@@ -77,6 +77,18 @@ it('po dwóch złych odpowiedziach rzuca wyjątek', function () {
     expect(ListingAnalysis::count())->toBe(0);
 });
 
+it('ponawia, gdy koszt jest pusty mimo ceny', function () {
+    ListingScoringAgent::fake([
+        aiAnswer(['monthly_cost' => ['rent' => null, 'admin_fee' => null, 'other_fees' => null, 'total' => null, 'note' => 'placeholder']]),
+        aiAnswer(),
+    ]);
+
+    $analysis = app(ListingScorer::class)->score($this->search, $this->listing);
+
+    expect($analysis->monthly_cost)->toBe(2950);
+    ListingScoringAgent::assertPromptedTimes(2);
+});
+
 it('job nie przerywa łańcucha przy złej odpowiedzi', function () {
     ListingScoringAgent::fake([aiAnswer(['score' => 'dużo']), aiAnswer(['score' => null])]);
 

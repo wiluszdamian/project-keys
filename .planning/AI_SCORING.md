@@ -2,11 +2,13 @@
 
 ## Technologia
 
-- Wbudowany w najnowszy Laravel moduł do providerów AI. **SPRAWDŹ** w aktualnej dokumentacji Laravela: nazwę paczki, plik konfiguracyjny, jak dodać providera zgodnego z API OpenAI z własnym adresem bazowym, jak wymusić odpowiedź w formacie JSON (structured output).
-- Provider: OpenCode Go. **SPRAWDŹ** w dokumentacji OpenCode Go: adres API, format (zgodny z OpenAI czy inny), nagłówek autoryzacji, dokładne ID modelu DeepSeek (użytkownik chce „DeepSeek 4.1 Flash”).
-- **SPRAWDŹ** razem z użytkownikiem, czy warunki OpenCode Go pozwalają używać subskrypcji z własnej aplikacji. Jeśli nie, alternatywa: bezpośrednie API DeepSeek. Kod ma pozwalać na zmianę samymi zmiennymi w `.env`.
+Sprawdzone 2026-11-17 (faza 6):
 
-Konfiguracja tylko przez `.env`: `OPENCODE_GO_BASE_URL`, `OPENCODE_GO_API_KEY`, `OPENCODE_GO_MODEL`.
+- Laravel AI SDK: paczka `laravel/ai` (v1.4.1), konfiguracja `config/ai.php`, provider `opencode` ze sterownikiem `openai-compatible`, odpowiedź JSON przez `HasStructuredOutput`. Agent: `app/Ai/Agents/ListingScoringAgent.php`.
+- OpenCode Go: API zgodne z OpenAI pod `https://opencode.ai/inference/go/openai/v1`, `Authorization: Bearer`, własny User-Agent i nagłówek `x-opencode-session`. Model `deepseek-v4.1-flash`. DeepSeek wymaga regionu Global w ustawieniach prywatności workspace (włączone przez właściciela).
+- Warunki: Go jest przeznaczony dla agentów do kodowania (otwarte pytanie w STATUS.md). Pay-as-you-go: `OPENCODE_GO_BASE_URL=https://opencode.ai/inference/openai/v1`, bez zmian w kodzie.
+
+Konfiguracja tylko przez `.env`: `OPENCODE_GO_BASE_URL`, `OPENCODE_GO_API_KEY`, `OPENCODE_GO_MODEL`, `AI_PROVIDER`, `AI_ENABLED`, `AI_MAX_PER_MINUTE`.
 
 ## Kiedy oceniamy
 
@@ -38,12 +40,18 @@ Zasady:
 Odpowiedz wyłącznie obiektem JSON zgodnym ze schematem.
 ```
 
+Aktualny prompt jest w `ListingScoringAgent::instructions()`. Doszły zasady o koszcie miesięcznym, ocenach cząstkowych i o tym, że nazwa osiedla w tytule lub opisie liczy się bardziej niż dzielnica z portalu.
+
 ## Schemat odpowiedzi
+
+Rozszerzony na prośbę właściciela o koszt miesięczny i oceny cząstkowe:
 
 ```json
 {
   "score": 7,
   "summary": "Jedno lub dwa zdania.",
+  "monthly_cost": {"rent": 2500, "admin_fee": 450, "other_fees": 200, "total": 3150, "note": "Media ok. 200 zł, kaucja 5000 zł."},
+  "sub_scores": {"cost": 6, "location": 9, "standard": 7, "fit": 8},
   "pros": ["max 4 krótkie punkty"],
   "red_flags": ["max 4 krótkie punkty, może być pusta lista"]
 }

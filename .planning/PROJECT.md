@@ -12,11 +12,11 @@ Prywatne narzędzie dla jednej osoby (właściciela). Zastępuje ręczne odświe
 
 ## Zakres pierwszej wersji
 
-- Portale: Otodom i OLX. Morizon i Gratka w fazie opcjonalnej.
+- Portale: Otodom i OLX (oba działają). Morizon i Gratka w fazie opcjonalnej.
 - Typy: mieszkania na wynajem i na sprzedaż.
 - Zarządzanie wyszukiwaniami przez API (token) i komendy artisan.
-- Powiadomienia: Telegram, Discord.
-- Ocena AI: Laravel AI (wbudowany moduł providerów) z OpenCode Go i modelem DeepSeek.
+- Powiadomienia: Telegram, Discord (Discord działa, Telegram do zrobienia).
+- Ocena AI: Laravel AI SDK (`laravel/ai`) z OpenCode Go i modelem `deepseek-v4.1-flash`. Ocena zawiera pełny koszt miesięczny i oceny cząstkowe.
 
 ## Poza zakresem
 
@@ -27,7 +27,7 @@ Prywatne narzędzie dla jednej osoby (właściciela). Zastępuje ręczne odświe
 
 ## Założenia
 
-- Serwer: VPS Contabo, Ubuntu 24.04, x86_64. Dokładne parametry wpisać w STATUS.md po fazie 0.
+- Serwer: VPS Contabo, x86_64. W praktyce Debian 13 zamiast Ubuntu 24.04, parametry w STATUS.md.
 - Wszystko działa w Docker Compose.
 - Użytkownik ma domenę lub subdomenę wskazującą na VPS (potrzebne do HTTPS). Jeśli nie ma, API działa tylko przez tunel SSH (patrz DEPLOYMENT.md).
 

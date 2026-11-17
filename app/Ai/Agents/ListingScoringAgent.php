@@ -44,11 +44,11 @@ class ListingScoringAgent implements Agent, HasStructuredOutput
             'score' => $schema->integer()->min(1)->max(10)->required(),
             'summary' => $schema->string()->description('Jedno lub dwa zdania.')->required(),
             'monthly_cost' => $schema->object([
-                'rent' => $schema->integer()->nullable()->description('Najem w zł, null przy sprzedaży.'),
-                'admin_fee' => $schema->integer()->nullable()->description('Czynsz administracyjny w zł, null gdy nieznany.'),
-                'other_fees' => $schema->integer()->nullable()->description('Inne stałe opłaty miesięczne z opisu w zł, null gdy brak.'),
-                'total' => $schema->integer()->nullable()->description('Suma miesięczna w zł.'),
-                'note' => $schema->string()->description('Krótko: co jest w cenie, czego brakuje, kaucja.'),
+                'rent' => $schema->integer()->nullable()->required()->description('Najem w zł, null przy sprzedaży.'),
+                'admin_fee' => $schema->integer()->nullable()->required()->description('Czynsz administracyjny w zł z danych albo z opisu, null gdy nieznany.'),
+                'other_fees' => $schema->integer()->nullable()->required()->description('Inne stałe opłaty miesięczne z opisu w zł (bez opłat według zużycia), null gdy brak.'),
+                'total' => $schema->integer()->nullable()->required()->description('Suma rent + admin_fee + other_fees w zł. Jeśli opis podaje całkowity koszt miesięczny, użyj go.'),
+                'note' => $schema->string()->required()->description('Jedno zdanie: co jest w cenie, co dochodzi według zużycia, kaucja.'),
             ])->required(),
             'sub_scores' => $schema->object([
                 'cost' => $schema->integer()->min(1)->max(10)->required(),

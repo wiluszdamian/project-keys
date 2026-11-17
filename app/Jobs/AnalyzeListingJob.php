@@ -5,6 +5,10 @@ namespace App\Jobs;
 use App\Ai\InvalidAiResponseException;
 use App\Models\Listing;
 use App\Models\Search;
+use App\Scrapers\Contracts\EnrichesListings;
+use App\Scrapers\Exceptions\PortalBlockedException;
+use App\Scrapers\Exceptions\ScraperException;
+use App\Scrapers\ScraperRegistry;
 use App\Services\ListingScorer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -40,11 +44,13 @@ class AnalyzeListingJob implements ShouldQueue
         return [new RateLimited('ai')];
     }
 
-    public function handle(ListingScorer $scorer): void
+    public function handle(ListingScorer $scorer, ScraperRegistry $registry): void
     {
         if (! ListingScorer::isEnabled()) {
             return;
         }
+
+        $this->enrich($registry);
 
         $existing = $this->listing->analyses()->where('search_id', $this->search->id)->first();
 
@@ -53,7 +59,7 @@ class AnalyzeListingJob implements ShouldQueue
         }
 
         try {
-            $scorer->score($this->search, $this->listing);
+            $scorer->score($this->search, $this->listing->fresh());
         } catch (InvalidAiResponseException $e) {
             // Dwie złe odpowiedzi z rzędu: oferta pójdzie bez oceny.
             Log::warning($e->getMessage(), ['listing' => $this->listing->id]);
@@ -67,6 +73,28 @@ class AnalyzeListingJob implements ShouldQueue
 
             $scorer->countError();
             Log::error("Ocena AI nie udała się 3 razy, oferta #{$this->listing->id} pójdzie bez oceny: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Brak opisu z listy wyników (Otodom): raz pobieramy stronę ogłoszenia. Błąd nie blokuje oceny.
+     */
+    private function enrich(ScraperRegistry $registry): void
+    {
+        if ($this->listing->description !== null || ! in_array($this->listing->portal, $registry->portals(), true)) {
+            return;
+        }
+
+        $scraper = $registry->get($this->listing->portal);
+
+        if (! $scraper instanceof EnrichesListings) {
+            return;
+        }
+
+        try {
+            $scraper->enrich($this->listing);
+        } catch (PortalBlockedException|ScraperException $e) {
+            Log::info("Nie pobrano strony oferty #{$this->listing->id}, ocena bez opisu: {$e->getMessage()}");
         }
     }
 }

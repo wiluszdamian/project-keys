@@ -36,33 +36,41 @@ Bez osobnego kontenera z przeglądarką. Playwright dodajemy tylko, jeśli któr
 
 ## Struktura kodu
 
+Stan na 2026-11-17 (fazy 0 do 6):
+
 ```
 app/
+  Ai/Agents/ListingScoringAgent.php  # prompt i schemat odpowiedzi (laravel/ai)
   Scrapers/
-    Contracts/PortalScraper.php      # interfejs: buildSearchUrl(Search), fetchListings(Search): ListingData[]
-    Data/ListingData.php             # DTO jednego ogłoszenia
-    OtodomScraper.php
-    OlxScraper.php
-    ScraperRegistry.php              # mapowanie nazwa portalu -> klasa
-    HttpFetcher.php                  # wspólny klient HTTP: user agent, opóźnienia, retry, obsługa 403/429
+    Contracts/PortalScraper.php      # buildSearchUrl, fetchListings, parse
+    Contracts/EnrichesListings.php   # pobranie strony oferty, gdy lista nie ma opisu (Otodom)
+    Data/ListingData.php, ScrapeResult.php
+    OtodomScraper.php, OlxScraper.php
+    ScraperRegistry.php              # portal -> klasa (config/scrapers.php)
+    HttpFetcher.php                  # przerwy, jedno zapytanie naraz na portal, retry, 403/429 -> pauza 2 h, HTTP/2
   Jobs/
-    RunSearchJob.php
-    ScrapePortalJob.php
-    AnalyzeListingJob.php
-    SendListingNotificationJob.php
-    SendDigestJob.php
+    RunSearchJob.php                 # batch ScrapePortalJob dla portali wyszukiwania
+    ScrapePortalJob.php              # pobranie, filtr, zapis, scrape_runs
+    NotifyRunResultsJob.php          # po przebiegu: łańcuch AnalyzeListingJob, potem wysyłka
+    AnalyzeListingJob.php            # ocena AI jednej oferty (kolejka ai, limit na minutę)
+    SendListingNotificationJob.php, SendDigestJob.php
+  Events/ ListingMatched, ListingPriceChanged, PortalBlockedRepeatedly
+  Listeners/ SendPriceDropNotification, SendPortalBlockedAlert
   Services/
-    ListingUpserter.php              # zapis, deduplikacja, historia cen
-    ListingMatcher.php               # dodatkowe filtrowanie po stronie aplikacji
-    MarketStats.php                  # mediana ceny za m2 dla miasta/dzielnicy z naszej bazy
-    ListingScorer.php                # wywołanie AI, walidacja odpowiedzi
-  Notifications/
-    NewListingNotification.php
-    DigestNotification.php
-  Models/ Search, Listing, SearchListing, ListingAnalysis, ListingPriceChange, ScrapeRun
-  Http/Controllers/Api/ SearchController, ListingController
-  Console/Commands/ SearchCreate, SearchRunNow, NotifyTest, MakeApiToken
+    ListingUpserter.php              # zapis, historia cen, duplikaty, nie kasuje danych ze strony oferty
+    DuplicateDetector.php            # ta sama oferta na dwóch portalach
+    ListingMatcher.php               # filtrowanie po pobraniu (dzielnice, zakresy)
+    MarketStats.php                  # mediana ceny za m2 (dzielnica albo miasto, 60 dni)
+    ListingScorer.php                # prompt, walidacja odpowiedzi, zapis oceny
+  Notifications/ Notifier.php, Discord/DiscordWebhook.php, Discord/DiscordMessages.php
+  Models/ Search, Listing, SearchListing, ListingAnalysis, ListingPriceChange, ScrapeRun, User
+  Http/Controllers/Api/ SearchController, ListingController, ScrapeRunController, HealthController
+  Console/Commands/ SearchCreate, SearchList, SearchPause, SearchResume, SearchRunNow, SearchDispatchDue,
+                    MakeApiToken, ScraperProbe, NotifyTest, AiUsage, AlertsCheck
+scripts/test.sh                      # testy na serwerze (Postgres mieszkania_test)
 ```
+
+Przepływ w praktyce: scheduler co minutę `search:dispatch-due` -> `RunSearchJob` -> batch `ScrapePortalJob` -> po batchu `NotifyRunResultsJob` -> łańcuch `AnalyzeListingJob` -> `NotifyRunResultsJob` (analyzed) -> Discord.
 
 ## Ważne zasady działania
 

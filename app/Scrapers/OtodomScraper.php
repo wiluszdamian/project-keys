@@ -4,7 +4,9 @@ namespace App\Scrapers;
 
 use App\Enums\DealType;
 use App\Enums\PropertyType;
+use App\Models\Listing;
 use App\Models\Search;
+use App\Scrapers\Contracts\EnrichesListings;
 use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\Data\ScrapeResult;
@@ -15,8 +17,9 @@ use Illuminate\Support\Str;
 /**
  * Otodom. Dane z JSON w tagu __NEXT_DATA__ na stronie wyników
  * (props.pageProps.data.searchAds.items), 36 ogłoszeń na stronę.
+ * Lista nie ma opisu, więc dla nowych ofert pobieramy stronę ogłoszenia (props.pageProps.ad).
  */
-class OtodomScraper implements PortalScraper
+class OtodomScraper implements EnrichesListings, PortalScraper
 {
     private const ROOMS = [1 => 'ONE', 2 => 'TWO', 3 => 'THREE', 4 => 'FOUR', 5 => 'FIVE'];
 
@@ -101,6 +104,53 @@ class OtodomScraper implements PortalScraper
         return [
             'listings' => array_map(fn (array $item) => $this->toListingData($item), $searchAds['items']),
             'total_pages' => Arr::get($searchAds, 'pagination.totalPages'),
+        ];
+    }
+
+    public function enrich(Listing $listing): bool
+    {
+        $details = $this->parseOffer($this->fetcher->get($this->name(), $listing->url));
+
+        $listing->description = $details['description'] ?? $listing->description;
+        $listing->rent_extra ??= $details['rent_extra'];
+        $listing->raw = array_merge($listing->raw ?? [], ['details' => $details['details']]);
+        $listing->content_hash = ListingData::hashOf($listing->title, $listing->price, $listing->area, $listing->description);
+
+        return $listing->isDirty() && $listing->save();
+    }
+
+    /**
+     * Strona jednego ogłoszenia: opis, czynsz, kaucja i kilka faktów o budynku.
+     *
+     * @return array{description: string|null, rent_extra: int|null, details: array<string, string|int|null>}
+     */
+    public function parseOffer(string $html): array
+    {
+        if (! preg_match('/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s', $html, $match)) {
+            throw new ScraperException('Otodom: brak __NEXT_DATA__ na stronie ogłoszenia.');
+        }
+
+        $ad = Arr::get(json_decode($match[1], true), 'props.pageProps.ad');
+
+        if (! is_array($ad)) {
+            throw new ScraperException('Otodom: brak danych ogłoszenia w __NEXT_DATA__.');
+        }
+
+        $characteristics = collect($ad['characteristics'] ?? [])->pluck('value', 'key');
+        $description = isset($ad['description'])
+            ? trim(preg_replace("/\n{3,}/", "\n\n", html_entity_decode(strip_tags(preg_replace('/<(br|\/p|\/li)\s*\/?>/i', "\n", $ad['description'])), ENT_QUOTES | ENT_HTML5)))
+            : null;
+
+        return [
+            'description' => $description ?: null,
+            'rent_extra' => is_numeric($characteristics->get('rent')) ? (int) round((float) $characteristics->get('rent')) : null,
+            'details' => array_filter([
+                'deposit' => is_numeric($characteristics->get('deposit')) ? (int) round((float) $characteristics->get('deposit')) : null,
+                'build_year' => $characteristics->get('build_year'),
+                'heating' => $characteristics->get('heating'),
+                'building_floors' => $characteristics->get('building_floors_num'),
+                'free_from' => $characteristics->get('free_from'),
+            ], fn ($value) => $value !== null && $value !== ''),
         ];
     }
 

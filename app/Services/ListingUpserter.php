@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  */
 class ListingUpserter
 {
+    private const KEEP_WHEN_MISSING = ['description', 'rent_extra', 'street', 'is_private_owner', 'image_url', 'district'];
+
     public function __construct(private DuplicateDetector $duplicates) {}
 
     public function upsert(ListingData $data): UpsertResult
@@ -42,7 +44,22 @@ class ListingUpserter
 
             $oldPrice = $listing->price;
             $oldHash = $listing->content_hash;
-            $listing->fill($data->toAttributes() + ['last_seen_at' => $now])->save();
+            $attributes = $data->toAttributes();
+
+            // Dane ze strony ogłoszenia (opis, czynsz) nie znikają, gdy lista wyników ich nie podaje.
+            foreach (self::KEEP_WHEN_MISSING as $field) {
+                if ($attributes[$field] === null && $listing->{$field} !== null) {
+                    unset($attributes[$field]);
+                }
+            }
+
+            if (isset($listing->raw['details']) && ! isset($attributes['raw']['details'])) {
+                $attributes['raw']['details'] = $listing->raw['details'];
+            }
+
+            $listing->fill($attributes + ['last_seen_at' => $now]);
+            $listing->content_hash = ListingData::hashOf($listing->title, $listing->price, $listing->area, $listing->description);
+            $listing->save();
 
             $priceChanged = $data->price !== null && $oldPrice !== null && $oldPrice !== $data->price;
 

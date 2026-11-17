@@ -43,7 +43,14 @@ final readonly class ListingData
      */
     public function contentHash(): string
     {
-        return sha1(implode('|', [$this->title, $this->price, $this->area, $this->description]));
+        return self::hashOf($this->title, $this->price, $this->area, $this->description);
+    }
+
+    public static function hashOf(?string $title, ?int $price, float|string|null $area, ?string $description): string
+    {
+        $area = $area === null ? null : (float) $area;
+
+        return sha1(implode('|', [$title, $price, $area, $description]));
     }
 
     /**

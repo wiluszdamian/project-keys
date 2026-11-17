@@ -41,7 +41,7 @@ class ListingScorer
             $this->countCall();
             $response = ListingScoringAgent::make()->prompt($prompt);
             $data = $response->toArray();
-            $errors = $this->validate($data);
+            $errors = $this->validate($data, $listing);
 
             if ($errors === []) {
                 return $this->save($search, $listing, $data, $response->usage->inputTokens ?? null, $response->usage->outputTokens ?? null);
@@ -91,6 +91,7 @@ class ListingScorer
                 false => 'agencja lub firma',
                 null => 'nie wiadomo',
             },
+            ...$this->details($listing),
             '- opis: '.($listing->description ? Str::limit(Str::squish($listing->description), config('scoring.description_limit')) : 'portal nie podał opisu'),
             '',
             '## Rynek (nasza baza, ostatnie '.MarketStats::DAYS.' dni, '.$market['scope'].')',
@@ -106,7 +107,7 @@ class ListingScorer
     /**
      * @return list<string>
      */
-    public function validate(array $data): array
+    public function validate(array $data, ?Listing $listing = null): array
     {
         $errors = [];
 
@@ -132,9 +133,21 @@ class ListingScorer
             }
         }
 
-        $total = $data['monthly_cost']['total'] ?? null;
-        if ($total !== null && (! is_int($total) || $total < 0)) {
+        $cost = $data['monthly_cost'] ?? null;
+        $total = $cost['total'] ?? null;
+
+        if (! is_array($cost)) {
+            $errors[] = 'brak monthly_cost';
+        } elseif ($total !== null && (! is_int($total) || $total < 0)) {
             $errors[] = 'monthly_cost.total musi być liczbą albo null';
+        } elseif ($listing?->price !== null && $total === null && ($cost['rent'] ?? null) === null) {
+            // Oferta ma cenę, więc koszt nie może być pusty.
+            $errors[] = 'monthly_cost jest pusty, choć oferta ma cenę';
+        }
+
+        $note = trim((string) ($cost['note'] ?? ''));
+        if ($note === '' || mb_strtolower($note) === 'placeholder') {
+            $errors[] = 'monthly_cost.note jest puste';
         }
 
         return $errors;
@@ -190,6 +203,29 @@ class ListingScorer
         $key = "ai:{$what}:".now()->format('YmdH');
         Cache::add($key, 0, now()->addHours(3));
         Cache::increment($key);
+    }
+
+    /**
+     * Dane ze strony ogłoszenia (Otodom): kaucja, rok budowy, ogrzewanie.
+     *
+     * @return list<string>
+     */
+    private function details(Listing $listing): array
+    {
+        $details = $listing->raw['details'] ?? [];
+        $labels = [
+            'deposit' => ['kaucja', 'zł'],
+            'build_year' => ['rok budowy', ''],
+            'heating' => ['ogrzewanie', ''],
+            'building_floors' => ['pięter w budynku', ''],
+            'free_from' => ['dostępne od', ''],
+        ];
+
+        return collect($labels)
+            ->filter(fn ($label, $key) => isset($details[$key]))
+            ->map(fn ($label, $key) => "- {$label[0]}: ".trim("{$details[$key]} {$label[1]}"))
+            ->values()
+            ->all();
     }
 
     private function range(?int $min, ?int $max, string $unit): string

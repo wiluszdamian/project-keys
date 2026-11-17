@@ -35,7 +35,7 @@ it('buduje embed oferty bez oceny AI', function () {
         ->and($embed['image']['url'])->toBe('https://img.test/1.jpg')
         ->and($embed['footer']['text'])->toBe('Wyszukiwanie: Rzeszów 3 pok.')
         ->and(collect($embed['fields'])->pluck('value', 'name')->all())->toMatchArray([
-            '💰 Cena' => "2 500 zł\n+ 400 zł czynsz",
+            '💰 Najem' => '2 500 zł + 400 zł czynsz',
             '📐 Metraż' => "56 m²\n45 zł/m²",
             '🚪 Pokoje' => "3\npiętro 2",
             '📍 Lokalizacja' => 'Drabinianka, Rzeszów',
@@ -69,6 +69,28 @@ it('pokazuje koszt miesięczny i oceny cząstkowe', function () {
 
     expect($fields['💸 Koszt miesięczny'])->toBe("**3 150 zł** / mies.\nnajem 2 500 zł + czynsz 450 zł + opłaty 200 zł\n_Media ok. 200 zł, kaucja 5000 zł._")
         ->and($fields['📊 Ocena 7/10'])->toBe('Koszt **6** · Lokalizacja **9** · Standard **7** · Dopasowanie **8**');
+});
+
+it('czynsz bierze z oceny AI, gdy portal go nie podał', function (?int $aiFee, string $expected) {
+    $analysis = ListingAnalysis::factory()->create(['cost_breakdown' => ['rent' => 2900, 'admin_fee' => $aiFee, 'other_fees' => null, 'note' => 'x']]);
+    $analysis->listing->update(['price' => 2900, 'rent_extra' => null]);
+
+    $fields = collect(app(DiscordMessages::class)->listing($analysis->listing->fresh(), $analysis->search, $analysis)['embeds'][0]['fields'])
+        ->pluck('value', 'name');
+
+    expect($fields['💰 Najem'])->toBe($expected);
+})->with([
+    'czynsz z opisu' => [570, '2 900 zł + 570 zł czynsz'],
+    'czynsz nieznany' => [null, '2 900 zł + czynsz nieznany'],
+]);
+
+it('przy sprzedaży pole nazywa się Cena', function () {
+    $listing = Listing::factory()->create(['deal_type' => 'sale', 'price' => 650000, 'rent_extra' => null]);
+
+    $fields = collect(app(DiscordMessages::class)->listing($listing, Search::factory()->create(['deal_type' => 'sale']))['embeds'][0]['fields'])
+        ->pluck('value', 'name');
+
+    expect($fields['💰 Cena'])->toBe('650 000 zł');
 });
 
 it('bez oceny przy włączonym AI dopisuje brak oceny', function () {

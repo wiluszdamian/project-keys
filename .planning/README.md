@@ -1,5 +1,7 @@
 # .planning: serwis do wyszukiwania mieszkań
 
+Stan na 2026-11-17: fazy 0 do 6 zrobione, aplikacja działa na serwerze (`ssh project-keys`, katalog `/home/deploy/project-keys`). Postęp i decyzje w STATUS.md, fazy w ROADMAP.md.
+
 Plan budowy prywatnego serwisu, który co kilkanaście minut sprawdza portale z ogłoszeniami (wynajem i sprzedaż) według zapisanych filtrów, ocenia nowe oferty przez AI i wysyła powiadomienia na Telegram lub Discord.
 
 ## Jak użyć
@@ -28,4 +30,4 @@ Plan budowy prywatnego serwisu, który co kilkanaście minut sprawdza portale z 
 | DEPLOYMENT.md | Przygotowanie VPS Contabo, Docker, bezpieczeństwo, backup. |
 | ROADMAP.md | Fazy pracy z kryteriami „gotowe”. |
 | STATUS.md | Postęp i decyzje. Aktualizuje Claude Code. |
-| env.example | Wzór pliku .env. |
+| env.example | Kopia wzoru `.env`. Aktualny wzór jest w `.env.example` w katalogu głównym. |

@@ -2,6 +2,7 @@
 
 namespace App\Notifications\Discord;
 
+use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
@@ -39,7 +40,7 @@ class DiscordMessages
             'url' => $listing->url,
             'color' => $this->color($listing, $analysis),
             'description' => $this->description($listing, $analysis),
-            'fields' => [...$this->analysisFields($analysis), ...$this->fields($listing)],
+            'fields' => [...$this->analysisFields($analysis), ...$this->fields($listing, $analysis)],
             'footer' => ['text' => "Wyszukiwanie: {$search->name}"],
             'timestamp' => $listing->first_seen_at?->toIso8601String(),
         ];
@@ -197,11 +198,17 @@ class DiscordMessages
         return $fields;
     }
 
-    private function fields(Listing $listing): array
+    private function fields(Listing $listing, ?ListingAnalysis $analysis = null): array
     {
+        $rent = $listing->deal_type === DealType::Rent;
         $price = $this->money($listing->price) ?? 'brak';
-        if ($listing->rent_extra) {
-            $price .= "\n+ ".$this->money($listing->rent_extra).' czynsz';
+        // Czynsz z portalu, a gdy go nie ma, odczytany przez AI z opisu.
+        $adminFee = $listing->rent_extra ?? ($analysis->cost_breakdown['admin_fee'] ?? null);
+
+        if ($adminFee) {
+            $price .= ' + '.$this->money((int) $adminFee).' czynsz';
+        } elseif ($rent) {
+            $price .= ' + czynsz nieznany';
         }
 
         $area = $listing->area ? $this->area($listing->area) : 'brak';
@@ -221,7 +228,7 @@ class DiscordMessages
         };
 
         return array_values(array_filter([
-            ['name' => '💰 Cena', 'value' => $price, 'inline' => true],
+            ['name' => $rent ? '💰 Najem' : '💰 Cena', 'value' => $price, 'inline' => true],
             ['name' => '📐 Metraż', 'value' => $area, 'inline' => true],
             ['name' => '🚪 Pokoje', 'value' => $rooms, 'inline' => true],
             $location !== '' ? ['name' => '📍 Lokalizacja', 'value' => Str::limit($location, 1000), 'inline' => true] : null,

@@ -2,6 +2,8 @@
 
 Jeden system powiadomień Laravela. Kanał wybierany per wyszukiwanie (`searches.notify_channels`).
 
+Stan 2026-11-17: Discord działa (`app/Notifications`), Telegram do zrobienia. Powiadomienia idą po całym przebiegu wyszukiwania (wszystkie portale), po ocenie AI. Wysyłane są oferty z oceną od `min_score_to_notify` oraz oferty bez oceny, gdy AI zawiodło.
+
 ## Discord
 
 - Webhook kanału (bez bota). URL w `.env`: `DISCORD_WEBHOOK_URL`.
@@ -16,6 +18,8 @@ Jeden system powiadomień Laravela. Kanał wybierany per wyszukiwanie (`searches
 - Komenda `php artisan telegram:chat-id` pomaga odczytać chat_id (czyta ostatnie wiadomości do bota przez getUpdates).
 
 ## Treść pojedynczej oferty
+
+Na Discordzie jako embed: ocena w tytule, kolor od oceny, koszt miesięczny z rozbiciem, oceny cząstkowe, pola z danymi oferty, zdjęcie, link. Bez oceny AI: początek opisu z ogłoszenia.
 
 ```
 [ocena]/10  [tytuł]
@@ -50,4 +54,4 @@ Treść: liczba nowych ofert, 10 najlepszych według oceny (tytuł, cena, ocena,
 
 ## Alerty systemowe
 
-Na ten sam kanał: blokada portalu 3 razy z rzędu, brak udanego przebiegu od 3 godzin, błędy AI w ponad połowie wywołań w ostatniej godzinie. Każdy alert maksymalnie raz na 6 godzin.
+Na ten sam kanał: blokada portalu 3 razy z rzędu, brak udanego przebiegu od 3 godzin, błędy AI w ponad połowie wywołań w ostatniej godzinie. Każdy alert maksymalnie raz na 6 godzin. Wszystkie trzy działają (`alerts:check` co godzinę).

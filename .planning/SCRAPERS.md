@@ -22,16 +22,24 @@ Preferowana kolejność:
 
 ## Otodom
 
-- **SPRAWDŹ** aktualny format URL wyszukiwania (transakcja, typ, lokalizacja, filtry ceny, metrażu, pokoi, sortowanie od najnowszych).
-- **SPRAWDŹ**, czy strona wyników zawiera JSON w `__NEXT_DATA__` i gdzie w nim są ogłoszenia, cena, metraż, pokoje, lokalizacja, typ ogłoszeniodawcy.
-- Zapisz przykładową stronę jako fixture do testów (`tests/Fixtures/otodom/search_rent.html`).
+Sprawdzone 2026-11-17 (faza 3):
+
+- URL: `https://www.otodom.pl/pl/wyniki/{wynajem|sprzedaz}/{mieszkanie|dom}/{lokalizacja}?priceMin=&priceMax=&areaMin=&areaMax=&roomsNumber=[TWO,THREE]&by=LATEST&direction=DESC&page=2`.
+- Lokalizacja z mapy miast w `config/scrapers.php` (`otodom.locations`): Kraków, Warszawa, Wrocław, Gdańsk, Poznań, Łódź, Rzeszów. Nowe miasto trzeba dopisać.
+- Filtr pokoi przyjmuje tylko ONE do FIVE. Dzielnice filtruje `ListingMatcher` po pobraniu.
+- Dane: `__NEXT_DATA__` → `props.pageProps.data.searchAds.items`, 36 ofert na stronę. Na liście nie ma opisu oferty.
+- Fixtures: `tests/Fixtures/otodom/search_rent.html`, `search_sale.html` (tylko `__NEXT_DATA__`).
 
 ## OLX
 
-- **SPRAWDŹ** format URL kategorii mieszkań (wynajem, sprzedaż) i parametrów filtrów.
-- **SPRAWDŹ**, czy strona używa wewnętrznego endpointu JSON z ofertami. Jeśli tak, użyj go z tymi samymi parametrami co strona.
-- OLX pokazuje też ogłoszenia przekierowujące na Otodom. Takie oferty oznacz i deduplikuj (patrz niżej).
-- Fixture do testów jak przy Otodom.
+Sprawdzone 2026-11-17 (faza 4):
+
+- Endpoint JSON strony: `https://www.olx.pl/api/v1/offers/?offset=&limit=40&category_id=&region_id=&city_id=&sort_by=created_at:desc&filter_float_price:from/to&filter_float_m:from/to&filter_enum_rooms[]=one..four`.
+- Identyfikatory z `/api/v1/friendly-links/query-params/nieruchomosci,{mieszkania|domy},{wynajem|sprzedaz},{miasto}/`, zapamiętane na 30 dni. Nie trzeba mapy miast.
+- Lista zawiera opis. Dzielnica tylko w dużych miastach (np. Kraków), w Rzeszowie brak.
+- Oferty skopiowane z Otodom mają `partner.code = otodom_pl` i `external_url` z adresem oferty Otodom.
+- OLX (CloudFront) odrzuca HTTP/1.1 z nagłówkiem przeglądarki. Zapytania idą przez HTTP/2, decyzja właściciela (STATUS.md).
+- Fixtures: `tests/Fixtures/olx/*.json` bez danych ogłoszeniodawców.
 
 ## Mapowanie filtrów
 
@@ -40,7 +48,7 @@ Każdy scraper zamienia obiekt `Search` na URL portalu. Jeśli portal nie obsłu
 ## Deduplikacja
 
 1. W obrębie portalu: unique(portal, external_id). Przy ponownym znalezieniu aktualizuj `last_seen_at`, a przy zmianie ceny dodaj wpis do `listing_price_changes`.
-2. Między portalami (ta sama oferta na Otodom i OLX): heurystyka na start: to samo miasto, cena różna o mniej niż 2%, metraż różny o mniej niż 1 m2, ten sam typ transakcji, widziane w ciągu 7 dni. Takie oferty nie wywołują drugiego powiadomienia. Zapisz to jako osobną usługę, łatwą do zmiany.
+2. Między portalami (ta sama oferta na Otodom i OLX): najpierw dokładnie po `external_url`, potem heurystyka: to samo miasto, cena różna o mniej niż 2%, metraż różny o mniej niż 1 m2, ten sam typ transakcji, widziane w ciągu 7 dni. Takie oferty dostają `duplicate_of_id` i nie wywołują drugiego powiadomienia. Usługa `DuplicateDetector`.
 
 ## Testy
 
