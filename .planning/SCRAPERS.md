@@ -25,7 +25,7 @@ Preferowana kolejność:
 Sprawdzone 2026-11-17 (faza 3):
 
 - URL: `https://www.otodom.pl/pl/wyniki/{wynajem|sprzedaz}/{mieszkanie|dom}/{lokalizacja}?priceMin=&priceMax=&areaMin=&areaMax=&roomsNumber=[TWO,THREE]&by=LATEST&direction=DESC&page=2`.
-- Lokalizacja z mapy miast w `config/scrapers.php` (`otodom.locations`): Kraków, Warszawa, Wrocław, Gdańsk, Poznań, Łódź, Rzeszów. Nowe miasto trzeba dopisać.
+- Lokalizacja z mapy miast w `config/scrapers.php` (`otodom.locations`): Kraków, Warszawa, Wrocław, Gdańsk, Poznań, Łódź, Rzeszów, Boguchwała, Tajęcina, Rudna Mała. Nowe miasto trzeba dopisać.
 - Filtr pokoi przyjmuje tylko ONE do FIVE. Dzielnice filtruje `ListingMatcher` po pobraniu.
 - Dane: `__NEXT_DATA__` → `props.pageProps.data.searchAds.items`, 36 ofert na stronę. Na liście nie ma opisu oferty.
 - Fixtures: `tests/Fixtures/otodom/search_rent.html`, `search_sale.html` (tylko `__NEXT_DATA__`).

@@ -38,6 +38,9 @@ return [
             'poznan' => 'wielkopolskie/poznan/poznan/poznan',
             'lodz' => 'lodzkie/lodz/lodz/lodz',
             'rzeszow' => 'podkarpackie/rzeszow/rzeszow/rzeszow',
+            'boguchwala' => 'podkarpackie/rzeszowski/boguchwala/boguchwala',
+            'tajecina' => 'podkarpackie/rzeszowski/trzebownisko/tajecina',
+            'rudna-mala' => 'podkarpackie/rzeszowski/glogow-malopolski/rudna-mala',
         ],
     ],
 

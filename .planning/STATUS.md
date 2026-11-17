@@ -67,6 +67,7 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Otodom: lista wyników nie ma opisu ani często czynszu. Przed oceną AI nowa oferta z Otodom pobiera raz stronę ogłoszenia (`EnrichesListings`): opis, czynsz, kaucja, rok budowy, ogrzewanie. Kolejne przebiegi nie kasują tych danych.
 - 2026-11-17: Pola kosztu w odpowiedzi AI są wymagane. Pusty koszt przy ofercie z ceną to błędna odpowiedź i ponowienie (model raz zwrócił „placeholder”).
 - 2026-11-17: Discord: pole „Najem: 2 900 zł + 570 zł czynsz”. Czynsz z portalu albo z opisu (przez AI), a gdy nieznany, napis „czynsz nieznany”. Prośba właściciela.
+- 2026-11-17: Wyszukiwania na sprzedaż (#4 do #7): mieszkania do 560 000 zł, od 3 pokoi, osobno dla Rzeszowa, Boguchwały, Tajęciny i Rudnej Małej (to osobne miejscowości na portalach). Wspólne preferencje AI: osiedle Projektant albo te miejscowości, dobry standard wykończenia. Lokalizacje Otodom dla trzech miejscowości sprawdzone na żywo.
 
 ## Otwarte pytania
 
