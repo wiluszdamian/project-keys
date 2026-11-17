@@ -53,11 +53,11 @@ Gotowe gdy: jak w fazie 3 dla OLX, a ta sama oferta z obu portali zapisuje się 
 
 ## Faza 5: harmonogram i kolejka
 
-Status: do zrobienia
+Status: ✅ gotowe (2026-11-17), obserwacja przez godzinę w toku
 
-- `RunSearchJob`, `ScrapePortalJob`, `scrape_runs`, locki, rate limiter na portal, wstrzymywanie portalu po blokadzie.
-- Scheduler co `SCRAPE_INTERVAL_MINUTES`.
-- `search:run`, endpoint `POST /searches/{id}/run`.
+- [x] `RunSearchJob`, `ScrapePortalJob`, `scrape_runs`, locki, rate limiter na portal, wstrzymywanie portalu po blokadzie.
+- [x] Scheduler co `SCRAPE_INTERVAL_MINUTES`.
+- [x] `search:run`, endpoint `POST /searches/{id}/run`.
 
 Gotowe gdy: przez godzinę system sam sprawdza portale, w `scrape_runs` są wpisy, nowe oferty pojawiają się w bazie, brak duplikatów.
 
@@ -72,10 +72,15 @@ Gotowe gdy: nowe oferty dostają ocenę w `listing_analyses`, niepoprawna odpowi
 
 ## Faza 7: powiadomienia
 
-Status: do zrobienia
+Status: w trakcie (Discord zrobiony wcześniej, na prośbę właściciela)
 
-- Discord i Telegram według NOTIFICATIONS.md, digest, obniżki cen, alerty systemowe.
-- `notify:test`, `telegram:chat-id`.
+- [ ] Discord i Telegram według NOTIFICATIONS.md, digest, obniżki cen, alerty systemowe.
+  - [x] Discord: embed oferty, podsumowanie, obniżki cen, osobne webhooki dla wynajmu i sprzedaży.
+  - [x] Alerty: blokada portalu 3 razy z rzędu, brak udanego przebiegu od 3 h (najwyżej raz na 6 h).
+  - [ ] Alert: błędy AI w ponad połowie wywołań (po fazie 6).
+  - [ ] Telegram.
+- [ ] `notify:test`, `telegram:chat-id`.
+  - [x] `notify:test discord`.
 
 Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną powyżej progu przychodzi automatycznie, pierwszy przebieg daje jedno podsumowanie.
 

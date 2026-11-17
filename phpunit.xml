@@ -18,17 +18,27 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env force="true" name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env force="true" name="CACHE_STORE" value="array"/>
+        <!-- Osobna baza testowa w Postgresie (scripts/test.sh). Nigdy główna baza. -->
+        <env name="DB_CONNECTION" value="pgsql" force="true"/>
+        <env name="DB_HOST" value="postgres" force="true"/>
+        <env name="DB_PORT" value="5432" force="true"/>
+        <env name="DB_DATABASE" value="mieszkania_test" force="true"/>
+        <env name="DB_USERNAME" value="test" force="true"/>
+        <env name="DB_PASSWORD" value="test" force="true"/>
         <env name="DB_URL" value=""/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
+        <env force="true" name="MAIL_MAILER" value="array"/>
+        <!-- Testy nigdy nie wysyłają na prawdziwy webhook z .env. -->
+        <env force="true" name="DISCORD_WEBHOOK_URL" value=""/>
+        <env force="true" name="DISCORD_WEBHOOK_URL_RENT" value=""/>
+        <env force="true" name="DISCORD_WEBHOOK_URL_SALE" value=""/>
+        <env force="true" name="TELEGRAM_BOT_TOKEN" value=""/>
+        <env force="true" name="QUEUE_CONNECTION" value="sync"/>
+        <env force="true" name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

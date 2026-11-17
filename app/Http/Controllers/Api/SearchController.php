@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\ListingResource;
 use App\Http\Resources\SearchResource;
+use App\Jobs\RunSearchJob;
 use App\Models\Listing;
 use App\Models\Search;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -63,6 +65,16 @@ class SearchController extends Controller
         $search->update(['is_active' => true]);
 
         return new SearchResource($search);
+    }
+
+    /**
+     * Uruchamia przebieg teraz. Wynik pojawi się w /scrape-runs.
+     */
+    public function run(Search $search): JsonResponse
+    {
+        RunSearchJob::dispatch($search);
+
+        return response()->json(['message' => 'Przebieg dodany do kolejki.'], 202);
     }
 
     /**

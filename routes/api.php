@@ -10,6 +10,7 @@ Route::get('/health', HealthController::class);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('searches', SearchController::class);
+    Route::post('searches/{search}/run', [SearchController::class, 'run']);
     Route::post('searches/{search}/pause', [SearchController::class, 'pause']);
     Route::post('searches/{search}/resume', [SearchController::class, 'resume']);
     Route::get('searches/{search}/listings', [SearchController::class, 'listings']);

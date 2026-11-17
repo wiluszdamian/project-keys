@@ -68,7 +68,8 @@ return [
             'driver' => 'redis',
             'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
             'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 90),
+            // Dłużej niż najdłuższy job (ScrapePortalJob ma timeout 600 s), inaczej job wróciłby do kolejki w trakcie pracy.
+            'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 960),
             'block_for' => null,
             'after_commit' => false,
         ],
