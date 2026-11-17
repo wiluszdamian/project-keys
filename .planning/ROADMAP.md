@@ -4,21 +4,27 @@ Każda faza kończy się: testami, commitem, aktualizacją STATUS.md i zatrzyman
 
 ## Faza 0: przygotowanie serwera
 
-- Kroki 1 i 2 z DEPLOYMENT.md.
-- Zapisz w STATUS.md parametry serwera i wersje (Docker, Compose).
+Status: ✅ gotowe (2026-11-17)
+
+- [x] Kroki 1 i 2 z DEPLOYMENT.md.
+- [x] Zapisz w STATUS.md parametry serwera i wersje (Docker, Compose).
 
 Gotowe gdy: logowanie tylko kluczem jako `deploy`, ufw aktywny (22, 80, 443), `docker run hello-world` działa.
 
 ## Faza 1: szkielet aplikacji
 
-- Najnowszy stabilny Laravel (**SPRAWDŹ** wersję), PHP 8.5.
-- Dockerfile i docker-compose.yml według ARCHITECTURE.md.
-- Pest, Laravel Pint, `.gitignore` z `.env`.
-- Endpoint `/api/health`.
+Status: ✅ gotowe (2026-11-17)
+
+- [x] Najnowszy stabilny Laravel (**SPRAWDŹ** wersję), PHP 8.5. Laravel 13.43, PHP 8.5.12.
+- [x] Dockerfile i docker-compose.yml według ARCHITECTURE.md.
+- [x] Pest, Laravel Pint, `.gitignore` z `.env`.
+- [x] Endpoint `/api/health`.
 
 Gotowe gdy: `docker compose up -d` stawia wszystkie usługi, `/api/health` zwraca ok przez Caddy (HTTPS lub tunel), testy przechodzą.
 
 ## Faza 2: model danych i API
+
+Status: do zrobienia
 
 - Migracje i modele z DATA_MODEL.md.
 - Sanctum, komenda `api:token`.
@@ -29,6 +35,8 @@ Gotowe gdy: można utworzyć, zmienić i usunąć wyszukiwanie przez API i komen
 
 ## Faza 3: scraper Otodom
 
+Status: do zrobienia
+
 - `HttpFetcher` z zasadami z SCRAPERS.md (opóźnienia, 403/429, retry).
 - Interfejs `PortalScraper`, `ListingData`, `OtodomScraper`, `ListingUpserter`.
 - Fixture i testy, komenda `scraper:probe`.
@@ -37,11 +45,15 @@ Gotowe gdy: `scraper:probe otodom {id}` wypisuje prawdziwe oferty zgodne z filtr
 
 ## Faza 4: scraper OLX
 
+Status: do zrobienia
+
 - `OlxScraper`, deduplikacja między portalami.
 
 Gotowe gdy: jak w fazie 3 dla OLX, a ta sama oferta z obu portali zapisuje się jako duplikat.
 
 ## Faza 5: harmonogram i kolejka
+
+Status: do zrobienia
 
 - `RunSearchJob`, `ScrapePortalJob`, `scrape_runs`, locki, rate limiter na portal, wstrzymywanie portalu po blokadzie.
 - Scheduler co `SCRAPE_INTERVAL_MINUTES`.
@@ -51,6 +63,8 @@ Gotowe gdy: przez godzinę system sam sprawdza portale, w `scrape_runs` są wpis
 
 ## Faza 6: ocena AI
 
+Status: do zrobienia
+
 - Konfiguracja modułu AI Laravela z OpenCode Go (wszystkie **SPRAWDŹ** z AI_SCORING.md).
 - `MarketStats`, `ListingScorer`, `AnalyzeListingJob`, komenda `ai:usage`.
 
@@ -58,12 +72,16 @@ Gotowe gdy: nowe oferty dostają ocenę w `listing_analyses`, niepoprawna odpowi
 
 ## Faza 7: powiadomienia
 
+Status: do zrobienia
+
 - Discord i Telegram według NOTIFICATIONS.md, digest, obniżki cen, alerty systemowe.
 - `notify:test`, `telegram:chat-id`.
 
 Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną powyżej progu przychodzi automatycznie, pierwszy przebieg daje jedno podsumowanie.
 
 ## Faza 8: utrwalenie
+
+Status: do zrobienia
 
 - Backup i `restore.sh` z testem przywracania.
 - `deploy.sh`.

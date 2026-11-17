@@ -1,0 +1,8 @@
+# Bez domeny CADDY_DOMAIN=":80" i port tylko na 127.0.0.1 (tunel SSH).
+# Z domeną CADDY_DOMAIN=twoja-domena.pl i Caddy sam pobierze certyfikat.
+{$CADDY_DOMAIN::80} {
+	root * /var/www/html/public
+	encode zstd gzip
+	php_fastcgi app:9000
+	file_server
+}
