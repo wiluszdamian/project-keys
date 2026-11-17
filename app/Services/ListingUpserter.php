@@ -9,10 +9,13 @@ use App\Scrapers\Data\ListingData;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Zapisuje ogłoszenia: nowe dodaje, istniejące aktualizuje i zapisuje zmiany ceny.
+ * Zapisuje ogłoszenia: nowe dodaje (i oznacza duplikaty z innych portali),
+ * istniejące aktualizuje i zapisuje zmiany ceny.
  */
 class ListingUpserter
 {
+    public function __construct(private DuplicateDetector $duplicates) {}
+
     public function upsert(ListingData $data): UpsertResult
     {
         return DB::transaction(function () use ($data) {
@@ -29,6 +32,10 @@ class ListingUpserter
                     'first_seen_at' => $now,
                     'last_seen_at' => $now,
                 ]);
+
+                if ($original = $this->duplicates->findOriginal($listing)) {
+                    $listing->update(['duplicate_of_id' => $original->id]);
+                }
 
                 return new UpsertResult($listing, isNew: true);
             }

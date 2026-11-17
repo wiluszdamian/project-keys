@@ -15,16 +15,16 @@ use Illuminate\Support\Sleep;
  */
 class HttpFetcher
 {
-    public function get(string $portal, string $url): string
+    public function get(string $portal, string $url, array $headers = []): string
     {
         $this->ensureNotPaused($portal);
 
         // Jedno zapytanie naraz do danego portalu, także z kilku workerów.
-        return Cache::lock("scraper:lock:{$portal}", 300)->block(600, function () use ($portal, $url) {
+        return Cache::lock("scraper:lock:{$portal}", 300)->block(600, function () use ($portal, $url, $headers) {
             $this->waitForTurn($portal);
 
             try {
-                return $this->request($portal, $url);
+                return $this->request($portal, $url, $headers);
             } finally {
                 Cache::put("scraper:last:{$portal}", microtime(true), now()->addHour());
             }
@@ -67,17 +67,22 @@ class HttpFetcher
         }
     }
 
-    private function request(string $portal, string $url): string
+    private function request(string $portal, string $url, array $headers): string
     {
         $retries = config('scrapers.retries');
 
         for ($attempt = 0; ; $attempt++) {
             try {
-                $response = Http::withHeaders([
+                $response = Http::withHeaders(array_merge([
                     'User-Agent' => config('scrapers.user_agent'),
                     'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language' => 'pl-PL,pl;q=0.9,en;q=0.8',
-                ])->timeout(config('scrapers.timeout_seconds'))->get($url);
+                ], $headers))
+                    // HTTP/2 jak przeglądarka. OLX (CloudFront) odrzuca HTTP/1.1 z nagłówkiem przeglądarki.
+                    // Decyzja właściciela z 2026-11-17, patrz .planning/STATUS.md.
+                    ->withOptions(['version' => 2.0])
+                    ->timeout(config('scrapers.timeout_seconds'))
+                    ->get($url);
             } catch (ConnectionException $e) {
                 if ($attempt < $retries) {
                     Sleep::for(config('scrapers.retry_sleep_seconds'))->seconds();

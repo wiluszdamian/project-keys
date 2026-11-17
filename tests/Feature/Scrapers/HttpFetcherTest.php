@@ -98,3 +98,11 @@ it('błąd 404 nie wstrzymuje portalu', function () {
     expect(fn () => $this->fetcher->get('otodom', 'https://example.test/a'))->toThrow(ScraperException::class, '404');
     expect($this->fetcher->isPaused('otodom'))->toBeFalse();
 });
+
+it('używa HTTP/2', function () {
+    Http::fake(['*' => Http::response('ok')]);
+
+    $this->fetcher->get('olx', 'https://example.test/a');
+
+    expect(Http::recorded()->first()[0]->toPsrRequest()->getProtocolVersion())->toBe('2.0');
+});

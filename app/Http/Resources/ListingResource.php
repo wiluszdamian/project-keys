@@ -28,6 +28,7 @@ class ListingResource extends JsonResource
             'is_private_owner' => $this->is_private_owner,
             'description' => $this->when($request->routeIs('listings.show'), $this->description),
             'image_url' => $this->image_url,
+            'duplicate_of_id' => $this->duplicate_of_id,
             'first_seen_at' => $this->first_seen_at,
             'last_seen_at' => $this->last_seen_at,
             'matched_at' => $this->whenHas('matched_at'),

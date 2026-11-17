@@ -18,7 +18,7 @@ beforeEach(function () {
 });
 
 it('odczytuje ogłoszenia na wynajem z fixture', function () {
-    $result = $this->scraper->parse(otodomFixture('search_rent'));
+    $result = $this->scraper->parse(otodomFixture('search_rent'), new Search);
 
     expect($result['listings'])->toHaveCount(37)
         ->and($result['total_pages'])->toBe(49);
@@ -57,7 +57,7 @@ it('odczytuje ogłoszenia na wynajem z fixture', function () {
 });
 
 it('odczytuje ogłoszenia na sprzedaż z fixture', function () {
-    $listings = $this->scraper->parse(otodomFixture('search_sale'))['listings'];
+    $listings = $this->scraper->parse(otodomFixture('search_sale'), new Search)['listings'];
 
     expect($listings)->toHaveCount(37);
 
@@ -78,7 +78,7 @@ it('odczytuje ogłoszenia na sprzedaż z fixture', function () {
 });
 
 it('rzuca wyjątek, gdy strona nie ma __NEXT_DATA__', function () {
-    $this->scraper->parse('<html><body>Captcha</body></html>');
+    $this->scraper->parse('<html><body>Captcha</body></html>', new Search);
 })->throws(ScraperException::class, '__NEXT_DATA__');
 
 it('buduje adres wyszukiwania', function (array $attributes, int $page, string $expected) {

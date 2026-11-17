@@ -19,7 +19,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 1 Szkielet | gotowe | 2026-11-17 | Laravel 13.43, PHP 8.5.12, 6 usług w compose, `/api/health` ok przez Caddy, Pest 4 |
 | 2 Dane i API | gotowe | 2026-11-17 | 6 tabel, Sanctum 4.5, API wyszukiwań, ofert i przebiegów, limit 60/min na token, 29 testów |
 | 3 Otodom | gotowe | 2026-11-17 | Dane z `__NEXT_DATA__`, 36 ofert na stronę, sprawdzone na żywo dla Rzeszowa, 66 testów |
-| 4 OLX | do zrobienia | | |
+| 4 OLX | gotowe | 2026-11-17 | Endpoint JSON OLX, duplikaty po adresie i po cenie z metrażem, HTTP/2 (decyzja właściciela), 92 testy. Na żywo: 153 oferty, 33 duplikaty |
 | 5 Harmonogram | do zrobienia | | |
 | 6 AI | do zrobienia | | |
 | 7 Powiadomienia | do zrobienia | | |
@@ -46,9 +46,16 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Otodom przyjmuje w filtrze pokoi tylko ONE do FIVE. Gdy zakres wychodzi poza 5, filtr pokoi jest tylko po stronie aplikacji.
 - 2026-11-17: Lista wyników Otodom nie zawiera opisu (`shortDescription` jest pusty). Na razie `description` zostaje puste. Czy pobierać stronę oferty dla nowych ogłoszeń, zdecydujemy w fazie 6 (AI).
 - 2026-11-17: Ogłoszenie bez dzielnicy jest odrzucane, gdy wyszukiwanie ma listę dzielnic. Brak ceny, metrażu lub pokoi nie odrzuca oferty.
+- 2026-11-17: OLX: endpoint JSON `/api/v1/offers`, z którego korzysta sama strona (strona HTML waży 4,4 MB). Identyfikatory kategorii i miasta z `/api/v1/friendly-links/query-params/...`, zapamiętane na 30 dni, więc nie trzeba ręcznej mapy miast. Lista OLX zawiera opis oferty.
+- 2026-11-17: OLX: dane ogłoszeniodawcy (`user`, `contact`) nie trafiają do bazy ani do fixtures.
+- 2026-11-17: Duplikaty: kolumna `listings.duplicate_of_id`. Najpierw dokładnie po adresie (kopie z Otodom na OLX mają `external_url`), potem po cenie (±2%) i metrażu (±1 m2) w tym samym mieście, z ostatnich 7 dni. Usługa `DuplicateDetector`.
+- 2026-11-17: Decyzja właściciela: zapytania do portali idą przez HTTP/2. OLX (CloudFront) odpowiadał 403 na HTTP/1.1 z nagłówkiem przeglądarki, a przepuszczał HTTP/2. To odstępstwo od zasady „bez obchodzenia zabezpieczeń” z PROJECT.md i SCRAPERS.md, przyjęte świadomie przez właściciela. Pozostałe zasady bez zmian: przerwy, maks. 3 strony, wstrzymanie na 2 h po 403/429.
+- 2026-11-17: Osiedle Projektant (Rzeszów) nie istnieje na Otodom jako lokalizacja. W wyszukiwaniu #3 jest w preferencjach AI, nie w filtrze dzielnic.
+- 2026-11-17: Testy idą na SQLite, a SQLite nie pilnuje typów kolumn. Błąd z ceną (ułamek porównywany z kolumną integer) wyszedł dopiero na Postgresie. Warto przenieść testy na Postgres (osobna baza testowa w compose).
 
 ## Otwarte pytania
 
 - Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji?
 - Dokładne ID modelu DeepSeek w OpenCode Go.
 - Domena dla HTTPS.
+- Duplikaty po cenie i metrażu mogą się mylić: dwa różne ogłoszenia OLX (2400 zł, 63 m2) wskazały tę samą ofertę Otodom (2390 zł, 63,9 m2). Można zaostrzyć regułę, np. wymagać tej samej liczby pokoi.

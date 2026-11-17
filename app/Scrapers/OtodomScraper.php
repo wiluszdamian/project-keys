@@ -70,7 +70,7 @@ class OtodomScraper implements PortalScraper
         $pages = 0;
 
         for ($page = 1; $page <= config('scrapers.max_pages'); $page++) {
-            $parsed = $this->parse($this->fetcher->get($this->name(), $this->buildSearchUrl($search, $page)));
+            $parsed = $this->parse($this->fetcher->get($this->name(), $this->buildSearchUrl($search, $page)), $search);
             $pages++;
 
             foreach ($parsed['listings'] as $listing) {
@@ -85,9 +85,9 @@ class OtodomScraper implements PortalScraper
         return new ScrapeResult(array_values($listings), $pages);
     }
 
-    public function parse(string $html): array
+    public function parse(string $body, Search $search): array
     {
-        if (! preg_match('/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s', $html, $match)) {
+        if (! preg_match('/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s', $body, $match)) {
             throw new ScraperException('Otodom: brak __NEXT_DATA__ na stronie wyników. Strona mogła się zmienić.');
         }
 

@@ -24,9 +24,9 @@ interface PortalScraper
     public function fetchListings(Search $search): ScrapeResult;
 
     /**
-     * Odczytuje ogłoszenia z jednej strony wyników.
+     * Odczytuje ogłoszenia z jednej strony wyników (HTML albo JSON, zależnie od portalu).
      *
      * @return array{listings: list<ListingData>, total_pages: int|null}
      */
-    public function parse(string $html): array;
+    public function parse(string $body, Search $search): array;
 }

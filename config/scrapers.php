@@ -1,12 +1,16 @@
 <?php
 
+use App\Scrapers\OlxScraper;
+use App\Scrapers\OtodomScraper;
+
 return [
     // Portale, które można wybrać w wyszukiwaniu.
     'portals' => ['otodom', 'olx'],
 
     // Klasa scrapera dla każdego portalu.
     'classes' => [
-        'otodom' => App\Scrapers\OtodomScraper::class,
+        'otodom' => OtodomScraper::class,
+        'olx' => OlxScraper::class,
     ],
 
     'interval_minutes' => (int) env('SCRAPE_INTERVAL_MINUTES', 20),
@@ -35,5 +39,19 @@ return [
             'lodz' => 'lodzkie/lodz/lodz/lodz',
             'rzeszow' => 'podkarpackie/rzeszow/rzeszow/rzeszow',
         ],
+    ],
+
+    'olx' => [
+        'base_url' => 'https://www.olx.pl',
+        // Tyle ogłoszeń zwraca endpoint na stronę (jak sama strona OLX).
+        'per_page' => 40,
+    ],
+
+    // Ta sama oferta na dwóch portalach: to samo miasto i typ transakcji,
+    // cena różna o mniej niż 2%, metraż o mniej niż 1 m2, widziana w ciągu 7 dni.
+    'duplicates' => [
+        'price_tolerance' => 0.02,
+        'area_tolerance' => 1.0,
+        'days' => 7,
     ],
 ];

@@ -45,9 +45,9 @@ Gotowe gdy: `scraper:probe otodom {id}` wypisuje prawdziwe oferty zgodne z filtr
 
 ## Faza 4: scraper OLX
 
-Status: do zrobienia
+Status: ✅ gotowe (2026-11-17)
 
-- `OlxScraper`, deduplikacja między portalami.
+- [x] `OlxScraper`, deduplikacja między portalami.
 
 Gotowe gdy: jak w fazie 3 dla OLX, a ta sama oferta z obu portali zapisuje się jako duplikat.
 
