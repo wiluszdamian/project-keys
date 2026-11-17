@@ -57,7 +57,7 @@ class DiscordMessages
      *
      * @param  Collection<int, Listing>  $listings  oferty do pokazania (najwyżej 10)
      */
-    public function digest(Search $search, Collection $listings, int $total, bool $firstRun): array
+    public function digest(Search $search, Collection $listings, int $total, bool $firstRun, ?int $qualifying = null): array
     {
         $lines = $listings->map(function (Listing $listing) {
             $score = $listing->getAttribute('score');
@@ -78,9 +78,19 @@ class DiscordMessages
             ? "Pierwszy przebieg: {$total} ".$this->offersWord($total).' pasuje do filtrów'
             : "{$total} nowych ".$this->offersWord($total, genitive: true).' w jednym przebiegu';
 
-        $more = $total > $listings->count()
-            ? "\n\nPokazuję {$listings->count()} z {$total}. Reszta: `GET /api/searches/{$search->id}/listings`"
+        $shown = $qualifying ?? $total;
+
+        if ($qualifying !== null) {
+            $heading .= ", {$qualifying} z oceną od {$search->min_score_to_notify}";
+        }
+
+        $more = $shown > $listings->count()
+            ? "\n\nPokazuję {$listings->count()} najlepszych z {$shown}. Reszta w bazie: `search:list`, API `/api/searches/{$search->id}/listings`."
             : '';
+
+        if ($listings->isEmpty()) {
+            $lines = collect(["Żadna oferta nie dostała oceny od {$search->min_score_to_notify}. Nowe dobre oferty przyjdą osobno."]);
+        }
 
         return ['embeds' => [[
             'author' => ['name' => '📋 Podsumowanie'],

@@ -127,6 +127,31 @@ it('podsumowanie pokazuje 10 ofert, resztę oznacza jako digest', function () {
         ->and(DB::table('search_listing')->where('notify_skipped_reason', 'digest')->count())->toBe(2);
 });
 
+it('podsumowanie pokazuje tylko oferty od progu', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    $this->search->update(['min_score_to_notify' => 6]);
+    [$good, $weak, $noScore] = matchListings($this->search, 3);
+    ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $good, 'score' => 8]);
+    ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $weak, 'score' => 3]);
+
+    SendDigestJob::dispatchSync($this->search, [$good, $weak, $noScore], true);
+
+    Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['title'], '3 oferty pasuje do filtrów, 2 z oceną od 6')
+        && ! str_contains($request['embeds'][0]['description'], Listing::find($weak)->url));
+    expect(pivot($this->search, $weak)->notify_skipped_reason)->toBe('digest')
+        ->and(pivot($this->search, $good)->notified_at)->not->toBeNull();
+});
+
+it('podsumowanie bez dobrych ofert mówi to wprost', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    [$weak] = matchListings($this->search, 1);
+    ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $weak, 'score' => 2]);
+
+    SendDigestJob::dispatchSync($this->search, [$weak], true);
+
+    Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['description'], 'Żadna oferta nie dostała oceny od 6'));
+});
+
 it('wysyła obniżkę tylko dla już wysłanej oferty', function (bool $notified, int $old, int $new, int $sent) {
     Http::fake([HOOK => Http::response('', 204)]);
     [$id] = matchListings($this->search, 1, $notified ? ['notified_at' => now()] : []);

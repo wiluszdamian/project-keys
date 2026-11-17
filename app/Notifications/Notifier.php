@@ -35,9 +35,9 @@ class Notifier
         $this->toChannels($search, $this->messages->listing($listing, $search, $analysis));
     }
 
-    public function digest(Search $search, Collection $listings, int $total, bool $firstRun): void
+    public function digest(Search $search, Collection $listings, int $total, bool $firstRun, ?int $qualifying = null): void
     {
-        $this->toChannels($search, $this->messages->digest($search, $listings, $total, $firstRun));
+        $this->toChannels($search, $this->messages->digest($search, $listings, $total, $firstRun, $qualifying));
     }
 
     public function priceDrop(Search $search, Listing $listing, int $oldPrice, int $newPrice): void

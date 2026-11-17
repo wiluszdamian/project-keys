@@ -111,7 +111,7 @@ it('buduje podsumowanie', function () {
     expect($embed['title'])->toBe('Pierwszy przebieg: 3 oferty pasuje do filtrów')
         ->and($embed['description'])->toContain($listings[0]->url)
         ->and($embed['description'])->toContain('Zalesie')
-        ->and($embed['description'])->toContain('Pokazuję 2 z 3');
+        ->and($embed['description'])->toContain('Pokazuję 2 najlepszych z 3');
 });
 
 it('wybiera webhook dla typu transakcji', function () {
