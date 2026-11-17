@@ -17,7 +17,8 @@ Pierwszy przebieg wyszukiwania lub dużo nowych naraz -> SendDigestJob (jedno zb
 | Usługa | Obraz | Rola | Port na zewnątrz |
 |---|---|---|---|
 | app | własny, PHP 8.5 FPM | Laravel (API) | brak |
-| worker | ten sam co app | `php artisan queue:work` | brak |
+| worker | ten sam co app | `queue:work --queue=notify,scrape,default` | brak |
+| worker-ai | ten sam co app, 3 kopie | `queue:work --queue=ai` | brak |
 | scheduler | ten sam co app | `php artisan schedule:work` | brak |
 | postgres | postgres:17 | baza danych | brak |
 | redis | redis:7 | kolejka, cache, locki | brak |
@@ -51,7 +52,7 @@ app/
   Jobs/
     RunSearchJob.php                 # batch ScrapePortalJob dla portali wyszukiwania
     ScrapePortalJob.php              # pobranie, filtr, zapis, scrape_runs
-    NotifyRunResultsJob.php          # po przebiegu: łańcuch AnalyzeListingJob, potem wysyłka
+    NotifyRunResultsJob.php          # po przebiegu: batch AnalyzeListingJob, potem wysyłka
     AnalyzeListingJob.php            # ocena AI jednej oferty (kolejka ai, limit na minutę)
     SendListingNotificationJob.php, SendDigestJob.php
   Events/ ListingMatched, ListingPriceChanged, PortalBlockedRepeatedly
@@ -70,7 +71,7 @@ app/
 scripts/test.sh                      # testy na serwerze (Postgres mieszkania_test)
 ```
 
-Przepływ w praktyce: scheduler co minutę `search:dispatch-due` -> `RunSearchJob` -> batch `ScrapePortalJob` -> po batchu `NotifyRunResultsJob` -> łańcuch `AnalyzeListingJob` -> `NotifyRunResultsJob` (analyzed) -> Discord.
+Przepływ w praktyce: scheduler co minutę `search:dispatch-due` -> `RunSearchJob` -> batch `ScrapePortalJob` -> po batchu `NotifyRunResultsJob` -> batch `AnalyzeListingJob` (worker-ai) -> `NotifyRunResultsJob` (analyzed) -> Discord.
 
 ## Ważne zasady działania
 

@@ -167,18 +167,16 @@ it('alerts:check zgłasza brak udanego przebiegu od 3 godzin', function () {
     Http::assertSentCount(1);
 });
 
-it('przy włączonym AI najpierw ocenia oferty w łańcuchu', function () {
+it('przy włączonym AI najpierw ocenia oferty w batchu', function () {
     Bus::fake();
     config(['ai.providers.opencode.key' => 'test-key']);
     $ids = matchListings($this->search, 2);
 
     (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
 
-    Bus::assertChained([
-        AnalyzeListingJob::class,
-        AnalyzeListingJob::class,
-        fn (NotifyRunResultsJob $job) => $job->analyzed && ! $job->firstRun,
-    ]);
+    Bus::assertBatched(fn ($batch) => $batch->jobs->count() === 2
+        && $batch->jobs->every(fn ($job) => $job instanceof AnalyzeListingJob)
+        && $batch->queue() === 'ai');
 });
 
 it('po ocenie wysyła tylko oferty od progu i te bez oceny', function () {

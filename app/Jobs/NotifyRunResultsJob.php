@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Po przebiegu wyszukiwania. Najpierw ocena AI nowych ofert (łańcuch AnalyzeListingJob),
+ * Po przebiegu wyszukiwania. Najpierw ocena AI nowych ofert (batch AnalyzeListingJob),
  * potem pojedyncze wiadomości dla ofert z oceną od min_score_to_notify
  * albo jedno podsumowanie, gdy to pierwszy przebieg lub nowych ofert jest więcej niż NOTIFY_DIGEST_THRESHOLD.
  */
@@ -49,9 +49,22 @@ class NotifyRunResultsJob implements ShouldQueue
         if (! $this->analyzed && ListingScorer::isEnabled()) {
             $jobs = Listing::whereKey($pendingIds)->orderBy('id')->get()
                 ->map(fn (Listing $listing) => new AnalyzeListingJob($search, $listing))
-                ->push(new self($search, $this->runStartedAt, $this->firstRun, analyzed: true));
+                ->all();
+            $searchId = $search->id;
+            $runStartedAt = $this->runStartedAt;
+            $firstRun = $this->firstRun;
 
-            Bus::chain($jobs->all())->dispatch();
+            // Ocena równolegle (kilka workerów kolejki ai), wysyłka po ocenie wszystkich ofert.
+            Bus::batch($jobs)
+                ->name("ai:search:{$searchId}")
+                ->onQueue('ai')
+                ->allowFailures()
+                ->finally(function () use ($searchId, $runStartedAt, $firstRun) {
+                    if ($search = Search::find($searchId)) {
+                        NotifyRunResultsJob::dispatch($search, $runStartedAt, $firstRun, analyzed: true);
+                    }
+                })
+                ->dispatch();
 
             return;
         }

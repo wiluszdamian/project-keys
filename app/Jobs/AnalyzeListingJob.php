@@ -10,6 +10,7 @@ use App\Scrapers\Exceptions\PortalBlockedException;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\ScraperRegistry;
 use App\Services\ListingScorer;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
@@ -18,12 +19,12 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Ocena AI jednej oferty dla jednego wyszukiwania. Działa w łańcuchu przed powiadomieniem,
- * więc nigdy nie kończy się porażką: po 3 błędach zapisuje problem i puszcza łańcuch dalej.
+ * Ocena AI jednej oferty dla jednego wyszukiwania, w batchu przed powiadomieniem.
+ * Po 3 błędach zapisuje problem i kończy się bez wyjątku, a oferta idzie bez oceny.
  */
 class AnalyzeListingJob implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     private const MAX_ERRORS = 3;
 

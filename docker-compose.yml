@@ -21,9 +21,17 @@ services:
   app:
     <<: *app
 
+  # Scraping i powiadomienia. Osobno od AI, żeby długa ocena nie blokowała pobierania.
   worker:
     <<: *app
-    command: php artisan queue:work --queue=notify,ai,scrape,default --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work --queue=notify,scrape,default --sleep=3 --tries=3 --max-time=3600
+
+  # Ocena AI: kilka procesów naraz, limit AI_MAX_PER_MINUTE pilnuje Redis.
+  worker-ai:
+    <<: *app
+    command: php artisan queue:work --queue=ai --sleep=3 --tries=3 --max-time=3600
+    deploy:
+      replicas: ${AI_WORKERS:-3}
 
   scheduler:
     <<: *app
