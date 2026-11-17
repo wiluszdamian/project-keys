@@ -89,6 +89,26 @@ it('ponawia, gdy koszt jest pusty mimo ceny', function () {
     ListingScoringAgent::assertPromptedTimes(2);
 });
 
+it('przy sprzedaży pusty koszt jest poprawny', function () {
+    $this->listing->update(['deal_type' => 'sale', 'price' => 520000, 'rent_extra' => null]);
+    $this->search->update(['deal_type' => 'sale']);
+    ListingScoringAgent::fake([aiAnswer(['monthly_cost' => ['rent' => null, 'admin_fee' => null, 'other_fees' => null, 'total' => null, 'note' => 'Czynsz nieznany.']])]);
+
+    $analysis = app(ListingScorer::class)->score($this->search->fresh(), $this->listing->fresh());
+
+    expect($analysis->monthly_cost)->toBeNull();
+    ListingScoringAgent::assertPromptedTimes(1);
+});
+
+it('wysyła reasoning_effort z konfiguracji', function () {
+    config(['scoring.reasoning_effort' => 'low']);
+
+    expect((new ListingScoringAgent)->providerOptions('opencode'))->toBe(['reasoning_effort' => 'low']);
+
+    config(['scoring.reasoning_effort' => null]);
+    expect((new ListingScoringAgent)->providerOptions('opencode'))->toBe([]);
+});
+
 it('job nie przerywa łańcucha przy złej odpowiedzi', function () {
     ListingScoringAgent::fake([aiAnswer(['score' => 'dużo']), aiAnswer(['score' => null])]);
 

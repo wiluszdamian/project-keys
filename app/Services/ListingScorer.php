@@ -140,8 +140,8 @@ class ListingScorer
             $errors[] = 'brak monthly_cost';
         } elseif ($total !== null && (! is_int($total) || $total < 0)) {
             $errors[] = 'monthly_cost.total musi być liczbą albo null';
-        } elseif ($listing?->price !== null && $total === null && ($cost['rent'] ?? null) === null) {
-            // Oferta ma cenę, więc koszt nie może być pusty.
+        } elseif ($listing?->deal_type === DealType::Rent && $listing->price !== null && $total === null && ($cost['rent'] ?? null) === null) {
+            // Wynajem z ceną: koszt nie może być pusty. Przy sprzedaży koszt to sam czynsz i bywa nieznany.
             $errors[] = 'monthly_cost jest pusty, choć oferta ma cenę';
         }
 

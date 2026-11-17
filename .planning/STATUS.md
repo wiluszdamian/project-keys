@@ -69,6 +69,8 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Discord: pole „Najem: 2 900 zł + 570 zł czynsz”. Czynsz z portalu albo z opisu (przez AI), a gdy nieznany, napis „czynsz nieznany”. Prośba właściciela.
 - 2026-11-17: Wyszukiwania na sprzedaż (#4 do #7): mieszkania do 560 000 zł, od 3 pokoi, osobno dla Rzeszowa, Boguchwały, Tajęciny i Rudnej Małej (to osobne miejscowości na portalach). Wspólne preferencje AI: osiedle Projektant albo te miejscowości, dobry standard wykończenia. Lokalizacje Otodom dla trzech miejscowości sprawdzone na żywo.
 - 2026-11-17: Osobne workery: `worker` (notify, scrape, default) i `worker-ai` w 3 kopiach (`AI_WORKERS`). Ocena idzie równolegle w batchu, a nie w łańcuchu. Wcześniej jeden worker oceniał 130 ofert po kolei (ok. 45 min) i w tym czasie nie pobierał portali.
+- 2026-11-17: AI: `reasoning_effort=low` (`AI_REASONING_EFFORT`) i timeout 120 s. Przy domyślnym rozumowaniu część odpowiedzi trwała ponad 60 s i kończyła się błędem połączenia. Sprawdzenie pustego kosztu tylko dla wynajmu: przy sprzedaży koszt to sam czynsz i bywa nieznany.
+- 2026-11-17: Podsumowanie pokazuje tylko oferty z oceną od `min_score_to_notify` (i bez oceny, gdy AI zawiodło). W nagłówku liczba wszystkich i liczba dobrych.
 
 ## Otwarte pytania
 

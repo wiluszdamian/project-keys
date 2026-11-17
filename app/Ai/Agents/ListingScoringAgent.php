@@ -6,15 +6,17 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
 /**
  * Ocena jednego ogłoszenia dla jednego wyszukiwania. Provider i model z config/ai.php (.env).
  */
 #[Temperature(0.2)]
-#[Timeout(60)]
-class ListingScoringAgent implements Agent, HasStructuredOutput
+#[Timeout(120)]
+class ListingScoringAgent implements Agent, HasProviderOptions, HasStructuredOutput
 {
     use Promptable;
 
@@ -36,6 +38,16 @@ class ListingScoringAgent implements Agent, HasStructuredOutput
 
         Odpowiedz wyłącznie obiektem JSON zgodnym ze schematem.
         PROMPT;
+    }
+
+    /**
+     * Mniej "myślenia" przed odpowiedzią: szybciej i taniej. Ocena ogłoszenia nie wymaga długiego rozumowania.
+     */
+    public function providerOptions(Lab|string $provider): array
+    {
+        $effort = config('scoring.reasoning_effort');
+
+        return $effort ? ['reasoning_effort' => $effort] : [];
     }
 
     public function schema(JsonSchema $schema): array
