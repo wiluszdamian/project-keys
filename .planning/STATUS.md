@@ -21,7 +21,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 3 Otodom | gotowe | 2026-11-17 | Dane z `__NEXT_DATA__`, 36 ofert na stronę, sprawdzone na żywo dla Rzeszowa, 66 testów |
 | 4 OLX | gotowe | 2026-11-17 | Endpoint JSON OLX, duplikaty po adresie i po cenie z metrażem, HTTP/2 (decyzja właściciela), 92 testy. Na żywo: 153 oferty, 33 duplikaty |
 | 5 Harmonogram | gotowe | 2026-11-17 | Pierwszy automatyczny przebieg 21:13: Otodom 109, OLX 120 ofert. Testy na Postgresie (`scripts/test.sh`) |
-| 6 AI | do zrobienia | | |
+| 6 AI | w trakcie | 2026-11-17 | Kod i 143 testy gotowe. Prawdziwe wywołanie: 400, DeepSeek wymaga regionu Global. Na serwerze `AI_ENABLED=false` do decyzji |
 | 7 Powiadomienia | w trakcie | 2026-11-17 | Discord gotowy (przed fazą 6, na prośbę właściciela). Telegram do zrobienia |
 | 8 Utrwalenie | do zrobienia | | |
 
@@ -58,10 +58,14 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Powiadomienia wysyłane po całym przebiegu (wszystkie portale), nie po każdym portalu. Dzięki temu pierwszy przebieg daje jedno podsumowanie z obu portali, a próg `NOTIFY_DIGEST_THRESHOLD` liczy oferty z całego przebiegu.
 - 2026-11-17: Discord zrobiony przed fazą 6. Do czasu oceny AI wiadomość pokazuje początek opisu z ogłoszenia, a próg `min_score_to_notify` nie działa (każda nowa oferta jest wysyłana).
 - 2026-11-17: Duplikaty z drugiego portalu są dopasowane do wyszukiwania, ale z `notify_skipped_reason = duplicate`, bez powiadomienia.
+- 2026-11-17: AI przez `laravel/ai` v1.4.1, provider `opencode` (sterownik `openai-compatible`), adres `https://opencode.ai/inference/go/openai/v1`, model `deepseek-v4.1-flash` (lista z `/inference/go/v1/models`). Nagłówki wg dokumentacji Go: własny User-Agent `project-keys/1.0` i stały `x-opencode-session`.
+- 2026-11-17: Odpowiedź modelu rozszerzona na prośbę właściciela: `monthly_cost` (najem + czynsz + inne opłaty z opisu) i `sub_scores` (koszt, lokalizacja, standard, dopasowanie). Nowe kolumny w `listing_analyses`.
+- 2026-11-17: Ocena idzie w łańcuchu przed powiadomieniem (najpierw `AnalyzeListingJob` dla nowych ofert, potem wysyłka). Błąd AI nie blokuje powiadomienia: oferta idzie z dopiskiem „brak oceny AI”.
+- 2026-11-17: Pusta wartość w `.env` (np. `OPENCODE_GO_MODEL=`) liczy się jak brak, wtedy działa wartość domyślna.
 
 ## Otwarte pytania
 
-- Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji?
-- Dokładne ID modelu DeepSeek w OpenCode Go.
+- Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji? Dokumentacja: Go jest „dla OpenCode i innych agentów do kodowania”, ruch jest monitorowany. Ocena ogłoszeń to nie jest ruch agenta do kodowania. Alternatywa zgodna z warunkami: pay-as-you-go (`https://opencode.ai/inference/openai/v1`, płatne z kredytów) albo bezpośrednie API DeepSeek.
+- DeepSeek V4.1 Flash w OpenCode wymaga włączenia regionu Global (Settings › Privacy). Dane trafiają wtedy do dostawcy poza UE i USA (DeepSeek: 0 dni przechowywania wg dokumentacji). Albo inny model z listy hostowany w UE/USA.
 - Domena dla HTTPS.
 - Duplikaty po cenie i metrażu mogą się mylić: dwa różne ogłoszenia OLX (2400 zł, 63 m2) wskazały tę samą ofertę Otodom (2390 zł, 63,9 m2). Można zaostrzyć regułę, np. wymagać tej samej liczby pokoi.

@@ -56,6 +56,30 @@ it('z oceną AI pokazuje ocenę, plusy i uwagi', function () {
         ->and($embed['description'])->toBe("Dobra cena za metraż.\n\n**Plusy:** balkon, garaż\n\n**Uwaga:** parter");
 });
 
+it('pokazuje koszt miesięczny i oceny cząstkowe', function () {
+    $analysis = ListingAnalysis::factory()->create([
+        'score' => 7,
+        'monthly_cost' => 3150,
+        'cost_breakdown' => ['rent' => 2500, 'admin_fee' => 450, 'other_fees' => 200, 'note' => 'Media ok. 200 zł, kaucja 5000 zł.'],
+        'sub_scores' => ['cost' => 6, 'location' => 9, 'standard' => 7, 'fit' => 8],
+    ]);
+
+    $fields = collect(app(DiscordMessages::class)->listing($analysis->listing, $analysis->search, $analysis)['embeds'][0]['fields'])
+        ->pluck('value', 'name');
+
+    expect($fields['💸 Koszt miesięczny'])->toBe("**3 150 zł** / mies.\nnajem 2 500 zł + czynsz 450 zł + opłaty 200 zł\n_Media ok. 200 zł, kaucja 5000 zł._")
+        ->and($fields['📊 Ocena 7/10'])->toBe('Koszt **6** · Lokalizacja **9** · Standard **7** · Dopasowanie **8**');
+});
+
+it('bez oceny przy włączonym AI dopisuje brak oceny', function () {
+    config(['ai.providers.opencode.key' => 'test-key']);
+    $listing = Listing::factory()->create(['description' => 'Opis.']);
+
+    $embed = app(DiscordMessages::class)->listing($listing, Search::factory()->create())['embeds'][0];
+
+    expect($embed['description'])->toContain('Brak oceny AI');
+});
+
 it('buduje podsumowanie', function () {
     $search = Search::factory()->create();
     $listings = Listing::factory()->count(3)->create(['district' => 'Zalesie']);

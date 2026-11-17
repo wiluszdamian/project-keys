@@ -22,5 +22,8 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(60)->by('api:'.$key);
         });
+
+        // Wywołania modelu AI: AI_MAX_PER_MINUTE na minutę dla całej aplikacji.
+        RateLimiter::for('ai', fn () => Limit::perMinute(config('scoring.max_per_minute'))->by('ai'));
     }
 }

@@ -10,7 +10,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Jedno podsumowanie: liczba nowych ofert i najlepsze z nich (po ocenie AI, a bez oceny najnowsze).
+ * Jedno podsumowanie: liczba nowych ofert i 10 najlepszych (po ocenie AI, a bez oceny najnowsze).
  */
 class SendDigestJob implements ShouldQueue
 {
@@ -31,7 +31,7 @@ class SendDigestJob implements ShouldQueue
     public function handle(Notifier $notifier): void
     {
         $top = Listing::query()
-            ->select('listings.*', 'listing_analyses.score')
+            ->select('listings.*', 'listing_analyses.score', 'listing_analyses.monthly_cost')
             ->leftJoin('listing_analyses', function ($join) {
                 $join->on('listing_analyses.listing_id', '=', 'listings.id')
                     ->where('listing_analyses.search_id', $this->search->id);

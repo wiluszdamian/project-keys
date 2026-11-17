@@ -41,6 +41,7 @@ class ListingUpserter
             }
 
             $oldPrice = $listing->price;
+            $oldHash = $listing->content_hash;
             $listing->fill($data->toAttributes() + ['last_seen_at' => $now])->save();
 
             $priceChanged = $data->price !== null && $oldPrice !== null && $oldPrice !== $data->price;
@@ -54,7 +55,7 @@ class ListingUpserter
                 ]);
             }
 
-            return new UpsertResult($listing, isNew: false, priceChanged: $priceChanged, oldPrice: $oldPrice);
+            return new UpsertResult($listing, isNew: false, priceChanged: $priceChanged, oldPrice: $oldPrice, contentChanged: $oldHash !== $listing->content_hash);
         });
     }
 

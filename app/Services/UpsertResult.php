@@ -11,5 +11,6 @@ final readonly class UpsertResult
         public bool $isNew,
         public bool $priceChanged = false,
         public ?int $oldPrice = null,
+        public bool $contentChanged = false,
     ) {}
 }

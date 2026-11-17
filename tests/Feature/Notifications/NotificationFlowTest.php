@@ -2,13 +2,16 @@
 
 use App\Events\ListingPriceChanged;
 use App\Events\PortalBlockedRepeatedly;
+use App\Jobs\AnalyzeListingJob;
 use App\Jobs\NotifyRunResultsJob;
 use App\Jobs\SendDigestJob;
 use App\Jobs\SendListingNotificationJob;
 use App\Models\Listing;
+use App\Models\ListingAnalysis;
 use App\Models\ScrapeRun;
 use App\Models\Search;
 use App\Notifications\Notifier;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -162,4 +165,43 @@ it('alerts:check zgłasza brak udanego przebiegu od 3 godzin', function () {
     Cache::flush();
     $this->artisan('alerts:check')->assertSuccessful();
     Http::assertSentCount(1);
+});
+
+it('przy włączonym AI najpierw ocenia oferty w łańcuchu', function () {
+    Bus::fake();
+    config(['ai.providers.opencode.key' => 'test-key']);
+    $ids = matchListings($this->search, 2);
+
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+
+    Bus::assertChained([
+        AnalyzeListingJob::class,
+        AnalyzeListingJob::class,
+        fn (NotifyRunResultsJob $job) => $job->analyzed && ! $job->firstRun,
+    ]);
+});
+
+it('po ocenie wysyła tylko oferty od progu i te bez oceny', function () {
+    Queue::fake();
+    config(['ai.providers.opencode.key' => 'test-key']);
+    $this->search->update(['min_score_to_notify' => 6]);
+    [$good, $weak, $noScore] = matchListings($this->search, 3);
+    ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $good, 'score' => 7]);
+    ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $weak, 'score' => 4]);
+
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class));
+
+    Queue::assertPushed(SendListingNotificationJob::class, 2);
+    expect(pivot($this->search, $weak)->notify_skipped_reason)->toBe('below_threshold');
+});
+
+it('alerts:check zgłasza dużo błędów AI', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    ScrapeRun::factory()->for($this->search)->create(['status' => 'ok', 'finished_at' => now()]);
+    Cache::put('ai:calls:'.now()->format('YmdH'), 6);
+    Cache::put('ai:errors:'.now()->format('YmdH'), 4);
+
+    $this->artisan('alerts:check')->expectsOutputToContain('błędów AI')->assertSuccessful();
+
+    Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['title'], 'AI'));
 });

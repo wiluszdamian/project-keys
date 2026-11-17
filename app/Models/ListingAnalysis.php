@@ -17,6 +17,8 @@ class ListingAnalysis extends Model
         return [
             'pros' => 'array',
             'red_flags' => 'array',
+            'cost_breakdown' => 'array',
+            'sub_scores' => 'array',
         ];
     }
 

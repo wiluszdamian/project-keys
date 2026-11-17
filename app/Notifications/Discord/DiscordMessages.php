@@ -5,6 +5,7 @@ namespace App\Notifications\Discord;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
+use App\Services\ListingScorer;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -38,7 +39,7 @@ class DiscordMessages
             'url' => $listing->url,
             'color' => $this->color($listing, $analysis),
             'description' => $this->description($listing, $analysis),
-            'fields' => $this->fields($listing),
+            'fields' => [...$this->analysisFields($analysis), ...$this->fields($listing)],
             'footer' => ['text' => "Wyszukiwanie: {$search->name}"],
             'timestamp' => $listing->first_seen_at?->toIso8601String(),
         ];
@@ -59,11 +60,12 @@ class DiscordMessages
     {
         $lines = $listings->map(function (Listing $listing) {
             $score = $listing->getAttribute('score');
+            $monthly = $listing->getAttribute('monthly_cost');
             $prefix = $score !== null ? "`{$score}/10` " : '';
             $title = Str::limit(str_replace(['[', ']'], '', $listing->title), 70);
 
             return "{$prefix}**[{$title}]({$listing->url})**\n".implode(' · ', array_filter([
-                $this->money($listing->price),
+                $monthly !== null ? $this->money((int) $monthly).'/mies. łącznie' : $this->money($listing->price),
                 $listing->area ? $this->area($listing->area) : null,
                 $listing->rooms ? "{$listing->rooms} pok." : null,
                 $listing->district ?? $listing->city,
@@ -148,7 +150,51 @@ class DiscordMessages
         }
 
         // Bez oceny AI: początek opisu z ogłoszenia, jeśli portal go podaje.
-        return $listing->description ? Str::limit(Str::squish($listing->description), 350) : null;
+        $text = $listing->description ? Str::limit(Str::squish($listing->description), 350) : '';
+
+        if (ListingScorer::isEnabled()) {
+            $text = trim($text."\n\n_Brak oceny AI (błąd modelu)._");
+        }
+
+        return $text !== '' ? $text : null;
+    }
+
+    /**
+     * Koszt miesięczny i oceny cząstkowe z AI, na górze wiadomości.
+     */
+    private function analysisFields(?ListingAnalysis $analysis): array
+    {
+        if (! $analysis) {
+            return [];
+        }
+
+        $fields = [];
+        $breakdown = $analysis->cost_breakdown ?? [];
+        $parts = array_filter([
+            isset($breakdown['rent']) ? 'najem '.$this->money($breakdown['rent']) : null,
+            isset($breakdown['admin_fee']) ? 'czynsz '.$this->money($breakdown['admin_fee']) : null,
+            isset($breakdown['other_fees']) ? 'opłaty '.$this->money($breakdown['other_fees']) : null,
+        ]);
+
+        if ($analysis->monthly_cost !== null || $parts !== []) {
+            $value = $analysis->monthly_cost !== null ? '**'.$this->money($analysis->monthly_cost).'** / mies.' : 'nie wiadomo';
+            $value .= $parts !== [] ? "\n".implode(' + ', $parts) : '';
+            $value .= ! empty($breakdown['note']) ? "\n_{$breakdown['note']}_" : '';
+
+            $fields[] = ['name' => '💸 Koszt miesięczny', 'value' => Str::limit($value, 1000), 'inline' => false];
+        }
+
+        if (! empty($analysis->sub_scores)) {
+            $labels = ['cost' => 'Koszt', 'location' => 'Lokalizacja', 'standard' => 'Standard', 'fit' => 'Dopasowanie'];
+            $scores = collect($labels)
+                ->filter(fn ($label, $key) => isset($analysis->sub_scores[$key]))
+                ->map(fn ($label, $key) => "{$label} **{$analysis->sub_scores[$key]}**")
+                ->implode(' · ');
+
+            $fields[] = ['name' => "📊 Ocena {$analysis->score}/10", 'value' => $scores, 'inline' => false];
+        }
+
+        return $fields;
     }
 
     private function fields(Listing $listing): array

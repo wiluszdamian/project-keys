@@ -113,8 +113,15 @@ class ScrapePortalJob implements ShouldQueue
                 }
 
                 ListingMatched::dispatch($this->search, $saved->listing, $this->duringFirstRun);
-            } elseif ($saved->priceChanged) {
-                ListingPriceChanged::dispatch($this->search, $saved->listing, $saved->oldPrice, $saved->listing->price);
+            } else {
+                if ($saved->priceChanged) {
+                    ListingPriceChanged::dispatch($this->search, $saved->listing, $saved->oldPrice, $saved->listing->price);
+                }
+
+                // Zmieniona treść już ocenionej oferty: nowa ocena (bez nowego powiadomienia).
+                if ($saved->contentChanged && $saved->listing->analyses()->where('search_id', $this->search->id)->exists()) {
+                    AnalyzeListingJob::dispatch($this->search, $saved->listing);
+                }
             }
         }
 
