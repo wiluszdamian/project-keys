@@ -35,11 +35,11 @@ Gotowe gdy: można utworzyć, zmienić i usunąć wyszukiwanie przez API i komen
 
 ## Faza 3: scraper Otodom
 
-Status: do zrobienia
+Status: ✅ gotowe (2026-11-17)
 
-- `HttpFetcher` z zasadami z SCRAPERS.md (opóźnienia, 403/429, retry).
-- Interfejs `PortalScraper`, `ListingData`, `OtodomScraper`, `ListingUpserter`.
-- Fixture i testy, komenda `scraper:probe`.
+- [x] `HttpFetcher` z zasadami z SCRAPERS.md (opóźnienia, 403/429, retry).
+- [x] Interfejs `PortalScraper`, `ListingData`, `OtodomScraper`, `ListingUpserter`.
+- [x] Fixture i testy, komenda `scraper:probe`.
 
 Gotowe gdy: `scraper:probe otodom {id}` wypisuje prawdziwe oferty zgodne z filtrami, testy na fixture przechodzą.
 

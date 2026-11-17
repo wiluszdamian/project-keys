@@ -18,7 +18,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 0 Serwer | gotowe | 2026-11-17 | SSH tylko kluczem jako deploy, ufw 22/80/443, fail2ban, unattended-upgrades, Docker |
 | 1 Szkielet | gotowe | 2026-11-17 | Laravel 13.43, PHP 8.5.12, 6 usług w compose, `/api/health` ok przez Caddy, Pest 4 |
 | 2 Dane i API | gotowe | 2026-11-17 | 6 tabel, Sanctum 4.5, API wyszukiwań, ofert i przebiegów, limit 60/min na token, 29 testów |
-| 3 Otodom | do zrobienia | | |
+| 3 Otodom | gotowe | 2026-11-17 | Dane z `__NEXT_DATA__`, 36 ofert na stronę, sprawdzone na żywo dla Rzeszowa, 66 testów |
 | 4 OLX | do zrobienia | | |
 | 5 Harmonogram | do zrobienia | | |
 | 6 AI | do zrobienia | | |
@@ -41,6 +41,11 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Jeden użytkownik `owner@localhost` z losowym hasłem. Tworzy go `api:token` przy pierwszym tokenie, logowanie tylko tokenem.
 - 2026-11-17: `search_listing` ma własną kolumnę `id` (łatwiej z modelem pivot). `scrape_runs.status` ma dodatkowo wartość `running` na czas przebiegu.
 - 2026-11-17: Testy działają na SQLite w pamięci. Zapytania na Postgresie sprawdzone ręcznie przez API na serwerze.
+- 2026-11-17: Otodom: miasto zamieniane na lokalizację z mapy w `config/scrapers.php` (`otodom.locations`). Sprawdzone: Kraków, Warszawa, Wrocław, Gdańsk, Poznań, Łódź, Rzeszów. Nowe miasto trzeba dopisać ręcznie.
+- 2026-11-17: Otodom: dzielnice filtrowane po pobraniu w `ListingMatcher`, nie w adresie. Co 20 minut 3 strony najnowszych ofert z całego miasta wystarczą, żeby złapać nowe.
+- 2026-11-17: Otodom przyjmuje w filtrze pokoi tylko ONE do FIVE. Gdy zakres wychodzi poza 5, filtr pokoi jest tylko po stronie aplikacji.
+- 2026-11-17: Lista wyników Otodom nie zawiera opisu (`shortDescription` jest pusty). Na razie `description` zostaje puste. Czy pobierać stronę oferty dla nowych ogłoszeń, zdecydujemy w fazie 6 (AI).
+- 2026-11-17: Ogłoszenie bez dzielnicy jest odrzucane, gdy wyszukiwanie ma listę dzielnic. Brak ceny, metrażu lub pokoi nie odrzuca oferty.
 
 ## Otwarte pytania
 
