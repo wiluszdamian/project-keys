@@ -24,12 +24,12 @@ Gotowe gdy: `docker compose up -d` stawia wszystkie usługi, `/api/health` zwrac
 
 ## Faza 2: model danych i API
 
-Status: do zrobienia
+Status: ✅ gotowe (2026-11-17)
 
-- Migracje i modele z DATA_MODEL.md.
-- Sanctum, komenda `api:token`.
-- Endpointy z API.md (bez uruchamiania przebiegów, to w fazie 5).
-- Komendy `search:create`, `search:list`.
+- [x] Migracje i modele z DATA_MODEL.md.
+- [x] Sanctum, komenda `api:token`.
+- [x] Endpointy z API.md (bez uruchamiania przebiegów, to w fazie 5).
+- [x] Komendy `search:create`, `search:list`. Dodatkowo `search:pause` i `search:resume`.
 
 Gotowe gdy: można utworzyć, zmienić i usunąć wyszukiwanie przez API i komendą, walidacja działa, testy feature dla API.
 

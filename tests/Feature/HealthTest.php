@@ -7,7 +7,8 @@ it('zwraca ok, gdy baza i redis działają', function () {
 
     $this->getJson('/api/health')
         ->assertOk()
-        ->assertJson(['status' => 'ok', 'checks' => ['database' => true, 'redis' => true]]);
+        ->assertJson(['status' => 'ok', 'checks' => ['database' => true, 'redis' => true]])
+        ->assertJsonStructure(['queue_size', 'last_scrape_at']);
 });
 
 it('zwraca 503, gdy redis nie działa', function () {
