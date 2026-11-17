@@ -3,7 +3,7 @@
 ## Sposób pracy
 
 - Pracuj fazami z `ROADMAP.md`, po kolei. Nie zaczynaj kolejnej fazy bez zgody użytkownika.
-- Po każdej fazie: uruchom testy, zrób commit (`faza N: krótki opis`), zaktualizuj `.planning/STATUS.md`, pokaż krótkie podsumowanie i zatrzymaj się.
+- Po każdej fazie: uruchom testy, zrób commit po angielsku z prefiksem (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`), kilka słów, bez linii Co-Authored-By, zaktualizuj `.planning/STATUS.md`, pokaż krótkie podsumowanie i zatrzymaj się.
 - Jeśli coś w planie nie zgadza się z rzeczywistością (np. inna wersja biblioteki, portal działa inaczej), wybierz najprostsze rozwiązanie, zapisz decyzję w `STATUS.md` w sekcji „Decyzje” i powiedz o tym użytkownikowi.
 
 ## Nie zgaduj
