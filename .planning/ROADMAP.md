@@ -63,12 +63,12 @@ Gotowe gdy: przez godzinę system sam sprawdza portale, w `scrape_runs` są wpis
 
 ## Faza 6: ocena AI
 
-Status: w trakcie (kod gotowy, czeka na włączenie regionu Global dla DeepSeek w OpenCode)
+Status: ✅ gotowe (2026-11-17)
 
 - [x] Konfiguracja modułu AI Laravela z OpenCode Go (wszystkie **SPRAWDŹ** z AI_SCORING.md).
 - [x] `MarketStats`, `ListingScorer`, `AnalyzeListingJob`, komenda `ai:usage`.
 - [x] Dodatkowo (prośba właściciela): pełny koszt miesięczny (najem + czynsz + opłaty z opisu) i oceny cząstkowe: koszt, lokalizacja, standard, dopasowanie.
-- [ ] Jedno prawdziwe wywołanie działa (OpenCode odrzuca DeepSeek bez regionu Global).
+- [x] Jedno prawdziwe wywołanie działa (po włączeniu regionu Global w OpenCode).
 
 Gotowe gdy: nowe oferty dostają ocenę w `listing_analyses`, niepoprawna odpowiedź modelu jest obsłużona, testy z mockiem AI przechodzą, jedno prawdziwe wywołanie działa.
 

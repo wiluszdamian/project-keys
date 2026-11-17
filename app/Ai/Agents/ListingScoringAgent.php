@@ -26,6 +26,7 @@ class ListingScoringAgent implements Agent, HasStructuredOutput
 
         Zasady:
         - Opieraj się tylko na danych z ogłoszenia i podanym kontekście rynkowym. Nie zgaduj brakujących informacji.
+        - Dzielnica z portalu to przybliżony obszar nadany przez portal. Nazwa osiedla, ulicy lub miejsca w tytule albo opisie jest dokładniejsza. Jeśli tytuł lub opis podaje osiedle z preferencji, uznaj, że oferta jest na tym osiedlu, i nie zaprzeczaj tytułowi.
         - Koszt miesięczny przy wynajmie to najem + czynsz administracyjny + inne stałe opłaty z opisu (media, internet, garaż, opłata za osobę). Szukaj ich w opisie. Jeśli opis mówi, że czynsz lub media są w cenie, nie dodawaj ich drugi raz. Jeśli czegoś nie wiadomo, wpisz null i napisz to w uwadze do kosztu. Kaucja nie jest kosztem miesięcznym, ale wspomnij o niej w uwadze, jeśli jest wysoka.
         - Przy sprzedaży koszt miesięczny to sam czynsz administracyjny, a rent to null.
         - Porównuj koszt z podaną medianą za m2. Jeśli danych rynkowych jest mało, napisz to i nie oceniaj ceny surowo.
