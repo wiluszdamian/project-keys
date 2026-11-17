@@ -1,0 +1,80 @@
+# Roadmap
+
+Każda faza kończy się: testami, commitem, aktualizacją STATUS.md i zatrzymaniem.
+
+## Faza 0: przygotowanie serwera
+
+- Kroki 1 i 2 z DEPLOYMENT.md.
+- Zapisz w STATUS.md parametry serwera i wersje (Docker, Compose).
+
+Gotowe gdy: logowanie tylko kluczem jako `deploy`, ufw aktywny (22, 80, 443), `docker run hello-world` działa.
+
+## Faza 1: szkielet aplikacji
+
+- Najnowszy stabilny Laravel (**SPRAWDŹ** wersję), PHP 8.5.
+- Dockerfile i docker-compose.yml według ARCHITECTURE.md.
+- Pest, Laravel Pint, `.gitignore` z `.env`.
+- Endpoint `/api/health`.
+
+Gotowe gdy: `docker compose up -d` stawia wszystkie usługi, `/api/health` zwraca ok przez Caddy (HTTPS lub tunel), testy przechodzą.
+
+## Faza 2: model danych i API
+
+- Migracje i modele z DATA_MODEL.md.
+- Sanctum, komenda `api:token`.
+- Endpointy z API.md (bez uruchamiania przebiegów, to w fazie 5).
+- Komendy `search:create`, `search:list`.
+
+Gotowe gdy: można utworzyć, zmienić i usunąć wyszukiwanie przez API i komendą, walidacja działa, testy feature dla API.
+
+## Faza 3: scraper Otodom
+
+- `HttpFetcher` z zasadami z SCRAPERS.md (opóźnienia, 403/429, retry).
+- Interfejs `PortalScraper`, `ListingData`, `OtodomScraper`, `ListingUpserter`.
+- Fixture i testy, komenda `scraper:probe`.
+
+Gotowe gdy: `scraper:probe otodom {id}` wypisuje prawdziwe oferty zgodne z filtrami, testy na fixture przechodzą.
+
+## Faza 4: scraper OLX
+
+- `OlxScraper`, deduplikacja między portalami.
+
+Gotowe gdy: jak w fazie 3 dla OLX, a ta sama oferta z obu portali zapisuje się jako duplikat.
+
+## Faza 5: harmonogram i kolejka
+
+- `RunSearchJob`, `ScrapePortalJob`, `scrape_runs`, locki, rate limiter na portal, wstrzymywanie portalu po blokadzie.
+- Scheduler co `SCRAPE_INTERVAL_MINUTES`.
+- `search:run`, endpoint `POST /searches/{id}/run`.
+
+Gotowe gdy: przez godzinę system sam sprawdza portale, w `scrape_runs` są wpisy, nowe oferty pojawiają się w bazie, brak duplikatów.
+
+## Faza 6: ocena AI
+
+- Konfiguracja modułu AI Laravela z OpenCode Go (wszystkie **SPRAWDŹ** z AI_SCORING.md).
+- `MarketStats`, `ListingScorer`, `AnalyzeListingJob`, komenda `ai:usage`.
+
+Gotowe gdy: nowe oferty dostają ocenę w `listing_analyses`, niepoprawna odpowiedź modelu jest obsłużona, testy z mockiem AI przechodzą, jedno prawdziwe wywołanie działa.
+
+## Faza 7: powiadomienia
+
+- Discord i Telegram według NOTIFICATIONS.md, digest, obniżki cen, alerty systemowe.
+- `notify:test`, `telegram:chat-id`.
+
+Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną powyżej progu przychodzi automatycznie, pierwszy przebieg daje jedno podsumowanie.
+
+## Faza 8: utrwalenie
+
+- Backup i `restore.sh` z testem przywracania.
+- `deploy.sh`.
+- Przegląd logów i błędów po 24 h działania, poprawki.
+- README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować.
+
+Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się przywrócić.
+
+## Faza 9 (opcjonalnie)
+
+- Morizon, Gratka.
+- Playwright jako osobna usługa, tylko jeśli któryś portal tego wymaga.
+- Prosty panel www (np. Filament) do przeglądania ofert.
+- Oznaczanie ofert z Telegrama przyciskami („ciekawe”, „odrzuć”), żeby AI uczyło się preferencji z przykładów.
