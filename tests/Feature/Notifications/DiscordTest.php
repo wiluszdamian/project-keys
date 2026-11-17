@@ -1,0 +1,124 @@
+<?php
+
+use App\Enums\DealType;
+use App\Models\Listing;
+use App\Models\ListingAnalysis;
+use App\Models\Search;
+use App\Notifications\Discord\DiscordMessages;
+use App\Notifications\Discord\DiscordWebhook;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
+
+const WEBHOOK = 'https://discord.com/api/webhooks/1/abc';
+
+beforeEach(function () {
+    Sleep::fake();
+    config(['notify.discord.webhook_url' => WEBHOOK]);
+});
+
+it('buduje embed oferty bez oceny AI', function () {
+    $listing = Listing::factory()->create([
+        'portal' => 'olx', 'title' => '3 pokoje Drabinianka', 'price' => 2500, 'rent_extra' => 400,
+        'area' => 56, 'price_per_m2' => 45, 'rooms' => 3, 'floor' => '2', 'district' => 'Drabinianka',
+        'city' => 'Rzeszów', 'is_private_owner' => true, 'image_url' => 'https://img.test/1.jpg',
+        'description' => 'Ładne mieszkanie z balkonem.',
+    ]);
+    $search = Search::factory()->create(['name' => 'Rzeszów 3 pok.']);
+
+    $embed = app(DiscordMessages::class)->listing($listing, $search)['embeds'][0];
+
+    expect($embed)
+        ->title->toBe('3 pokoje Drabinianka')
+        ->url->toBe($listing->url)
+        ->color->toBe(0x23E5DB)
+        ->description->toBe('Ładne mieszkanie z balkonem.')
+        ->and($embed['image']['url'])->toBe('https://img.test/1.jpg')
+        ->and($embed['footer']['text'])->toBe('Wyszukiwanie: Rzeszów 3 pok.')
+        ->and(collect($embed['fields'])->pluck('value', 'name')->all())->toMatchArray([
+            '💰 Cena' => "2 500 zł\n+ 400 zł czynsz",
+            '📐 Metraż' => "56 m²\n45 zł/m²",
+            '🚪 Pokoje' => "3\npiętro 2",
+            '📍 Lokalizacja' => 'Drabinianka, Rzeszów',
+            '👤 Ogłoszeniodawca' => 'prywatne',
+            '🔗 Portal' => 'OLX',
+        ]);
+});
+
+it('z oceną AI pokazuje ocenę, plusy i uwagi', function () {
+    $analysis = ListingAnalysis::factory()->create([
+        'score' => 8, 'summary' => 'Dobra cena za metraż.', 'pros' => ['balkon', 'garaż'], 'red_flags' => ['parter'],
+    ]);
+
+    $embed = app(DiscordMessages::class)->listing($analysis->listing, $analysis->search, $analysis)['embeds'][0];
+
+    expect($embed['title'])->toStartWith('8/10 · ')
+        ->and($embed['color'])->toBe(0x2ECC71)
+        ->and($embed['description'])->toBe("Dobra cena za metraż.\n\n**Plusy:** balkon, garaż\n\n**Uwaga:** parter");
+});
+
+it('buduje podsumowanie', function () {
+    $search = Search::factory()->create();
+    $listings = Listing::factory()->count(3)->create(['district' => 'Zalesie']);
+
+    $embed = app(DiscordMessages::class)->digest($search, $listings->take(2), 3, true)['embeds'][0];
+
+    expect($embed['title'])->toBe('Pierwszy przebieg: 3 oferty pasuje do filtrów')
+        ->and($embed['description'])->toContain($listings[0]->url)
+        ->and($embed['description'])->toContain('Zalesie')
+        ->and($embed['description'])->toContain('Pokazuję 2 z 3');
+});
+
+it('wybiera webhook dla typu transakcji', function () {
+    config(['notify.discord.webhook_url_rent' => 'https://discord.com/api/webhooks/2/rent']);
+    $webhook = app(DiscordWebhook::class);
+
+    expect($webhook->urlFor(DealType::Rent))->toBe('https://discord.com/api/webhooks/2/rent')
+        ->and($webhook->urlFor(DealType::Sale))->toBe(WEBHOOK)
+        ->and($webhook->urlFor())->toBe(WEBHOOK);
+});
+
+it('ponawia po 429 z czasem z odpowiedzi', function () {
+    Http::fake([WEBHOOK => Http::sequence()->push(['retry_after' => 2.5], 429)->push('', 204)]);
+
+    app(DiscordWebhook::class)->send(['content' => 'x']);
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => $request['username'] === 'Mieszkania');
+    Sleep::assertSlept(fn ($duration) => (int) $duration->totalMilliseconds === 2600);
+});
+
+it('błąd nie pokazuje adresu webhooka', function () {
+    Http::fake([WEBHOOK => Http::response(['message' => 'Unknown Webhook'], 404)]);
+
+    expect(fn () => app(DiscordWebhook::class)->send(['content' => 'x']))
+        ->toThrow(RuntimeException::class, 'Discord odpowiedział 404');
+
+    try {
+        app(DiscordWebhook::class)->send(['content' => 'x']);
+    } catch (RuntimeException $e) {
+        expect($e->getMessage())->not->toContain('abc');
+    }
+});
+
+it('robi przerwę między wiadomościami', function () {
+    Http::fake([WEBHOOK => Http::response('', 204)]);
+
+    app(DiscordWebhook::class)->send(['content' => '1']);
+    app(DiscordWebhook::class)->send(['content' => '2']);
+
+    Sleep::assertSlept(fn ($duration) => $duration->totalMilliseconds > 1000 && $duration->totalMilliseconds <= 1500);
+});
+
+it('notify:test wysyła wiadomość', function () {
+    Http::fake([WEBHOOK => Http::response('', 204)]);
+
+    $this->artisan('notify:test')->expectsOutputToContain('Wysłano')->assertSuccessful();
+
+    Http::assertSent(fn ($request) => $request['embeds'][0]['title'] === 'Webhook działa');
+});
+
+it('notify:test bez webhooka zgłasza błąd', function () {
+    config(['notify.discord.webhook_url' => null]);
+
+    $this->artisan('notify:test')->expectsOutputToContain('DISCORD_WEBHOOK_URL')->assertFailed();
+});
