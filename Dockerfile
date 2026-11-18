@@ -2,8 +2,9 @@ FROM php:8.5-fpm AS app
 
 # Biblioteki systemowe potrzebne do rozszerzeń PHP
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libpq-dev libicu-dev libzip-dev unzip git \
-    && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl zip pcntl bcmath \
+        libpq-dev libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev unzip git \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl zip pcntl bcmath gd \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get purge -y --auto-remove \

@@ -20,6 +20,8 @@ Wszystkie odpowiedzi JSON. Prefiks `/api`.
 
 Powiadomienia w wyszukiwaniu: `notify_enabled` (bool), `notify_mode` (`instant`, `every_hours`, `daily`), `notify_every_hours` (1 do 72, wymagane przy `every_hours`), `notify_daily_at` (`HH:MM`, wymagane przy `daily`), `min_score_to_notify`.
 
+Miejsca dojazdu (np. praca): `GET/POST /commute-places`, `GET/PATCH/DELETE /commute-places/{id}`. Pola: `name`, `address`, opcjonalnie `lat`, `lng` (bez nich szukamy adresu w OpenStreetMap), `max_minutes`, `is_active`. Oferta w `GET /listings/{id}` ma `commutes` (miejsce, `mode` car albo bike, `minutes`, `km`), `lat`, `lng`, `geo_precision` i `risk_flags`.
+
 Zbiorcze powiadomienia kanałów (wynajem i sprzedaż osobno):
 
 - `GET /notification-settings`: `{"data": {"rent": {"schedule", "every_hours", "daily_at", "last_sent_at"}, "sale": {...}}}`.

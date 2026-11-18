@@ -6,11 +6,13 @@ use App\Enums\DealType;
 use App\Enums\PropertyType;
 use App\Models\Listing;
 use App\Models\Search;
+use App\Scrapers\Concerns\StoresCoordinates;
 use App\Scrapers\Contracts\EnrichesListings;
 use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\Data\ScrapeResult;
 use App\Scrapers\Exceptions\ScraperException;
+use App\Scrapers\Support\TextParser;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -21,6 +23,8 @@ use Illuminate\Support\Str;
  */
 class OtodomScraper implements EnrichesListings, PortalScraper
 {
+    use StoresCoordinates;
+
     private const ROOMS = [1 => 'ONE', 2 => 'TWO', 3 => 'THREE', 4 => 'FOUR', 5 => 'FIVE'];
 
     private const ROOMS_FROM_PORTAL = [
@@ -109,7 +113,9 @@ class OtodomScraper implements EnrichesListings, PortalScraper
 
     public function enrich(Listing $listing): bool
     {
-        $details = $this->parseOffer($this->fetcher->get($this->name(), $listing->url));
+        $html = $this->fetcher->get($this->name(), $listing->url);
+        $details = $this->parseOffer($html);
+        $this->applyCoordinates($listing, TextParser::coordinates($html));
 
         $listing->description = $details['description'] ?? $listing->description;
         $listing->rent_extra ??= $details['rent_extra'];

@@ -32,7 +32,9 @@ class ListingScoringAgent implements Agent, HasProviderOptions, HasStructuredOut
         - Koszt miesięczny przy wynajmie to najem + czynsz administracyjny + inne stałe opłaty z opisu (media, internet, garaż, opłata za osobę). Szukaj ich w opisie. Jeśli opis mówi, że czynsz lub media są w cenie, nie dodawaj ich drugi raz. Jeśli czegoś nie wiadomo, wpisz null i napisz to w uwadze do kosztu. Kaucja nie jest kosztem miesięcznym, ale wspomnij o niej w uwadze, jeśli jest wysoka.
         - Przy sprzedaży koszt miesięczny to sam czynsz administracyjny, a rent to null.
         - Porównuj koszt z podaną medianą za m2. Jeśli danych rynkowych jest mało, napisz to i nie oceniaj ceny surowo.
-        - Oceny cząstkowe od 1 do 10: cost (koszt na tle rynku i budżetu), location (lokalizacja wobec preferencji), standard (stan, wyposażenie, budynek), fit (ogólne dopasowanie do preferencji i filtrów). Ocena główna score to Twoja całościowa ocena, nie średnia.
+        - Dojazd do miejsc z sekcji "Dojazd" (np. praca) wliczaj do oceny lokalizacji. Gdy miejsce ma akceptowalny czas, a dojazd go przekracza, to wyraźny minus.
+        - Sygnały ryzyka wykryte automatycznie traktuj poważnie: wypisz je w red_flags i obniż ocenę, chyba że opis je wyjaśnia.
+        - Oceny cząstkowe od 1 do 10: cost (koszt na tle rynku i budżetu), location (lokalizacja wobec preferencji i dojazdu), standard (stan, wyposażenie, budynek), fit (ogólne dopasowanie do preferencji i filtrów). Ocena główna score to Twoja całościowa ocena, nie średnia.
         - Zwracaj uwagę na ryzyka: cena podejrzanie niska (możliwe oszustwo), brak adresu, prośba o przedpłatę przed obejrzeniem, ukryte koszty, sprzeczności w opisie, "bez zwierząt" lub inne ograniczenia sprzeczne z preferencjami, pokoje na wynajem zamiast całego mieszkania.
         - Pisz krótko, prostym językiem, po polsku. Najwyżej 4 punkty w pros i red_flags.
 

@@ -25,7 +25,7 @@ class ScrapeRunResource extends Resource
 
     protected static ?string $navigationLabel = 'Przebiegi';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     public static function table(Table $table): Table
     {

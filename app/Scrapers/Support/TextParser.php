@@ -147,4 +147,20 @@ class TextParser
 
         return null;
     }
+
+    /**
+     * Pierwsza para "latitude"/"longitude" w HTML lub JSON strony, tylko w granicach Polski.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    public static function coordinates(string $html): ?array
+    {
+        if (! preg_match('/"latitude"\s*:\s*"?(-?\d{1,2}\.\d+)"?\s*,\s*"longitude"\s*:\s*"?(-?\d{1,3}\.\d+)"?/', $html, $match)) {
+            return null;
+        }
+
+        [$lat, $lng] = [(float) $match[1], (float) $match[2]];
+
+        return $lat >= 49 && $lat <= 55 && $lng >= 14 && $lng <= 24.2 ? [$lat, $lng] : null;
+    }
 }

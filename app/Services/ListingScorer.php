@@ -8,6 +8,7 @@ use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
+use App\Services\Geo\CommuteCalculator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class ListingScorer
 {
     private const SUB_SCORES = ['cost', 'location', 'standard', 'fit'];
 
-    public function __construct(private MarketStats $market) {}
+    public function __construct(private MarketStats $market, private CommuteCalculator $commutes) {}
 
     /**
      * Czy ocena AI jest włączona i ma klucz.
@@ -93,6 +94,12 @@ class ListingScorer
             },
             ...$this->details($listing),
             '- opis: '.($listing->description ? Str::limit(Str::squish($listing->description), config('scoring.description_limit')) : 'portal nie podał opisu'),
+            '',
+            '## Dojazd (trasa z naszego serwera, bez korków)',
+            ...($this->commuteLines($listing)),
+            '',
+            '## Sygnały ryzyka wykryte automatycznie',
+            ...($listing->risk_flags ? array_map(fn (array $flag) => "- {$flag['message']}", $listing->risk_flags) : ['- brak']),
             '',
             '## Rynek (nasza baza, ostatnie '.MarketStats::DAYS.' dni, '.$market['scope'].')',
             '- mediana ceny za m2: '.$this->value($market['median_price_per_m2'], 'zł'),
@@ -210,6 +217,24 @@ class ListingScorer
      *
      * @return list<string>
      */
+    /**
+     * @return list<string>
+     */
+    private function commuteLines(Listing $listing): array
+    {
+        $lines = array_map(fn (string $line) => "- {$line}", $this->commutes->describe($listing));
+
+        if ($lines === []) {
+            return ['- brak danych (brak adresu oferty albo miejsc dojazdu)'];
+        }
+
+        if (in_array($listing->geo_precision, ['district', 'city'], true)) {
+            $lines[] = '- uwaga: położenie przybliżone ('.($listing->geo_precision === 'city' ? 'środek miasta' : 'środek dzielnicy').'), czasy mogą się różnić';
+        }
+
+        return $lines;
+    }
+
     private function details(Listing $listing): array
     {
         $details = $listing->raw['details'] ?? [];
@@ -219,6 +244,9 @@ class ListingScorer
             'heating' => ['ogrzewanie', ''],
             'building_floors' => ['pięter w budynku', ''],
             'free_from' => ['dostępne od', ''],
+            'building_type' => ['typ budynku', ''],
+            'condition' => ['stan', ''],
+            'market' => ['rynek', ''],
         ];
 
         return collect($labels)

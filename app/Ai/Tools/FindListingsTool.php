@@ -3,6 +3,7 @@
 namespace App\Ai\Tools;
 
 use App\Enums\ListingStatus;
+use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Support\Portals;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -49,6 +50,10 @@ class FindListingsTool implements Tool
             ->when($data['max_area'] ?? null, fn (Builder $q, $v) => $q->where('area', '<=', $v))
             ->when($data['min_rooms'] ?? null, fn (Builder $q, $v) => $q->where('rooms', '>=', $v))
             ->when($data['min_score'] ?? null, fn (Builder $q, $v) => $q->whereHas('analyses', fn (Builder $q) => $q->where('score', '>=', $v)))
+            ->when(($data['max_commute_minutes'] ?? null) !== null, fn (Builder $q) => $q->whereHas('commutes', fn (Builder $q) => $q
+                ->where('mode', $data['commute_mode'] ?? 'car')
+                ->where('minutes', '<=', (int) $data['max_commute_minutes'])
+                ->when($data['commute_place_id'] ?? null, fn (Builder $q, $id) => $q->where('commute_place_id', $id))))
             ->when($data['days'] ?? null, fn (Builder $q, $v) => $q->where('first_seen_at', '>=', now()->subDays((int) $v)))
             ->when($data['status'] ?? null, fn (Builder $q, $status) => $status === 'none' ? $q->whereNull('status') : $q->where('status', $status))
             ->when(($data['status'] ?? null) === null, fn (Builder $q) => $q->where(fn (Builder $q) => $q->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value)));
@@ -61,7 +66,7 @@ class FindListingsTool implements Tool
         };
 
         $total = (clone $query)->count();
-        $rows = $query->limit($limit)->get()->map(fn (Listing $listing) => [
+        $rows = $query->with('commutes.place')->limit($limit)->get()->map(fn (Listing $listing) => [
             'id' => $listing->id,
             'title' => Str::limit($listing->title, 90),
             'deal_type' => $listing->deal_type->value,
@@ -76,6 +81,8 @@ class FindListingsTool implements Tool
             'portal' => Portals::label($listing->portal),
             'private_owner' => $listing->is_private_owner,
             'score' => $listing->analyses_max_score,
+            'commutes' => Format::commutes($listing),
+            'risk_flags' => collect($listing->risk_flags ?? [])->pluck('message')->all(),
             'status' => $listing->status?->getLabel(),
             'found' => $listing->first_seen_at?->format('Y-m-d H:i'),
             'panel_url' => route('filament.admin.resources.listings.view', $listing),
@@ -101,6 +108,9 @@ class FindListingsTool implements Tool
             'min_score' => $schema->integer()->description('Ocena AI od (1-10).'),
             'days' => $schema->integer()->description('Tylko oferty znalezione w ostatnich N dniach.'),
             'status' => $schema->string()->enum(['favorite', 'contacted', 'viewing', 'rejected', 'none'])->description('Status nadany przez właściciela. Bez tego parametru odrzucone są pomijane.'),
+            'max_commute_minutes' => $schema->integer()->description('Najdłuższy dojazd w minutach do miejsc dojazdu (np. praca).'),
+            'commute_mode' => $schema->string()->enum(['car', 'bike'])->description('Dojazd autem (domyślnie) albo rowerem.'),
+            'commute_place_id' => $schema->integer()->description('Konkretne miejsce dojazdu (id z list_searches -> commute_places). Puste = dowolne.'),
             'sort' => $schema->string()->enum(['score', 'newest', 'price', 'price_per_m2']),
             'limit' => $schema->integer()->description('Ile ofert, najwyżej 20.'),
         ];

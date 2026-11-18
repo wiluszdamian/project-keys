@@ -2,6 +2,7 @@
 
 namespace App\Ai\Tools;
 
+use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Support\Portals;
@@ -27,7 +28,7 @@ class GetListingTool implements Tool
     {
         $ids = array_slice(array_map('intval', (array) ($request['ids'] ?? [])), 0, 5);
 
-        $listings = Listing::with(['analyses.search', 'priceChanges', 'searches'])->whereKey($ids)->get()->map(fn (Listing $listing) => [
+        $listings = Listing::with(['analyses.search', 'priceChanges', 'searches', 'commutes.place'])->whereKey($ids)->get()->map(fn (Listing $listing) => [
             'id' => $listing->id,
             'title' => $listing->title,
             'deal_type' => $listing->deal_type->value,
@@ -49,6 +50,9 @@ class GetListingTool implements Tool
             'status' => $listing->status?->getLabel(),
             'note' => $listing->note,
             'searches' => $listing->searches->pluck('name'),
+            'commutes' => Format::commutes($listing),
+            'location_precision' => $listing->geo_precision,
+            'risk_flags' => collect($listing->risk_flags ?? [])->pluck('message')->all(),
             'analyses' => $listing->analyses->map(fn (ListingAnalysis $analysis) => [
                 'search' => $analysis->search?->name,
                 'score' => $analysis->score,

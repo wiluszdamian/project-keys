@@ -6,6 +6,7 @@ use App\Enums\DealType;
 use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
 use App\Filament\Support\ListingFilters;
+use App\Models\CommutePlace;
 use App\Models\Listing;
 use App\Support\Portals;
 use Filament\Actions\Action;
@@ -13,6 +14,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -28,6 +30,7 @@ class ListingsTable
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query
+                ->with('commutes.place')
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))
             ->defaultSort('first_seen_at', 'desc')
@@ -72,6 +75,23 @@ class ListingsTable
                 TextColumn::make('rooms')
                     ->label('Pokoje')
                     ->sortable(),
+                TextColumn::make('commutes')
+                    ->label('Dojazd')
+                    ->state(fn (Listing $record) => Format::commutes($record))
+                    ->listWithLineBreaks()
+                    ->size('xs')
+                    ->description(fn (Listing $record) => in_array($record->geo_precision, ['district', 'city'], true) ? 'położenie przybliżone' : null)
+                    ->placeholder('-')
+                    ->toggleable(),
+                TextColumn::make('risk_flags')
+                    ->label('Ryzyko')
+                    ->state(fn (Listing $record) => $record->risk_flags ? count($record->risk_flags) : null)
+                    ->formatStateUsing(fn ($state) => "⚠ {$state}")
+                    ->badge()
+                    ->color('danger')
+                    ->tooltip(fn (Listing $record) => collect($record->risk_flags ?? [])->pluck('message')->implode("\n"))
+                    ->placeholder('')
+                    ->toggleable(),
                 TextColumn::make('portal')
                     ->label('Portal')
                     ->badge()
@@ -109,6 +129,29 @@ class ListingsTable
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(ListingStatus::class),
+                Filter::make('commute')
+                    ->schema([
+                        Select::make('place')
+                            ->label('Dojazd autem do')
+                            ->options(fn () => CommutePlace::where('is_active', true)->pluck('name', 'id')),
+                        TextInput::make('minutes')
+                            ->label('najwyżej')
+                            ->integer()
+                            ->suffix('min'),
+                    ])
+                    ->query(fn (Builder $query, array $data) => $query->when(
+                        filled($data['place'] ?? null) && filled($data['minutes'] ?? null),
+                        fn (Builder $query) => $query->whereHas('commutes', fn (Builder $query) => $query
+                            ->where('commute_place_id', $data['place'])
+                            ->where('mode', 'car')
+                            ->where('minutes', '<=', (int) $data['minutes'])),
+                    ))
+                    ->indicateUsing(fn (array $data) => filled($data['place'] ?? null) && filled($data['minutes'] ?? null)
+                        ? 'Dojazd do '.CommutePlace::find($data['place'])?->name." do {$data['minutes']} min" : null),
+                Filter::make('risky')
+                    ->label('Tylko z sygnałami ryzyka')
+                    ->toggle()
+                    ->query(fn (Builder $query) => $query->whereNotNull('risk_flags')),
                 SelectFilter::make('portal')
                     ->label('Portal')
                     ->options(Portals::allOptions()),

@@ -9,6 +9,7 @@ use App\Scrapers\Contracts\EnrichesListings;
 use App\Scrapers\Exceptions\PortalBlockedException;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\ScraperRegistry;
+use App\Services\ListingExtras;
 use App\Services\ListingScorer;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,13 +46,14 @@ class AnalyzeListingJob implements ShouldQueue
         return [new RateLimited('ai')];
     }
 
-    public function handle(ListingScorer $scorer, ScraperRegistry $registry): void
+    public function handle(ListingScorer $scorer, ScraperRegistry $registry, ListingExtras $extras): void
     {
         if (! ListingScorer::isEnabled()) {
             return;
         }
 
         $this->enrich($registry);
+        $extras->prepare($this->listing);
 
         $existing = $this->listing->analyses()->where('search_id', $this->search->id)->first();
 
@@ -78,11 +80,12 @@ class AnalyzeListingJob implements ShouldQueue
     }
 
     /**
-     * Brak opisu z listy wyników (Otodom): raz pobieramy stronę ogłoszenia. Błąd nie blokuje oceny.
+     * Lista wyników nie ma wszystkich danych (opis, czynsz, współrzędne): raz pobieramy stronę ogłoszenia.
+     * Znacznik raw.enriched_at pilnuje, żeby nie pobierać jej drugi raz. Błąd nie blokuje oceny.
      */
     private function enrich(ScraperRegistry $registry): void
     {
-        if ($this->listing->description !== null || ! in_array($this->listing->portal, $registry->portals(), true)) {
+        if (isset($this->listing->raw['enriched_at']) || ! in_array($this->listing->portal, $registry->portals(), true)) {
             return;
         }
 
@@ -94,6 +97,7 @@ class AnalyzeListingJob implements ShouldQueue
 
         try {
             $scraper->enrich($this->listing);
+            $this->listing->forceFill(['raw' => array_merge($this->listing->raw ?? [], ['enriched_at' => now()->toIso8601String()])])->save();
         } catch (PortalBlockedException|ScraperException $e) {
             Log::info("Nie pobrano strony oferty #{$this->listing->id}, ocena bez opisu: {$e->getMessage()}");
         }

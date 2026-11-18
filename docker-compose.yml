@@ -38,6 +38,23 @@ services:
     <<: *app
     command: php artisan schedule:work
 
+  # Czasy dojazdu: OSRM z mapą regionu, tylko w sieci Compose. Dane: scripts/osrm-prepare.sh.
+  osrm-car:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    restart: unless-stopped
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/car/region.osrm
+    volumes:
+      - osrm_data:/data:ro
+    logging: *logging
+
+  osrm-bike:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    restart: unless-stopped
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/bicycle/region.osrm
+    volumes:
+      - osrm_data:/data:ro
+    logging: *logging
+
   postgres:
     image: postgres:17
     restart: unless-stopped
@@ -95,3 +112,7 @@ volumes:
   redisdata:
   caddy_data:
   caddy_config:
+  # Tworzy go scripts/osrm-prepare.sh (mapa regionu i dane tras).
+  osrm_data:
+    name: project-keys_osrm_data
+    external: true

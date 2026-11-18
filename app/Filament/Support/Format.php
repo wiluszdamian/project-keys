@@ -2,6 +2,8 @@
 
 namespace App\Filament\Support;
 
+use App\Models\Listing;
+use App\Models\ListingCommute;
 use Illuminate\Support\Number;
 
 class Format
@@ -24,5 +26,27 @@ class Format
             $score >= 6 => 'warning',
             default => 'danger',
         };
+    }
+
+    /**
+     * Dojazdy oferty, np. ["Praca (ja): 🚗 8 min · 🚲 14 min"]. Wymaga załadowanych commutes.place.
+     *
+     * @return list<string>
+     */
+    public static function commutes(Listing $listing): array
+    {
+        return $listing->commutes
+            ->filter(fn (ListingCommute $commute) => $commute->place?->is_active)
+            ->groupBy('commute_place_id')
+            ->map(function ($commutes) {
+                $byMode = $commutes->keyBy('mode');
+
+                return $commutes->first()->place->name.': '.collect(['car' => '🚗', 'bike' => '🚲'])
+                    ->filter(fn ($icon, $mode) => $byMode->has($mode))
+                    ->map(fn ($icon, $mode) => "{$icon} {$byMode[$mode]->minutes} min")
+                    ->implode(' · ');
+            })
+            ->values()
+            ->all();
     }
 }

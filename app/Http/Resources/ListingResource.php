@@ -25,7 +25,13 @@ class ListingResource extends JsonResource
             'city' => $this->city,
             'district' => $this->district,
             'street' => $this->street,
+            'lat' => $this->lat,
+            'lng' => $this->lng,
+            'geo_precision' => $this->geo_precision,
             'is_private_owner' => $this->is_private_owner,
+            'status' => $this->status,
+            'note' => $this->note,
+            'risk_flags' => $this->risk_flags ?? [],
             'description' => $this->when($request->routeIs('listings.show'), $this->description),
             'image_url' => $this->image_url,
             'duplicate_of_id' => $this->duplicate_of_id,
@@ -33,6 +39,13 @@ class ListingResource extends JsonResource
             'last_seen_at' => $this->last_seen_at,
             'matched_at' => $this->whenHas('matched_at'),
             'analyses' => ListingAnalysisResource::collection($this->whenLoaded('analyses')),
+            'commutes' => $this->whenLoaded('commutes', fn () => $this->commutes->map(fn ($commute) => [
+                'place_id' => $commute->commute_place_id,
+                'place' => $commute->place?->name,
+                'mode' => $commute->mode,
+                'minutes' => $commute->minutes,
+                'km' => $commute->km,
+            ])->values()),
             'price_changes' => $this->whenLoaded('priceChanges', fn () => $this->priceChanges->map->only(['old_price', 'new_price', 'changed_at'])),
         ];
     }

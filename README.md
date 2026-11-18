@@ -49,6 +49,7 @@ Postęp prac i podjęte decyzje: [`.planning/STATUS.md`](.planning/STATUS.md).
 | `scheduler` | `schedule:work`: uruchamia wyszukiwania, sprząta kolejki, sprawdza alerty |
 | `postgres` | baza danych (PostgreSQL 17) |
 | `redis` | kolejki, cache, blokady |
+| `osrm-car`, `osrm-bike` | trasy i czasy dojazdu (OSRM z mapą regionu) |
 | `caddy` | serwer WWW przed `app`, filtr adresów IP, pliki `public/` z obrazu aplikacji |
 
 ## Uruchomienie
@@ -88,7 +89,14 @@ repozytorium Dockera.
    docker compose exec app php artisan search:create
    ```
 
-6. Załóż konto do panelu:
+6. Przygotuj dane tras do liczenia dojazdów (mapa Podkarpacia, około 4 minut):
+
+   ```bash
+   scripts/osrm-prepare.sh
+   docker compose up -d
+   ```
+
+7. Załóż konto do panelu:
 
    ```bash
    docker compose exec app php artisan make:filament-user
@@ -103,6 +111,9 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
   oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
+- **Mapa:** oferty na mapie w kolorze oceny, twoje miejsca dojazdu, filtry.
+- **Miejsca dojazdu:** np. praca. Z każdej oferty liczę dojazd autem i rowerem (własny serwer tras OSRM).
+  Czasy widać przy ofercie, można po nich filtrować, a AI bierze je pod uwagę w ocenie.
 - **Asystent:** czat z AI o ofertach z bazy. Widzi twoje wyszukiwania, oferty, oceny AI, historię cen
   i ceny w okolicy (tylko odczyt). Odpowiada z linkami do ofert w panelu. Rozmowy są zapisywane.
 - **Dzwoneczek:** nowe dobre oferty, obniżki cen i alerty pojawiają się w panelu od razu, niezależnie

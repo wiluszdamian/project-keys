@@ -2,6 +2,7 @@
 
 namespace App\Ai\Tools;
 
+use App\Models\CommutePlace;
 use App\Models\Search;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -17,12 +18,12 @@ class ListSearchesTool implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Lista zapisanych wyszukiwań właściciela: id, nazwa, wynajem czy sprzedaż, miejscowość, filtry, preferencje dla AI, liczba ofert.';
+        return 'Zapisane wyszukiwania właściciela (filtry, preferencje dla AI, liczba ofert) i miejsca dojazdu (np. praca).';
     }
 
     public function handle(Request $request): Stringable|string
     {
-        return Search::withCount('listings')->orderBy('id')->get()->map(fn (Search $search) => [
+        $searches = Search::withCount('listings')->orderBy('id')->get()->map(fn (Search $search) => [
             'id' => $search->id,
             'name' => $search->name,
             'deal_type' => $search->deal_type->value,
@@ -36,7 +37,11 @@ class ListSearchesTool implements Tool
             'min_score_to_notify' => $search->min_score_to_notify,
             'is_active' => $search->is_active,
             'listings_count' => $search->listings_count,
-        ])->toJson(JSON_UNESCAPED_UNICODE);
+        ]);
+
+        $places = CommutePlace::where('is_active', true)->get(['id', 'name', 'address', 'max_minutes']);
+
+        return json_encode(['searches' => $searches, 'commute_places' => $places], JSON_UNESCAPED_UNICODE);
     }
 
     public function schema(JsonSchema $schema): array

@@ -26,6 +26,10 @@ class Listing extends Model
             'area' => 'decimal:2',
             'is_private_owner' => 'boolean',
             'raw' => 'array',
+            'risk_flags' => 'array',
+            'lat' => 'float',
+            'lng' => 'float',
+            'geocoded_at' => 'datetime',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];
@@ -41,6 +45,16 @@ class Listing extends Model
     public function analyses(): HasMany
     {
         return $this->hasMany(ListingAnalysis::class);
+    }
+
+    public function commutes(): HasMany
+    {
+        return $this->hasMany(ListingCommute::class);
+    }
+
+    public function hasCoordinates(): bool
+    {
+        return $this->lat !== null && $this->lng !== null;
     }
 
     public function priceChanges(): HasMany

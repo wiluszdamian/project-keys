@@ -6,6 +6,7 @@ use App\Models\Listing;
 use App\Models\Search;
 use App\Scrapers\Concerns\FetchesPages;
 use App\Scrapers\Concerns\ResolvesLocation;
+use App\Scrapers\Concerns\StoresCoordinates;
 use App\Scrapers\Contracts\EnrichesListings;
 use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  */
 abstract class MorizonNetworkScraper implements EnrichesListings, PortalScraper
 {
-    use FetchesPages, ResolvesLocation;
+    use FetchesPages, ResolvesLocation, StoresCoordinates;
 
     public function __construct(protected HttpFetcher $fetcher) {}
 
@@ -54,7 +55,9 @@ abstract class MorizonNetworkScraper implements EnrichesListings, PortalScraper
 
     public function enrich(Listing $listing): bool
     {
-        $details = $this->parseOffer($this->fetcher->get($this->name(), $listing->url));
+        $html = $this->fetcher->get($this->name(), $listing->url);
+        $details = $this->parseOffer($html);
+        $this->applyCoordinates($listing, $details['coordinates']);
 
         $listing->description = $details['description'] ?? $listing->description;
         $listing->area = $details['area'] ?? $listing->area;
@@ -70,7 +73,7 @@ abstract class MorizonNetworkScraper implements EnrichesListings, PortalScraper
     /**
      * Strona oferty: pełny opis, dokładny metraż, piętro i fakty o budynku. Czynszu portal nie podaje osobno.
      *
-     * @return array{description: ?string, area: ?float, floor: ?string, is_private_owner: ?bool, details: array<string, string>}
+     * @return array{description: ?string, area: ?float, floor: ?string, is_private_owner: ?bool, coordinates: array{0: float, 1: float}|null, details: array<string, string>}
      */
     public function parseOffer(string $html): array
     {
@@ -95,6 +98,9 @@ abstract class MorizonNetworkScraper implements EnrichesListings, PortalScraper
             'area' => isset($property['area']) ? TextParser::number((string) $property['area']) : null,
             'floor' => $this->floor($info['Piętro'] ?? (isset($property['floor']) ? (string) $property['floor'] : null)),
             'is_private_owner' => $this->isPrivate($property['contact'] ?? []),
+            'coordinates' => isset($property['location']['map']['center']['latitude'], $property['location']['map']['center']['longitude'])
+                ? [(float) $property['location']['map']['center']['latitude'], (float) $property['location']['map']['center']['longitude']]
+                : null,
             'details' => array_filter([
                 'building_floors' => $info['Liczba pięter'] ?? null,
                 'build_year' => $info['Rok budowy'] ?? null,

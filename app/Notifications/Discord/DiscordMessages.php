@@ -6,6 +6,7 @@ use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
+use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
 use App\Support\Portals;
 use Illuminate\Support\Collection;
@@ -276,6 +277,8 @@ class DiscordMessages
             $location !== '' ? ['name' => '📍 Lokalizacja', 'value' => Str::limit($location, 1000), 'inline' => true] : null,
             ['name' => '👤 Ogłoszeniodawca', 'value' => $owner, 'inline' => true],
             ['name' => '🔗 Portal', 'value' => $this->portalName($listing->portal), 'inline' => true],
+            ($commutes = app(CommuteCalculator::class)->describe($listing)) ? ['name' => '🚗 Dojazd', 'value' => Str::limit(implode("\n", $commutes), 1000), 'inline' => false] : null,
+            $listing->risk_flags ? ['name' => '⚠️ Uwaga', 'value' => Str::limit(collect($listing->risk_flags)->pluck('message')->implode("\n"), 1000), 'inline' => false] : null,
         ]));
     }
 
@@ -306,7 +309,7 @@ class DiscordMessages
             $listing->district ?? $listing->city,
             $this->portalName($listing->portal),
             $searchNames,
-        ]));
+        ])).($listing->risk_flags ? "\n⚠️ ".collect($listing->risk_flags)->pluck('message')->first() : '');
     }
 
     private function portalName(string $portal): string

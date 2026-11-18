@@ -8,6 +8,9 @@ Schedule::command('search:dispatch-due')->everyMinute()->withoutOverlapping();
 // Podsumowania wyszukiwań z powiadomieniami co kilka godzin albo raz dziennie.
 Schedule::command('notify:send-scheduled')->everyMinute()->withoutOverlapping();
 
+// Współrzędne, dojazdy, zdjęcia i ryzyko dla ofert, które ich jeszcze nie mają (porcjami).
+Schedule::command('listings:enrich-missing')->everyTenMinutes()->withoutOverlapping()->runInBackground();
+
 // Sprzątanie kolejki: stare batche i nieudane joby.
 Schedule::command('queue:prune-batches --hours=48')->daily();
 Schedule::command('queue:prune-failed --hours=168')->daily();

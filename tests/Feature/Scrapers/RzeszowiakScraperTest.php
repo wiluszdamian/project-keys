@@ -1,6 +1,8 @@
 <?php
 
+use App\Ai\Agents\ListingScoringAgent;
 use App\Enums\DealType;
+use App\Jobs\AnalyzeListingJob;
 use App\Models\Listing;
 use App\Models\Search;
 use App\Scrapers\RzeszowiakScraper;
@@ -104,4 +106,19 @@ it('pobiera kategorie prywatne i agencji, a przy wzbogaceniu nie bierze najmu za
     $this->scraper->enrich($listing);
 
     expect($listing->fresh())->area->toEqual('50.00')->rent_extra->toBeNull()->street->toBe('Dąbrowskiego 85');
+});
+
+it('przed oceną pobiera stronę ogłoszenia także, gdy lista dała krótki opis', function () {
+    config(['ai.providers.opencode.key' => 'test-key']);
+    Http::fake(['www.rzeszowiak.pl/*' => Http::response(rzeszowiakFixture('offer_sale_agency'))]);
+    ListingScoringAgent::fake();
+    $listing = Listing::factory()->create(['portal' => 'rzeszowiak', 'deal_type' => 'sale', 'description' => 'Krótki opis z listy', 'area' => null, 'raw' => [], 'url' => 'https://www.rzeszowiak.pl/x-55116813']);
+
+    AnalyzeListingJob::dispatchSync(Search::factory()->create(['deal_type' => 'sale']), $listing);
+
+    expect($listing->fresh())->area->toEqual('72.50')->rooms->toBe(3)
+        ->and($listing->fresh()->raw)->toHaveKey('enriched_at');
+
+    AnalyzeListingJob::dispatchSync(Search::factory()->create(['deal_type' => 'sale']), $listing->fresh());
+    Http::assertSentCount(1);
 });

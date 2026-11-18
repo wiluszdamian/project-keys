@@ -10,6 +10,6 @@ class ListingController extends Controller
 {
     public function show(Listing $listing): ListingResource
     {
-        return new ListingResource($listing->load(['analyses', 'priceChanges']));
+        return new ListingResource($listing->load(['analyses', 'priceChanges', 'commutes.place']));
     }
 }

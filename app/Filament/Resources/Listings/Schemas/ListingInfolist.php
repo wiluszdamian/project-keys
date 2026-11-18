@@ -98,6 +98,50 @@ class ListingInfolist
                             ]),
                     ]),
 
+                Section::make('Sygnały ryzyka')
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->iconColor('danger')
+                    ->columnSpanFull()
+                    ->visible(fn (Listing $record) => filled($record->risk_flags))
+                    ->schema([
+                        TextEntry::make('risk_flags')
+                            ->hiddenLabel()
+                            ->state(fn (Listing $record) => collect($record->risk_flags)->pluck('message')->all())
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->color('danger'),
+                    ]),
+
+                Section::make('Dojazd')
+                    ->icon('heroicon-o-map-pin')
+                    ->columnSpanFull()
+                    ->visible(fn (Listing $record) => $record->commutes()->exists())
+                    ->description(fn (Listing $record) => match ($record->geo_precision) {
+                        'district' => 'Położenie przybliżone (środek dzielnicy), czasy mogą się różnić.',
+                        'city' => 'Położenie przybliżone (środek miasta), czasy mogą się różnić.',
+                        default => 'Trasa bez korków, liczona na naszym serwerze.',
+                    })
+                    ->schema([
+                        RepeatableEntry::make('commutesByPlace')
+                            ->hiddenLabel()
+                            ->state(fn (Listing $record) => $record->commutes()->with('place')->get()
+                                ->filter(fn ($commute) => $commute->place?->is_active)
+                                ->groupBy('commute_place_id')
+                                ->map(fn ($commutes) => [
+                                    'place' => $commutes->first()->place->name,
+                                    'car' => ($car = $commutes->firstWhere('mode', 'car')) ? "{$car->minutes} min ({$car->km} km)" : null,
+                                    'bike' => ($bike = $commutes->firstWhere('mode', 'bike')) ? "{$bike->minutes} min ({$bike->km} km)" : null,
+                                    'route' => "https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route={$record->lat},{$record->lng};{$commutes->first()->place->lat},{$commutes->first()->place->lng}",
+                                ])->values()->all())
+                            ->columns(4)
+                            ->schema([
+                                TextEntry::make('place')->label('Miejsce')->weight('bold'),
+                                TextEntry::make('car')->label('🚗 Autem')->placeholder('-'),
+                                TextEntry::make('bike')->label('🚲 Rowerem')->placeholder('-'),
+                                TextEntry::make('route')->label('Trasa')->formatStateUsing(fn () => 'Pokaż na mapie')->url(fn ($state) => $state, shouldOpenInNewTab: true)->color('primary'),
+                            ]),
+                    ]),
+
                 Section::make('Ocena AI')
                     ->columnSpanFull()
                     ->schema([

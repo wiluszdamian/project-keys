@@ -179,3 +179,11 @@ it('zapisuje tryb powiadomień z formularza', function () {
 
     expect($search->fresh())->notify_enabled->toBeFalse()->notify_channels->toBe(['discord']);
 });
+
+it('otwiera mapę i miejsca dojazdu', function () {
+    $listing = Listing::factory()->create(['lat' => 50.03, 'lng' => 22.01]);
+
+    $this->get('/admin/map')->assertOk()->assertSee('leaflet');
+    $this->get('/admin/commute-places')->assertOk()->assertSee('Dodaj miejsce');
+    $this->get("/admin/listings/{$listing->id}")->assertOk();
+});

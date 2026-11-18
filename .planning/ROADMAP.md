@@ -103,3 +103,21 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - Playwright jako osobna usługa, tylko jeśli któryś portal tego wymaga.
 - ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Domena `nieruchomosci.wilusz.tech` przez proxy Cloudflare, HTTPS (Let's Encrypt), dostęp tylko z adresów z `PANEL_ALLOWED_IPS`. 2FA do zrobienia.
 - Oznaczanie ofert z Telegrama przyciskami („ciekawe”, „odrzuć”), żeby AI uczyło się preferencji z przykładów.
+
+## Zrobione 2026-11-18 (pomysły z listy)
+
+- ✅ Czas dojazdu autem i rowerem do miejsc właściciela (OSRM u nas, adresy z OpenStreetMap).
+- ✅ Mapa ofert w panelu.
+- ✅ Wykrywanie oszustw: zwroty, cena poniżej rynku, to samo zdjęcie w innej ofercie.
+
+## Na później (pomysły zatwierdzone przez właściciela 2026-11-18)
+
+- AI uczy się z decyzji: oferty ulubione i odrzucone jako przykłady w prompcie oceny.
+- Wiadomość do ogłoszeniodawcy: przycisk, AI pisze pytania o brakujące informacje (kaucja, media, zwierzęta, termin, parking).
+- Lista pytań na oglądanie dla statusu "Oglądanie" i termin w kalendarzu (iCal).
+- Oferty, które zniknęły z portalu: status nieaktualnej, czas schodzenia ofert, dokładniejsze statystyki.
+- Okazje: oferty wyraźnie tańsze niż mediana za m² w dzielnicy, obniżki cen w jednym miejscu.
+- Asystent z działaniami: statusy, notatki, nowe wyszukiwania z czatu.
+- Tygodniowy raport rynku na Discordzie i w panelu.
+- Nadal otwarte z wcześniej: backup bazy (faza 8), 2FA w panelu, `deploy.sh`, Telegram.
+

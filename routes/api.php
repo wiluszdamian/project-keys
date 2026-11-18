@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CommutePlaceController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\NotificationSettingsController;
@@ -19,6 +20,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('listings/{listing}', [ListingController::class, 'show'])->name('listings.show');
 
     Route::get('scrape-runs', [ScrapeRunController::class, 'index']);
+    Route::apiResource('commute-places', CommutePlaceController::class);
     Route::get('notification-settings', [NotificationSettingsController::class, 'show']);
     Route::put('notification-settings', [NotificationSettingsController::class, 'update']);
 });

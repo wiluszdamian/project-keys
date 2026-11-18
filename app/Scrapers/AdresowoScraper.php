@@ -8,6 +8,7 @@ use App\Models\Listing;
 use App\Models\Search;
 use App\Scrapers\Concerns\FetchesPages;
 use App\Scrapers\Concerns\ResolvesLocation;
+use App\Scrapers\Concerns\StoresCoordinates;
 use App\Scrapers\Contracts\EnrichesListings;
 use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
@@ -23,7 +24,7 @@ use Dom\HTMLDocument;
  */
 class AdresowoScraper implements EnrichesListings, PortalScraper
 {
-    use FetchesPages, ResolvesLocation;
+    use FetchesPages, ResolvesLocation, StoresCoordinates;
 
     public function __construct(private HttpFetcher $fetcher) {}
 
@@ -76,7 +77,9 @@ class AdresowoScraper implements EnrichesListings, PortalScraper
 
     public function enrich(Listing $listing): bool
     {
-        $details = $this->parseOffer($this->fetcher->get($this->name(), $listing->url));
+        $html = $this->fetcher->get($this->name(), $listing->url);
+        $details = $this->parseOffer($html);
+        $this->applyCoordinates($listing, TextParser::coordinates($html));
 
         $listing->description = $details['description'] ?? $listing->description;
         $listing->floor ??= $details['floor'];

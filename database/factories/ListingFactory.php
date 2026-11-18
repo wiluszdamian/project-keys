@@ -33,7 +33,8 @@ class ListingFactory extends Factory
             'is_private_owner' => true,
             'description' => 'Opis mieszkania.',
             'image_url' => null,
-            'raw' => [],
+            // Strona ogłoszenia już pobrana, więc testy oceny nie wychodzą do portalu.
+            'raw' => ['enriched_at' => '2026-01-01T00:00:00+00:00'],
             'content_hash' => fake()->sha1(),
             'first_seen_at' => now(),
             'last_seen_at' => now(),

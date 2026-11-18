@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\Search;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\OtodomScraper;
+use App\Scrapers\Support\TextParser;
 use App\Services\ListingUpserter;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -115,6 +116,10 @@ it('oferta OLX z opisem nie pobiera strony', function () {
 
     AnalyzeListingJob::dispatchSync(Search::factory()->create(), $listing);
 
-    Http::assertNothingSent();
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'olx.pl'));
     ListingScoringAgent::assertPromptedTimes(1);
+});
+
+it('czyta współrzędne ze strony ogłoszenia', function () {
+    expect(TextParser::coordinates(offerFixture('offer_with_fee')))->toBe([50.028107, 22.000294]);
 });
