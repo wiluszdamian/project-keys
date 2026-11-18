@@ -31,6 +31,15 @@ class MarketStats
         return ['scope' => "miasto {$listing->city}"] + $this->stats($listing->city, $listing->deal_type);
     }
 
+    /**
+     * Statystyki dla miasta albo dzielnicy (np. dla asystenta w panelu).
+     */
+    public function forArea(string $city, DealType $dealType, ?string $district = null): array
+    {
+        return ['scope' => $district ? "dzielnica {$district}, {$city}" : "miasto {$city}", 'days' => self::DAYS]
+            + $this->stats($city, $dealType, $district);
+    }
+
     private function stats(?string $city, DealType $dealType, ?string $district = null): array
     {
         $base = Listing::query()

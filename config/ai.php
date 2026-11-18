@@ -33,6 +33,11 @@ return [
     |
     */
 
+    // Tytuł rozmowy z pierwszego pytania, bez dodatkowego zapytania do modelu.
+    'conversations' => [
+        'generate_title' => false,
+    ],
+
     'caching' => [
         'embeddings' => [
             'cache' => false,

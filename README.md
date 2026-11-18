@@ -103,6 +103,8 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
   oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
+- **Asystent:** czat z AI o ofertach z bazy. Widzi twoje wyszukiwania, oferty, oceny AI, historię cen
+  i ceny w okolicy (tylko odczyt). Odpowiada z linkami do ofert w panelu. Rozmowy są zapisywane.
 - **Dzwoneczek:** nowe dobre oferty, obniżki cen i alerty pojawiają się w panelu od razu, niezależnie
   od tego, jak często idzie Discord.
 - **Ustawienia:** wszystko, co jest w `.env` i configu: częstotliwość i tempo pobierania,
