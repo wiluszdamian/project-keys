@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\DealType;
 use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
+use App\Support\NotifySchedule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -82,13 +83,7 @@ class Search extends Model
      */
     public function scheduledNotifyDue(Carbon $now): bool
     {
-        return match ($this->notify_mode) {
-            NotifyMode::Instant => true,
-            NotifyMode::EveryHours => $this->notify_last_sent_at === null
-                || $this->notify_last_sent_at->lte($now->copy()->subHours(max(1, (int) $this->notify_every_hours))),
-            NotifyMode::Daily => $this->dailySendTime($now)->lte($now)
-                && ($this->notify_last_sent_at === null || $this->notify_last_sent_at->lt($this->dailySendTime($now))),
-        };
+        return NotifySchedule::due($this->notify_mode, $this->notify_every_hours, $this->notify_daily_at, $this->notify_last_sent_at, $now);
     }
 
     /**
@@ -96,17 +91,6 @@ class Search extends Model
      */
     public function scheduledPeriodLabel(): string
     {
-        return match ($this->notify_mode) {
-            NotifyMode::EveryHours => 'Podsumowanie z ostatnich '.max(1, (int) $this->notify_every_hours).' h',
-            NotifyMode::Daily => 'Podsumowanie dnia',
-            NotifyMode::Instant => 'Zaległe oferty',
-        };
-    }
-
-    private function dailySendTime(Carbon $now): Carbon
-    {
-        [$hour, $minute] = array_map('intval', explode(':', $this->notify_daily_at ?: '20:00') + [1 => 0]);
-
-        return $now->copy()->setTime($hour, $minute);
+        return NotifySchedule::periodLabel($this->notify_mode, $this->notify_every_hours);
     }
 }

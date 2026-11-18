@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
@@ -40,6 +41,22 @@ class Notifier
         $this->toChannels($search, $this->messages->digest($search, $listings, $total, $firstRun, $qualifying, $period));
     }
 
+    /**
+     * Zbiorcze podsumowanie kanału (wszystkie wyszukiwania na wynajem albo na sprzedaż).
+     *
+     * @param  Collection<int, Listing>  $listings  z atrybutami score, monthly_cost i search_names
+     * @param  list<array{listing: Listing, old_price: int, new_price: int}>  $priceDrops
+     */
+    public function groupDigest(DealType $dealType, Collection $listings, int $total, array $priceDrops, string $period): void
+    {
+        $this->discord->send($this->messages->groupDigest($dealType, $listings, $total, $priceDrops, $period), $dealType);
+    }
+
+    public function canNotifyGroup(DealType $dealType): bool
+    {
+        return $this->discord->isConfigured($dealType);
+    }
+
     public function priceDrop(Search $search, Listing $listing, int $oldPrice, int $newPrice): void
     {
         $this->toChannels($search, $this->messages->priceDrop($listing, $search, $oldPrice, $newPrice));
@@ -61,6 +78,7 @@ class Notifier
         }
 
         $this->discord->send($this->messages->alert($title, $body));
+        app(PanelNotifier::class)->alert($title, $body);
 
         return true;
     }

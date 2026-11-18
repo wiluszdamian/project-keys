@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Notifications\NotifyGroups;
 use App\Support\AppSettings;
 use App\Support\Portals;
 use BackedEnum;
@@ -9,15 +10,18 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -94,6 +98,13 @@ class Settings extends Page
                                         Toggle::make('notify_price_drops')
                                             ->label('Wysyłaj obniżki cen wysłanych ofert')
                                             ->inline(false),
+                                    ]),
+                                Section::make('Zbiorcze powiadomienia kanałów')
+                                    ->description('Jedna wiadomość na Discordzie dla wszystkich wyszukiwań danego typu: nowe dobre oferty i obniżki cen. Gdy ustawisz tryb zbiorczy, wygrywa on z ustawieniami pojedynczych wyszukiwań. Dzwoneczek w panelu dostaje powiadomienia od razu.')
+                                    ->columns(2)
+                                    ->schema([
+                                        ...self::group('rent', 'Wynajem'),
+                                        ...self::group('sale', 'Sprzedaż'),
                                     ]),
                                 Section::make('Discord')
                                     ->description('Adresy webhooków to sekrety: pole jest puste, a wpisana wartość zastępuje zapisaną. Bez osobnych webhooków wszystko idzie na główny.')
@@ -172,6 +183,43 @@ class Settings extends Page
             ->title('Zapisano')
             ->body('Workery przeładują ustawienia po bieżącym zadaniu.')
             ->send();
+    }
+
+    /**
+     * @return list<Fieldset>
+     */
+    private static function group(string $deal, string $label): array
+    {
+        $schedule = fn (Get $get) => $get("notify_{$deal}_schedule");
+
+        return [
+            Fieldset::make($label)
+                ->columns(1)
+                ->columnSpan(1)
+                ->schema([
+                    Select::make("notify_{$deal}_schedule")
+                        ->label('Wysyłka')
+                        ->options([
+                            NotifyGroups::PER_SEARCH => 'Według ustawień wyszukiwań',
+                            'every_hours' => 'Jedno podsumowanie co kilka godzin',
+                            'daily' => 'Jedno podsumowanie dziennie',
+                        ])
+                        ->native(false)
+                        ->live(),
+                    TextInput::make("notify_{$deal}_every_hours")
+                        ->label('Co ile godzin')
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(72)
+                        ->suffix('h')
+                        ->visible(fn (Get $get) => $schedule($get) === 'every_hours'),
+                    TimePicker::make("notify_{$deal}_daily_at")
+                        ->label('O której')
+                        ->seconds(false)
+                        ->format('H:i')
+                        ->visible(fn (Get $get) => $schedule($get) === 'daily'),
+                ]),
+        ];
     }
 
     private static function locations(string $portal, string $hint, string $example): Tab

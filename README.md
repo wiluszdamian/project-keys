@@ -103,8 +103,11 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
   oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
+- **Dzwoneczek:** nowe dobre oferty, obniżki cen i alerty pojawiają się w panelu od razu, niezależnie
+  od tego, jak często idzie Discord.
 - **Ustawienia:** wszystko, co jest w `.env` i configu: częstotliwość i tempo pobierania,
-  lokalizacje miejscowości dla portali, powiadomienia, webhooki Discorda, model i klucz AI. Wartość z panelu
+  lokalizacje miejscowości dla portali, powiadomienia (w tym jedno zbiorcze podsumowanie dziennie
+  albo co kilka godzin osobno dla wynajmu i sprzedaży), webhooki Discorda, model i klucz AI. Wartość z panelu
   wygrywa z `.env`. Zapis restartuje workery.
 
 > [!IMPORTANT]

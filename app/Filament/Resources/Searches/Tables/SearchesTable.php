@@ -6,6 +6,7 @@ use App\Enums\NotifyMode;
 use App\Filament\Resources\Listings\ListingResource;
 use App\Jobs\RunSearchJob;
 use App\Models\Search;
+use App\Notifications\NotifyGroups;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -44,11 +45,11 @@ class SearchesTable
                     ->badge(),
                 TextColumn::make('notify_mode')
                     ->label('Powiadomienia')
-                    ->state(fn (Search $record) => ! $record->notify_enabled ? 'wyłączone' : match ($record->notify_mode) {
+                    ->state(fn (Search $record) => ! $record->notify_enabled ? 'wyłączone' : (NotifyGroups::isCombined($record->deal_type) ? 'zbiorczo kanału' : match ($record->notify_mode) {
                         NotifyMode::Instant => 'od razu',
                         NotifyMode::EveryHours => 'co '.$record->notify_every_hours.' h',
                         NotifyMode::Daily => 'codziennie '.$record->notify_daily_at,
-                    })
+                    }))
                     ->description(fn (Search $record) => $record->notify_enabled ? "ocena od {$record->min_score_to_notify}/10" : null)
                     ->color(fn (Search $record) => $record->notify_enabled ? null : 'gray'),
                 TextColumn::make('listings_count')

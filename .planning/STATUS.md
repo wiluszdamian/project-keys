@@ -83,6 +83,8 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-18: Gratka ma te same oferty i te same id co Morizon. Duplikaty łączymy dokładnie po `raw.network_id`. Gratki nie włączamy w wyszukiwaniach, bo podwaja zapytania bez nowych ofert.
 - 2026-11-18: Duplikaty po cenie i metrażu wymagają też tej samej liczby pokoi (gdy obie oferty ją podają). Przy ośmiu portalach fałszywe dopasowania byłyby częstsze.
 - 2026-11-18: Domena `nieruchomosci.wilusz.tech` z proxy Cloudflare (ustawił właściciel). Caddy pobiera certyfikat Let's Encrypt (HTTP-01 przez Cloudflare), port 443 tylko IPv4. Adres klienta z `CF-Connecting-IP`, ale tylko gdy połączenie przychodzi z adresów Cloudflare (`trusted_proxies`), więc podrobiony nagłówek prosto na IP serwera nic nie daje. Panel dalej tylko z `PANEL_ALLOWED_IPS`. Blok `:80` po IP i tunel SSH zostają jako zapasowe wejście.
+- 2026-11-18: Zbiorcze powiadomienia kanałów (prośba właściciela, za dużo wiadomości): osobno dla wynajmu i sprzedaży jedno podsumowanie co N godzin albo raz dziennie o godzinie, ze wszystkich wyszukiwań tego typu, razem z obniżkami cen. Ustawienie kanału wygrywa z ustawieniami wyszukiwań i obejmuje też pierwszy przebieg. Panel (Ustawienia → Powiadomienia) i API `/api/notification-settings`. Domyślnie `per_search`, czyli jak dotąd.
+- 2026-11-18: Dzwoneczek w panelu (powiadomienia Filamenta w bazie, odświeżanie co 30 s): jedno powiadomienie na przebieg wyszukiwania z najlepszą nową ofertą, każda obniżka ceny i alerty systemowe. Od razu, niezależnie od Discorda.
 
 ## Otwarte pytania
 

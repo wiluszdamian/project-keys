@@ -20,6 +20,11 @@ Wszystkie odpowiedzi JSON. Prefiks `/api`.
 
 Powiadomienia w wyszukiwaniu: `notify_enabled` (bool), `notify_mode` (`instant`, `every_hours`, `daily`), `notify_every_hours` (1 do 72, wymagane przy `every_hours`), `notify_daily_at` (`HH:MM`, wymagane przy `daily`), `min_score_to_notify`.
 
+Zbiorcze powiadomienia kanałów (wynajem i sprzedaż osobno):
+
+- `GET /notification-settings`: `{"data": {"rent": {"schedule", "every_hours", "daily_at", "last_sent_at"}, "sale": {...}}}`.
+- `PUT /notification-settings`: np. `{"rent": {"schedule": "daily", "daily_at": "20:00"}, "sale": {"schedule": "every_hours", "every_hours": 4}}`. `schedule`: `per_search` (decydują wyszukiwania), `every_hours`, `daily`.
+
 Limity: 60 zapytań na minutę na token.
 
 Dostęp: `http://155.133.197.67` tylko z adresów z `PANEL_ALLOWED_IPS`, albo tunel SSH. Wszystko poza `/health` wymaga tokenu. Ten sam adres obsługuje panel `/admin`.

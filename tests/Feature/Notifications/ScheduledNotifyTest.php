@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
 use App\Notifications\Notifier;
+use App\Notifications\PanelNotifier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -46,7 +47,7 @@ it('w trybie zbiorczym oferty czekają zamiast iść od razu', function () {
     $good = scheduledMatch($this->search, 8);
     $weak = scheduledMatch($this->search, 3);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertNotPushed(SendListingNotificationJob::class);
     Queue::assertNotPushed(SendDigestJob::class);
@@ -103,7 +104,7 @@ it('wyłączone powiadomienia: oferta zostaje tylko w panelu', function () {
     $this->search->update(['notify_enabled' => false]);
     $id = scheduledMatch($this->search, 9);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertNothingPushed();
     expect(reason($this->search, $id))->toBe('notifications_off');

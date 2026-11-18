@@ -12,6 +12,7 @@ use App\Models\ListingPriceChange;
 use App\Models\ScrapeRun;
 use App\Models\Search;
 use App\Notifications\Notifier;
+use App\Notifications\PanelNotifier;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +47,7 @@ it('pierwszy przebieg daje jedno podsumowanie', function () {
     Queue::fake();
     $ids = matchListings($this->search, 3);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), true))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), true))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertPushed(SendDigestJob::class, fn ($job) => $job->listingIds == $ids && $job->firstRun);
     Queue::assertNotPushed(SendListingNotificationJob::class);
@@ -56,7 +57,7 @@ it('kilka nowych ofert idzie osobno, dużo jako podsumowanie', function (int $co
     Queue::fake();
     matchListings($this->search, $count);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     if ($digest) {
         Queue::assertPushed(SendDigestJob::class);
@@ -77,7 +78,7 @@ it('pomija duplikaty, już wysłane i starsze dopasowania', function () {
     matchListings($this->search, 1, ['matched_at' => now()->subHour()]);
     $fresh = matchListings($this->search, 1);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertPushed(SendListingNotificationJob::class, 1);
     Queue::assertPushed(SendListingNotificationJob::class, fn ($job) => $job->listing->id === $fresh[0]);
@@ -88,7 +89,7 @@ it('bez skonfigurowanego kanału oznacza oferty jako pominięte', function () {
     config(['notify.discord.webhook_url' => null]);
     [$id] = matchListings($this->search, 1);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertNothingPushed();
     expect(pivot($this->search, $id)->notify_skipped_reason)->toBe('no_channel');
@@ -110,7 +111,7 @@ it('nieudana wysyłka nie ustawia notified_at', function () {
     Http::fake([HOOK => Http::response('', 400)]);
     [$id] = matchListings($this->search, 1);
 
-    expect(fn () => (new SendListingNotificationJob($this->search, Listing::find($id)))->handle(app(Notifier::class)))
+    expect(fn () => (new SendListingNotificationJob($this->search, Listing::find($id)))->handle(app(Notifier::class), app(PanelNotifier::class)))
         ->toThrow(RuntimeException::class);
 
     expect(pivot($this->search, $id)->notified_at)->toBeNull();
@@ -198,7 +199,7 @@ it('przy włączonym AI najpierw ocenia oferty w batchu', function () {
     config(['ai.providers.opencode.key' => 'test-key']);
     $ids = matchListings($this->search, 2);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Bus::assertBatched(fn ($batch) => $batch->jobs->count() === 2
         && $batch->jobs->every(fn ($job) => $job instanceof AnalyzeListingJob)
@@ -213,7 +214,7 @@ it('po ocenie wysyła tylko oferty od progu i te bez oceny', function () {
     ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $good, 'score' => 7]);
     ListingAnalysis::factory()->create(['search_id' => $this->search->id, 'listing_id' => $weak, 'score' => 4]);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false, analyzed: true))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertPushed(SendListingNotificationJob::class, 2);
     expect(pivot($this->search, $weak)->notify_skipped_reason)->toBe('below_threshold');
@@ -262,7 +263,7 @@ it('po przebiegu pomija oferty wysłane z innego wyszukiwania', function () {
     [$sent, $fresh] = matchListings($this->search, 2);
     $other->listings()->attach($sent, ['matched_at' => now(), 'notified_at' => now()]);
 
-    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class), app(PanelNotifier::class));
 
     Queue::assertPushed(SendListingNotificationJob::class, 1);
     Queue::assertPushed(SendListingNotificationJob::class, fn ($job) => $job->listing->id === $fresh);

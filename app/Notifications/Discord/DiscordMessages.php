@@ -66,20 +66,7 @@ class DiscordMessages
      */
     public function digest(Search $search, Collection $listings, int $total, bool $firstRun, ?int $qualifying = null, ?string $period = null): array
     {
-        $lines = $listings->map(function (Listing $listing) {
-            $score = $listing->getAttribute('score');
-            $monthly = $listing->getAttribute('monthly_cost');
-            $prefix = $score !== null ? "`{$score}/10` " : '';
-            $title = Str::limit(str_replace(['[', ']'], '', $listing->title), 70);
-
-            return "{$prefix}**[{$title}]({$listing->url})**\n".implode(' · ', array_filter([
-                $monthly !== null ? $this->money((int) $monthly).'/mies. łącznie' : $this->money($listing->price),
-                $listing->area ? $this->area($listing->area) : null,
-                $listing->rooms ? "{$listing->rooms} pok." : null,
-                $listing->district ?? $listing->city,
-                $this->portalName($listing->portal),
-            ]));
-        });
+        $lines = $listings->map(fn (Listing $listing) => $this->digestLine($listing));
 
         $heading = match (true) {
             $period !== null => "{$period}: {$total} nowych ".$this->offersWord($total, genitive: true)." z oceną od {$search->min_score_to_notify}",
@@ -107,6 +94,42 @@ class DiscordMessages
             'description' => Str::limit($lines->implode("\n\n").$more, 4000),
             'color' => self::COLOR_INFO,
             'footer' => ['text' => "Wyszukiwanie: {$search->name}"],
+            'timestamp' => now()->toIso8601String(),
+        ]]];
+    }
+
+    /**
+     * Podsumowanie kanału: wszystkie wyszukiwania na wynajem (albo sprzedaż) w jednej wiadomości.
+     *
+     * @param  Collection<int, Listing>  $listings  z atrybutami score, monthly_cost i search_names
+     * @param  list<array{listing: Listing, old_price: int, new_price: int}>  $priceDrops
+     */
+    public function groupDigest(DealType $dealType, Collection $listings, int $total, array $priceDrops, string $period): array
+    {
+        $deal = $dealType === DealType::Rent ? 'Wynajem' : 'Sprzedaż';
+        $sections = [];
+
+        if ($listings->isNotEmpty()) {
+            $sections[] = $listings->map(fn (Listing $listing) => $this->digestLine($listing, $listing->getAttribute('search_names')))->implode("\n\n");
+
+            if ($total > $listings->count()) {
+                $sections[] = "Pokazuję {$listings->count()} najlepszych z {$total}. Wszystkie w panelu: ".rtrim(config('app.url'), '/').'/admin/listings';
+            }
+        } else {
+            $sections[] = 'Brak nowych ofert z oceną od progu wyszukiwania.';
+        }
+
+        if ($priceDrops !== []) {
+            $sections[] = "**📉 Obniżki cen**\n".collect($priceDrops)->map(fn (array $drop) => '['.Str::limit(str_replace(['[', ']'], '', $drop['listing']->title), 60).']('.$drop['listing']->url.'): '
+                .$this->money($drop['old_price']).' → '.$this->money($drop['new_price']))->implode("\n");
+        }
+
+        return ['embeds' => [[
+            'author' => ['name' => "📋 {$period} · {$deal}"],
+            'title' => "{$deal}: {$total} nowych ".$this->offersWord($total, genitive: true).' z oceną od progu',
+            'description' => Str::limit(implode("\n\n", $sections), 4000),
+            'color' => self::COLOR_INFO,
+            'footer' => ['text' => 'Zbiorcze powiadomienie kanału. Zmienisz je w panelu: Ustawienia → Powiadomienia.'],
             'timestamp' => now()->toIso8601String(),
         ]]];
     }
@@ -267,6 +290,23 @@ class DiscordMessages
         }
 
         return self::PORTAL_COLORS[$listing->portal] ?? self::COLOR_INFO;
+    }
+
+    private function digestLine(Listing $listing, ?string $searchNames = null): string
+    {
+        $score = $listing->getAttribute('score');
+        $monthly = $listing->getAttribute('monthly_cost');
+        $prefix = $score !== null ? "`{$score}/10` " : '';
+        $title = Str::limit(str_replace(['[', ']'], '', $listing->title), 70);
+
+        return "{$prefix}**[{$title}]({$listing->url})**\n".implode(' · ', array_filter([
+            $monthly !== null ? $this->money((int) $monthly).'/mies. łącznie' : $this->money($listing->price),
+            $listing->area ? $this->area($listing->area) : null,
+            $listing->rooms ? "{$listing->rooms} pok." : null,
+            $listing->district ?? $listing->city,
+            $this->portalName($listing->portal),
+            $searchNames,
+        ]));
     }
 
     private function portalName(string $portal): string

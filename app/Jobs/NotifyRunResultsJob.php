@@ -7,6 +7,8 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
 use App\Notifications\Notifier;
+use App\Notifications\NotifyGroups;
+use App\Notifications\PanelNotifier;
 use App\Services\ListingScorer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -32,7 +34,7 @@ class NotifyRunResultsJob implements ShouldQueue
         $this->onQueue('notify');
     }
 
-    public function handle(Notifier $notifier): void
+    public function handle(Notifier $notifier, PanelNotifier $panel): void
     {
         $search = $this->search;
         $pendingIds = $this->pendingIds();
@@ -81,16 +83,22 @@ class NotifyRunResultsJob implements ShouldQueue
             return;
         }
 
+        $below = $this->belowThreshold($pendingIds);
+        $this->notifyPanel($panel, array_keys(array_filter($below, fn (bool $isBelow) => ! $isBelow)));
+
         if (! $notifier->canNotify($search)) {
             $this->skip($pendingIds->all(), 'no_channel');
 
             return;
         }
 
-        // Tryb zbiorczy: dobre oferty czekają na podsumowanie (notify:send-scheduled).
-        if (! $this->firstRun && $search->notify_mode !== NotifyMode::Instant) {
-            foreach ($this->belowThreshold($pendingIds) as $listingId => $below) {
-                $this->skip([$listingId], $below ? 'below_threshold' : 'scheduled');
+        // Tryb zbiorczy (kanału albo wyszukiwania): dobre oferty czekają na podsumowanie (notify:send-scheduled).
+        // Kanał zbiorczy obejmuje też pierwszy przebieg, żeby nowe wyszukiwanie nie zasypało Discorda.
+        $groupCombined = NotifyGroups::isCombined($search->deal_type);
+
+        if ($groupCombined || (! $this->firstRun && $search->notify_mode !== NotifyMode::Instant)) {
+            foreach ($below as $listingId => $isBelow) {
+                $this->skip([$listingId], $isBelow ? 'below_threshold' : 'scheduled');
             }
 
             return;
@@ -102,8 +110,6 @@ class NotifyRunResultsJob implements ShouldQueue
             return;
         }
 
-        $below = $this->belowThreshold($pendingIds);
-
         foreach (Listing::whereKey($pendingIds)->orderBy('first_seen_at')->get() as $listing) {
             if ($below[$listing->id]) {
                 $this->skip([$listing->id], 'below_threshold');
@@ -113,6 +119,23 @@ class NotifyRunResultsJob implements ShouldQueue
 
             SendListingNotificationJob::dispatch($search, $listing);
         }
+    }
+
+    /**
+     * Jedno powiadomienie w panelu na przebieg, z najlepszą nową ofertą.
+     *
+     * @param  list<int>  $listingIds
+     */
+    private function notifyPanel(PanelNotifier $panel, array $listingIds): void
+    {
+        if ($listingIds === []) {
+            return;
+        }
+
+        $scores = ListingAnalysis::where('search_id', $this->search->id)->whereIn('listing_id', $listingIds)->pluck('score', 'listing_id');
+        $listings = Listing::whereKey($listingIds)->get()->each(fn (Listing $listing) => $listing->setAttribute('score', $scores[$listing->id] ?? null));
+
+        $panel->newListings($this->search, $listings);
     }
 
     /**

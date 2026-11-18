@@ -6,6 +6,8 @@ use App\Enums\ListingStatus;
 use App\Events\ListingPriceChanged;
 use App\Models\ListingPriceChange;
 use App\Notifications\Notifier;
+use App\Notifications\NotifyGroups;
+use App\Notifications\PanelNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,7 @@ class SendPriceDropNotification implements ShouldQueue
 {
     public string $queue = 'notify';
 
-    public function __construct(private Notifier $notifier) {}
+    public function __construct(private Notifier $notifier, private PanelNotifier $panel) {}
 
     public function shouldQueue(ListingPriceChanged $event): bool
     {
@@ -43,13 +45,20 @@ class SendPriceDropNotification implements ShouldQueue
             return;
         }
 
-        try {
-            $this->notifier->priceDrop($event->search, $event->listing, $event->oldPrice, $event->newPrice);
-        } catch (Throwable $exception) {
-            Cache::forget($key);
+        // Kanał zbiorczy: obniżka trafi do podsumowania kanału. Inaczej od razu na Discorda.
+        if (NotifyGroups::isCombined($event->listing->deal_type)) {
+            NotifyGroups::queuePriceDrop($event->listing->deal_type, $event->listing->id, $event->search->id, $event->oldPrice, $event->newPrice);
+        } else {
+            try {
+                $this->notifier->priceDrop($event->search, $event->listing, $event->oldPrice, $event->newPrice);
+            } catch (Throwable $exception) {
+                Cache::forget($key);
 
-            throw $exception;
+                throw $exception;
+            }
         }
+
+        $this->panel->priceDrop($event->search, $event->listing, $event->oldPrice, $event->newPrice);
     }
 
     /**

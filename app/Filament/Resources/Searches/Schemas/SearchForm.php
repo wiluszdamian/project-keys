@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Searches\Schemas;
 use App\Enums\DealType;
 use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
+use App\Notifications\NotifyGroups;
 use App\Support\Portals;
 use Closure;
 use Filament\Forms\Components\CheckboxList;
@@ -134,7 +135,7 @@ class SearchForm
                             ->required()
                             ->native(false)
                             ->live()
-                            ->helperText(fn (Get $get) => match (self::modeValue($get('notify_mode'))) {
+                            ->helperText(fn (Get $get) => self::groupNotice($get('deal_type')) ?? match (self::modeValue($get('notify_mode'))) {
                                 NotifyMode::Instant->value => 'Każda dobra oferta osobno. Gdy w jednym przebiegu jest ich dużo, przychodzi jedno podsumowanie.',
                                 default => 'Dobre oferty czekają i przychodzą razem w jednym podsumowaniu. Obniżki cen dalej od razu.',
                             })
@@ -158,6 +159,20 @@ class SearchForm
                             ->visible(fn (Get $get) => $get('notify_enabled') && self::modeValue($get('notify_mode')) === NotifyMode::Daily->value),
                     ]),
             ]);
+    }
+
+    /**
+     * Tekst, gdy kanał (wynajem albo sprzedaż) ma zbiorcze powiadomienia, które wygrywają z tym ustawieniem.
+     */
+    private static function groupNotice(mixed $dealType): ?string
+    {
+        $deal = $dealType instanceof DealType ? $dealType : DealType::tryFrom((string) $dealType);
+
+        if (! $deal || ! NotifyGroups::isCombined($deal)) {
+            return null;
+        }
+
+        return 'Kanał '.mb_strtolower($deal->getLabel()).' ma zbiorcze powiadomienie ('.mb_strtolower(NotifyGroups::periodLabel($deal)).') i ono wygrywa z tym ustawieniem. Zmienisz to w Ustawienia → Powiadomienia.';
     }
 
     private static function modeValue(mixed $mode): ?string

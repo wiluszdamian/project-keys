@@ -11,6 +11,21 @@ return [
     // Ten sam alert systemowy najwyżej raz na tyle godzin.
     'alert_cooldown_hours' => 6,
 
+    // Zbiorcze powiadomienie dla kanału (wynajem i sprzedaż osobno), zamiast ustawień każdego wyszukiwania.
+    // schedule: per_search (decyduje wyszukiwanie), every_hours (co N godzin) albo daily (raz dziennie o daily_at).
+    'groups' => [
+        'rent' => [
+            'schedule' => env('NOTIFY_RENT_SCHEDULE', 'per_search'),
+            'every_hours' => 6,
+            'daily_at' => '20:00',
+        ],
+        'sale' => [
+            'schedule' => env('NOTIFY_SALE_SCHEDULE', 'per_search'),
+            'every_hours' => 6,
+            'daily_at' => '20:00',
+        ],
+    ],
+
     'discord' => [
         'webhook_url' => env('DISCORD_WEBHOOK_URL'),
         'webhook_url_rent' => env('DISCORD_WEBHOOK_URL_RENT'),
