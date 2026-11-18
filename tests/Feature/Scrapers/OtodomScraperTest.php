@@ -26,7 +26,7 @@ it('odczytuje ogłoszenia na wynajem z fixture', function () {
     [$first, $second, $third] = $result['listings'];
 
     expect($first)
-        ->externalId->toBe('68645655')
+        ->externalId->toBe('ID4E1RZ')
         ->url->toBe('https://www.otodom.pl/pl/oferta/dywizjonu-303-2-osobne-pokoje-52-m2-eng-ID4E1RZ')
         ->title->toBe('Dywizjonu 303 | 2 osobne pokoje | 52 m2 | ENG')
         ->dealType->toBe(DealType::Rent)
@@ -44,14 +44,14 @@ it('odczytuje ogłoszenia na wynajem z fixture', function () {
         ->and($first->pricePerM2())->toBe(58);
 
     expect($second)
-        ->externalId->toBe('68645647')
+        ->externalId->toBe('ID4E1RR')
         ->price->toBe(3200)
         ->rooms->toBe(3)
         ->floor->toBe('parter')
         ->district->toBe('Prądnik Biały');
 
     expect($third)
-        ->externalId->toBe('68645503')
+        ->externalId->toBe('ID4E1Px')
         ->street->toBeNull()
         ->isPrivateOwner->toBeTrue();
 });
@@ -62,7 +62,7 @@ it('odczytuje ogłoszenia na sprzedaż z fixture', function () {
     expect($listings)->toHaveCount(37);
 
     expect($listings[0])
-        ->externalId->toBe('68645792')
+        ->externalId->toBe('ID4E1Uc')
         ->dealType->toBe(DealType::Sale)
         ->price->toBe(903168)
         ->rentExtra->toBeNull()
@@ -128,7 +128,7 @@ it('pobiera kilka stron i usuwa powtórki', function () {
     $result = $this->scraper->fetchListings(Search::factory()->create());
 
     expect($result->pagesFetched)->toBe(2)
-        ->and($result->listings)->toHaveCount(37);
+        ->and($result->listings)->toHaveCount(36);
 
     Http::assertSentCount(2);
     Http::assertSent(fn ($request) => str_contains($request->url(), 'page=2'));
@@ -141,4 +141,13 @@ it('kończy na ostatniej stronie wyników', function () {
 
     expect($this->scraper->fetchListings(Search::factory()->create())->pagesFetched)->toBe(1);
     Http::assertSentCount(1);
+});
+
+it('wyróżniona kopia z tymczasowym id łączy się z oryginałem', function () {
+    $listings = collect($this->scraper->parse(otodomFixture('search_rent'), new Search)['listings']);
+    $copy = $listings->firstWhere(fn ($listing) => ($listing->raw['id'] ?? null) === 9000062324);
+
+    expect($copy->externalId)->toBe('ID4E1RZ')
+        ->and($listings->where('externalId', 'ID4E1RZ'))->toHaveCount(2)
+        ->and($listings->pluck('externalId')->unique())->toHaveCount(36);
 });

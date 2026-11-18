@@ -33,6 +33,12 @@ class SendListingNotificationJob implements ShouldQueue
             return;
         }
 
+        if ($this->listing->wasNotified()) {
+            $row->update(['notify_skipped_reason' => 'already_sent']);
+
+            return;
+        }
+
         $analysis = $this->listing->analyses()->where('search_id', $this->search->id)->first();
         $notifier->listing($this->search, $this->listing, $analysis);
 

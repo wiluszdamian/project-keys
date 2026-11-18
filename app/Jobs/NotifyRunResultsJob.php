@@ -36,6 +36,16 @@ class NotifyRunResultsJob implements ShouldQueue
         $search = $this->search;
         $pendingIds = $this->pendingIds();
 
+        // Oferta wysłana już z innego wyszukiwania: bez drugiej wiadomości i bez drugiej oceny AI.
+        $alreadySent = Listing::whereKey($pendingIds)->get()
+            ->filter(fn (Listing $listing) => $listing->wasNotified($search->id))
+            ->modelKeys();
+
+        if ($alreadySent !== []) {
+            $this->skip($alreadySent, 'already_sent');
+            $pendingIds = $pendingIds->diff($alreadySent)->values();
+        }
+
         if ($pendingIds->isEmpty()) {
             return;
         }

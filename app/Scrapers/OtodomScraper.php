@@ -162,7 +162,7 @@ class OtodomScraper implements EnrichesListings, PortalScraper
 
         return new ListingData(
             portal: $this->name(),
-            externalId: (string) $item['id'],
+            externalId: self::externalId($item),
             url: config('scrapers.otodom.base_url').'/pl/oferta/'.$item['slug'],
             title: trim($item['title'] ?? ''),
             dealType: ($item['transaction'] ?? null) === 'RENT' ? DealType::Rent : DealType::Sale,
@@ -180,6 +180,20 @@ class OtodomScraper implements EnrichesListings, PortalScraper
             // Bez listy zdjęć, żeby nie trzymać zbędnych danych.
             raw: Arr::except($item, ['images']),
         );
+    }
+
+    /**
+     * Kod z końca adresu (np. ID4E1rD). Liczbowe id nie jest unikalne: świeże ogłoszenia
+     * dostają wspólne tymczasowe id (np. 9000062325), co sklejało różne oferty w jedną.
+     */
+    public static function externalId(array $item): string
+    {
+        return self::codeFromSlug($item['slug'] ?? '') ?? (string) $item['id'];
+    }
+
+    public static function codeFromSlug(string $slugOrUrl): ?string
+    {
+        return preg_match('/-(ID[0-9A-Za-z]+)$/', $slugOrUrl, $match) ? $match[1] : null;
     }
 
     private function money(?array $value): ?int

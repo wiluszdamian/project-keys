@@ -35,13 +35,13 @@ it('zapisuje oferty, dopasowania i przebieg', function () {
     expect($run)
         ->status->toBe(ScrapeRunStatus::Ok)
         ->pages_fetched->toBe(1)
-        ->found_count->toBe(37)
-        ->new_count->toBe(37)
+        ->found_count->toBe(36)
+        ->new_count->toBe(36)
         ->finished_at->not->toBeNull()
-        ->and(Listing::count())->toBe(37)
-        ->and($this->search->listings()->count())->toBe(37);
+        ->and(Listing::count())->toBe(36)
+        ->and($this->search->listings()->count())->toBe(36);
 
-    Event::assertDispatchedTimes(ListingMatched::class, 37);
+    Event::assertDispatchedTimes(ListingMatched::class, 36);
     Event::assertDispatched(ListingMatched::class, fn ($event) => $event->duringFirstRun && $event->search->is($this->search));
 });
 
@@ -54,9 +54,9 @@ it('drugi przebieg nie daje nowych dopasowań, ale łapie zmianę ceny', functio
     ScrapePortalJob::dispatchSync($this->search, 'otodom');
 
     expect(ScrapeRun::latest('id')->first()->new_count)->toBe(0)
-        ->and(Listing::where('external_id', '68645655')->value('price'))->toBe(2700);
+        ->and(Listing::where('external_id', 'ID4E1RZ')->value('price'))->toBe(2700);
 
-    Event::assertDispatchedTimes(ListingMatched::class, 37);
+    Event::assertDispatchedTimes(ListingMatched::class, 36);
     Event::assertDispatched(ListingPriceChanged::class, fn ($event) => $event->oldPrice === 3000 && $event->newPrice === 2700);
 });
 
@@ -66,7 +66,7 @@ it('pomija oferty niezgodne z filtrami', function () {
 
     ScrapePortalJob::dispatchSync($this->search, 'otodom');
 
-    expect(ScrapeRun::sole()->found_count)->toBe(37)
+    expect(ScrapeRun::sole()->found_count)->toBe(36)
         ->and(ScrapeRun::sole()->new_count)->toBe($this->search->listings()->count())
         ->and($this->search->listings()->pluck('district')->unique()->all())->toBe(['Czyżyny']);
 });

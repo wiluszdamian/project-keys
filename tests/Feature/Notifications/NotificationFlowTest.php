@@ -8,6 +8,7 @@ use App\Jobs\SendDigestJob;
 use App\Jobs\SendListingNotificationJob;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\ListingPriceChange;
 use App\Models\ScrapeRun;
 use App\Models\Search;
 use App\Notifications\Notifier;
@@ -227,4 +228,66 @@ it('alerts:check zgłasza dużo błędów AI', function () {
     $this->artisan('alerts:check')->expectsOutputToContain('błędów AI')->assertSuccessful();
 
     Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['title'], 'AI'));
+});
+
+it('oferta pasująca do dwóch wyszukiwań idzie raz', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    $other = Search::factory()->create(['notify_channels' => ['discord']]);
+    [$id] = matchListings($this->search, 1);
+    $other->listings()->attach($id, ['matched_at' => now()]);
+
+    SendListingNotificationJob::dispatchSync($this->search, Listing::find($id));
+    SendListingNotificationJob::dispatchSync($other, Listing::find($id));
+
+    Http::assertSentCount(1);
+    expect(pivot($other, $id)->notify_skipped_reason)->toBe('already_sent')
+        ->and(pivot($other, $id)->notified_at)->toBeNull();
+});
+
+it('nie wysyła oferty, której duplikat z drugiego portalu już poszedł', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    $other = Search::factory()->create(['notify_channels' => ['discord']]);
+    [$original] = matchListings($this->search, 1, ['notified_at' => now()]);
+    $duplicate = Listing::factory()->create(['duplicate_of_id' => $original]);
+    $other->listings()->attach($duplicate, ['matched_at' => now()]);
+
+    SendListingNotificationJob::dispatchSync($other, $duplicate);
+
+    Http::assertNothingSent();
+});
+
+it('po przebiegu pomija oferty wysłane z innego wyszukiwania', function () {
+    Queue::fake();
+    $other = Search::factory()->create(['notify_channels' => ['discord']]);
+    [$sent, $fresh] = matchListings($this->search, 2);
+    $other->listings()->attach($sent, ['matched_at' => now(), 'notified_at' => now()]);
+
+    (new NotifyRunResultsJob($this->search, now()->subMinute()->toIso8601String(), false))->handle(app(Notifier::class));
+
+    Queue::assertPushed(SendListingNotificationJob::class, 1);
+    Queue::assertPushed(SendListingNotificationJob::class, fn ($job) => $job->listing->id === $fresh);
+    expect(pivot($this->search, $sent)->notify_skipped_reason)->toBe('already_sent');
+});
+
+it('cena skacząca w górę i w dół daje jedną wiadomość o obniżce', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    $other = Search::factory()->create(['notify_channels' => ['discord']]);
+    [$id] = matchListings($this->search, 1, ['notified_at' => now()]);
+    $other->listings()->attach($id, ['matched_at' => now(), 'notified_at' => now()]);
+    $listing = Listing::find($id);
+
+    $change = function (int $old, int $new) use ($listing) {
+        ListingPriceChange::create(['listing_id' => $listing->id, 'old_price' => $old, 'new_price' => $new, 'changed_at' => now()]);
+        ListingPriceChanged::dispatch($this->search, $listing, $old, $new);
+    };
+
+    $change(3000, 2700);
+    ListingPriceChanged::dispatch($other, $listing, 3000, 2700);
+    $change(2700, 3000);
+    $change(3000, 2700);
+
+    Http::assertSentCount(1);
+
+    $change(2700, 2500);
+    Http::assertSentCount(2);
 });

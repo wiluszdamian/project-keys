@@ -12,7 +12,7 @@ it('wypisuje oferty z portalu i nic nie zapisuje', function () {
 
     $this->artisan('scraper:probe', ['portal' => 'otodom', 'search' => $search->id])
         ->expectsOutputToContain('Dywizjonu 303')
-        ->expectsOutputToContain('Stron: 1, ogłoszeń: 37')
+        ->expectsOutputToContain('Stron: 1, ogłoszeń: 36')
         ->assertSuccessful();
 
     expect(Listing::count())->toBe(0);
