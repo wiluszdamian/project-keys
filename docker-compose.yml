@@ -78,7 +78,7 @@ services:
     depends_on:
       - app
     environment:
-      CADDY_DOMAIN: ${CADDY_DOMAIN:-:80}
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-http://localhost}
       # Adresy IP z dostępem (spacja między adresami). Sieci prywatne zawsze: tunel SSH i ruch z serwera.
       PANEL_ALLOWED_IPS: ${PANEL_ALLOWED_IPS:-127.0.0.1}
     ports:

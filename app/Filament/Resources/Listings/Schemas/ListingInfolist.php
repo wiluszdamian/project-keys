@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Listings\Schemas;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Support\Portals;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -30,7 +31,7 @@ class ListingInfolist
                             ->columnSpanFull(),
                         TextEntry::make('url')
                             ->hiddenLabel()
-                            ->formatStateUsing(fn (Listing $record) => 'Otwórz ogłoszenie na '.($record->portal === 'olx' ? 'OLX' : 'Otodom'))
+                            ->formatStateUsing(fn (Listing $record) => 'Otwórz ogłoszenie na '.Portals::label($record->portal))
                             ->url(fn (Listing $record) => $record->url, shouldOpenInNewTab: true)
                             ->color('primary')
                             ->icon('heroicon-o-arrow-top-right-on-square')

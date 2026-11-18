@@ -29,6 +29,14 @@ final readonly class ListingData
         public array $raw = [],
     ) {}
 
+    /**
+     * Kopia z innymi wartościami wybranych pól.
+     */
+    public function with(mixed ...$changes): self
+    {
+        return new self(...array_merge(get_object_vars($this), $changes));
+    }
+
     public function pricePerM2(): ?int
     {
         if ($this->price === null || ! $this->area) {

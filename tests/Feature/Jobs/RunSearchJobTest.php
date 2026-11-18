@@ -27,7 +27,7 @@ it('tworzy batch z jobem dla każdego portalu', function () {
 
 it('pomija portale bez scrapera', function () {
     Bus::fake();
-    $search = Search::factory()->create(['portals' => ['morizon']]);
+    $search = Search::factory()->create(['portals' => ['nieistniejacy']]);
 
     app()->call([new RunSearchJob($search), 'handle']);
 

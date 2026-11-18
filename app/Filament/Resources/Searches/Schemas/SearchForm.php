@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Searches\Schemas;
 use App\Enums\DealType;
 use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
+use App\Support\Portals;
 use Closure;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
@@ -16,7 +17,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
 class SearchForm
 {
@@ -48,11 +48,12 @@ class SearchForm
                             ->label('Miasto lub miejscowość')
                             ->required()
                             ->maxLength(100)
-                            ->helperText('Dla Otodom miejscowość musi mieć lokalizację w Ustawieniach.')
+                            ->helperText('Otodom, Morizon, Gratka, Domiporta i Adresowo potrzebują lokalizacji z Ustawień.')
                             ->rule(fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                if (in_array('otodom', $get('portals') ?? [], true)
-                                    && ! array_key_exists(Str::slug((string) $value), config('scrapers.otodom.locations'))) {
-                                    $fail('Otodom nie zna tej miejscowości. Dodaj ją w Ustawienia → Lokalizacje Otodom albo odznacz Otodom.');
+                                $missing = collect($get('portals') ?? [])->filter(fn ($portal) => Portals::missingLocation($portal, (string) $value));
+
+                                if ($missing->isNotEmpty()) {
+                                    $fail($missing->map(Portals::label(...))->implode(', ').' nie zna tej miejscowości. Dodaj ją w Ustawienia → Lokalizacje albo odznacz te portale.');
                                 }
                             }),
                         TagsInput::make('districts')
@@ -75,11 +76,8 @@ class SearchForm
                     ->schema([
                         CheckboxList::make('portals')
                             ->label('Portale')
-                            ->options(collect(config('scrapers.portals'))->mapWithKeys(fn ($portal) => [$portal => match ($portal) {
-                                'otodom' => 'Otodom',
-                                'olx' => 'OLX',
-                                default => $portal,
-                            }])->all())
+                            ->options(Portals::options())
+                            ->columns(2)
                             ->default(config('scrapers.portals'))
                             ->required()
                             ->live(),

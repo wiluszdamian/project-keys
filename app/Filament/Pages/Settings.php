@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Support\AppSettings;
+use App\Support\Portals;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\KeyValue;
@@ -66,15 +67,18 @@ class Settings extends Page
                                             ->label('User-Agent')
                                             ->columnSpanFull(),
                                     ]),
-                                Section::make('Lokalizacje Otodom')
-                                    ->description('Otodom wymaga ścieżki lokalizacji dla każdej miejscowości. Otwórz wyniki dla miejscowości na otodom.pl i skopiuj część adresu po /mieszkanie/. Nazwa miejscowości bez polskich znaków, małymi literami, spacje jako myślniki (np. rudna-mala). OLX nie potrzebuje tej listy.')
+                                Section::make('Lokalizacje')
+                                    ->description('Część portali potrzebuje w adresie własnej ścieżki dla każdej miejscowości. Klucz to nazwa miejscowości bez polskich znaków, małymi literami, spacje jako myślniki (np. rudna-mala). Ścieżkę skopiuj z adresu wyników na stronie portalu. OLX, Rzeszowiak i Nieruchomości-online jej nie potrzebują.')
                                     ->schema([
-                                        KeyValue::make('otodom_locations')
-                                            ->hiddenLabel()
-                                            ->keyLabel('Miejscowość (np. rudna-mala)')
-                                            ->valueLabel('Ścieżka (np. podkarpackie/rzeszowski/glogow-malopolski/rudna-mala)')
-                                            ->addActionLabel('Dodaj miejscowość')
-                                            ->reorderable(false),
+                                        Tabs::make('locations')
+                                            ->contained(false)
+                                            ->tabs([
+                                                self::locations('otodom', 'część adresu po /mieszkanie/', 'podkarpackie/rzeszowski/glogow-malopolski/rudna-mala'),
+                                                self::locations('morizon', 'część adresu po /mieszkania/najnowsze/', 'rzeszowski/gmina-glogow-malopolski/rudna-mala'),
+                                                self::locations('gratka', 'część adresu po /nieruchomosci/mieszkania/', 'rudna-mala-37382'),
+                                                self::locations('domiporta', 'część adresu po /mieszkanie/sprzedam/', 'podkarpackie/rudna-mala'),
+                                                self::locations('adresowo', 'część adresu po /mieszkania/', 'rudna-mala'),
+                                            ]),
                                     ]),
                             ]),
 
@@ -168,6 +172,20 @@ class Settings extends Page
             ->title('Zapisano')
             ->body('Workery przeładują ustawienia po bieżącym zadaniu.')
             ->send();
+    }
+
+    private static function locations(string $portal, string $hint, string $example): Tab
+    {
+        return Tab::make(Portals::label($portal))
+            ->schema([
+                KeyValue::make("{$portal}_locations")
+                    ->hiddenLabel()
+                    ->helperText("Ścieżka to {$hint}.")
+                    ->keyLabel('Miejscowość (np. rudna-mala)')
+                    ->valueLabel("Ścieżka (np. {$example})")
+                    ->addActionLabel('Dodaj miejscowość')
+                    ->reorderable(false),
+            ]);
     }
 
     private static function int(string $name, string $label, ?string $suffix, int $min, int $max): TextInput

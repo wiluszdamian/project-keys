@@ -36,6 +36,10 @@ class AppSettings
         'scraper_block_hours' => ['scrapers.block_hours', 'int'],
         'scraper_user_agent' => ['scrapers.user_agent', 'string'],
         'otodom_locations' => ['scrapers.otodom.locations', 'map'],
+        'morizon_locations' => ['scrapers.morizon.locations', 'map'],
+        'gratka_locations' => ['scrapers.gratka.locations', 'map'],
+        'domiporta_locations' => ['scrapers.domiporta.locations', 'map'],
+        'adresowo_locations' => ['scrapers.adresowo.locations', 'map'],
 
         'notify_digest_threshold' => ['notify.digest_threshold', 'int'],
         'notify_digest_size' => ['notify.digest_size', 'int'],

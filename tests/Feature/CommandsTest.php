@@ -28,7 +28,7 @@ it('tworzy wyszukiwanie z komendy', function () {
         ->expectsQuestion('Metraż do (m2)', '')
         ->expectsQuestion('Pokoje od', '2')
         ->expectsQuestion('Pokoje do', '')
-        ->expectsChoice('Portale', ['otodom'], ['otodom', 'olx'])
+        ->expectsChoice('Portale', ['otodom'], config('scrapers.portals'))
         ->expectsChoice('Powiadomienia', ['discord'], ['telegram', 'discord'])
         ->expectsQuestion('Preferencje dla AI (np. balkon, blisko metra, bez agencji)', '')
         ->expectsQuestion('Minimalna ocena do powiadomienia (1-10)', '7')

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ScrapeRuns\Tables;
 
 use App\Enums\ScrapeRunStatus;
 use App\Models\ScrapeRun;
+use App\Support\Portals;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -25,8 +26,8 @@ class ScrapeRunsTable
                 TextColumn::make('portal')
                     ->label('Portal')
                     ->badge()
-                    ->formatStateUsing(fn (string $state) => $state === 'olx' ? 'OLX' : 'Otodom')
-                    ->color(fn (string $state) => $state === 'olx' ? 'info' : 'success'),
+                    ->formatStateUsing(fn (string $state) => Portals::label($state))
+                    ->color(fn (string $state) => Portals::color($state)),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
@@ -53,7 +54,7 @@ class ScrapeRunsTable
                     ->relationship('search', 'name'),
                 SelectFilter::make('portal')
                     ->label('Portal')
-                    ->options(['otodom' => 'Otodom', 'olx' => 'OLX']),
+                    ->options(Portals::allOptions()),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(ScrapeRunStatus::class),

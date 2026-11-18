@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
  */
 class ListingUpserter
 {
-    private const KEEP_WHEN_MISSING = ['description', 'rent_extra', 'street', 'is_private_owner', 'image_url', 'district'];
+    // Dane ze strony ogłoszenia (EnrichesListings), których lista wyników nie podaje.
+    private const KEEP_WHEN_MISSING = ['description', 'rent_extra', 'street', 'is_private_owner', 'image_url', 'district', 'area', 'rooms', 'floor'];
 
     public function __construct(private DuplicateDetector $duplicates) {}
 

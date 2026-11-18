@@ -16,7 +16,8 @@ Prywatny serwis, który szuka mieszkań za ciebie.
 
 </div>
 
-project-keys co 20 minut przegląda Otodom i OLX według zapisanych wyszukiwań. Nowe oferty ocenia
+project-keys co 20 minut przegląda portale z ogłoszeniami (Otodom, OLX, Rzeszowiak, Morizon, Gratka,
+Nieruchomości-online, Domiporta, Adresowo) według zapisanych wyszukiwań. Nowe oferty ocenia
 AI według twoich preferencji, a te z dobrą oceną przychodzą na Discorda. Zbudowany na Laravel 13
 i PHP 8.5, działa w Docker Compose na jednym serwerze.
 
@@ -27,7 +28,7 @@ i PHP 8.5, działa w Docker Compose na jednym serwerze.
 2. **Pobieranie.** Scheduler co minutę sprawdza, które wyszukiwania czekają dłużej niż
    `SCRAPE_INTERVAL_MINUTES`, i pobiera z obu portali najnowsze oferty. Między zapytaniami robi
    przerwy, a gdy portal blokuje (403 albo 429), odpuszcza go na 2 godziny.
-3. **Duplikaty.** To samo mieszkanie na Otodom i OLX zapisuje się jako jedna oferta. Jedna oferta
+3. **Duplikaty.** To samo mieszkanie na kilku portalach zapisuje się jako jedna oferta. Jedna oferta
    pasująca do kilku wyszukiwań przychodzi raz.
 4. **Ocena AI.** Każda nowa oferta dostaje ocenę od 1 do 10, pełny koszt miesięczny (najem,
    czynsz, opłaty z opisu) i oceny cząstkowe: koszt, lokalizacja, standard, dopasowanie.
@@ -103,7 +104,7 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
 - **Ustawienia:** wszystko, co jest w `.env` i configu: częstotliwość i tempo pobierania,
-  lokalizacje Otodom, powiadomienia, webhooki Discorda, model i klucz AI. Wartość z panelu
+  lokalizacje miejscowości dla portali, powiadomienia, webhooki Discorda, model i klucz AI. Wartość z panelu
   wygrywa z `.env`. Zapis restartuje workery.
 
 > [!IMPORTANT]

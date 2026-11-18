@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
 use App\Services\ListingScorer;
+use App\Support\Portals;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -15,9 +16,15 @@ use Illuminate\Support\Str;
  */
 class DiscordMessages
 {
-    private const PORTALS = [
-        'otodom' => ['name' => 'Otodom', 'color' => 0x4A5BD9],
-        'olx' => ['name' => 'OLX', 'color' => 0x23E5DB],
+    private const PORTAL_COLORS = [
+        'otodom' => 0x4A5BD9,
+        'olx' => 0x23E5DB,
+        'rzeszowiak' => 0xE67E22,
+        'morizon' => 0xE4202E,
+        'gratka' => 0x0069B4,
+        'nieruchomosci_online' => 0x1E8449,
+        'domiporta' => 0x8E44AD,
+        'adresowo' => 0xF39C12,
     ];
 
     private const COLOR_GOOD = 0x2ECC71;
@@ -259,12 +266,12 @@ class DiscordMessages
             };
         }
 
-        return self::PORTALS[$listing->portal]['color'] ?? self::COLOR_INFO;
+        return self::PORTAL_COLORS[$listing->portal] ?? self::COLOR_INFO;
     }
 
     private function portalName(string $portal): string
     {
-        return self::PORTALS[$portal]['name'] ?? Str::ucfirst($portal);
+        return Portals::label($portal);
     }
 
     private function money(?int $value): ?string

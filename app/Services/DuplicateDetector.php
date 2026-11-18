@@ -7,15 +7,26 @@ use App\Models\Listing;
 /**
  * Szuka tej samej oferty na innym portalu.
  *
- * 1. Dokładnie: ogłoszenie OLX skopiowane z Otodom ma w raw.external_url adres oferty Otodom.
+ * 1. Dokładnie: Morizon i Gratka mają to samo raw.network_id, a ogłoszenie OLX skopiowane
+ *    z Otodom ma w raw.external_url adres oferty Otodom.
  * 2. Przybliżenie: to samo miasto i typ transakcji, cena różna o mniej niż 2%,
- *    metraż o mniej niż 1 m2, oferta widziana w ciągu 7 dni.
+ *    metraż o mniej niż 1 m2, ta sama liczba pokoi (gdy znana), oferta widziana w ciągu 7 dni.
  */
 class DuplicateDetector
 {
     public function findOriginal(Listing $listing): ?Listing
     {
-        return $this->byExternalUrl($listing) ?? $this->bySimilarity($listing);
+        return $this->byNetworkId($listing) ?? $this->byExternalUrl($listing) ?? $this->bySimilarity($listing);
+    }
+
+    /**
+     * Morizon i Gratka podają to samo id oferty.
+     */
+    private function byNetworkId(Listing $listing): ?Listing
+    {
+        $id = $listing->raw['network_id'] ?? null;
+
+        return $id === null ? null : $this->candidates($listing)->where('raw->network_id', (string) $id)->orderBy('id')->first();
     }
 
     private function byExternalUrl(Listing $listing): ?Listing
@@ -56,6 +67,8 @@ class DuplicateDetector
             ->where('price', '<', (int) ceil($listing->price + $priceTolerance))
             ->where('area', '>', $area - $config['area_tolerance'])
             ->where('area', '<', $area + $config['area_tolerance'])
+            // Przy wielu portalach sama cena i metraż mylą się częściej: liczba pokoi musi się zgadzać, gdy obie ją znają.
+            ->when($listing->rooms !== null, fn ($query) => $query->where(fn ($query) => $query->whereNull('rooms')->orWhere('rooms', $listing->rooms)))
             ->where('last_seen_at', '>=', now()->subDays($config['days']))
             ->orderBy('first_seen_at')
             ->first();

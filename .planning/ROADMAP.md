@@ -99,7 +99,7 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 
 ## Faza 9 (opcjonalnie)
 
-- Morizon, Gratka.
+- ✅ Kolejne portale (2026-11-18): Rzeszowiak, Morizon, Gratka, Nieruchomości-online, Domiporta, Adresowo. Szczegóły w SCRAPERS.md.
 - Playwright jako osobna usługa, tylko jeśli któryś portal tego wymaga.
-- ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Dostęp po IP serwera tylko z adresów z `PANEL_ALLOWED_IPS`, do czasu domeny z HTTPS i 2FA.
+- ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Domena `nieruchomosci.wilusz.tech` przez proxy Cloudflare, HTTPS (Let's Encrypt), dostęp tylko z adresów z `PANEL_ALLOWED_IPS`. 2FA do zrobienia.
 - Oznaczanie ofert z Telegrama przyciskami („ciekawe”, „odrzuć”), żeby AI uczyło się preferencji z przykładów.

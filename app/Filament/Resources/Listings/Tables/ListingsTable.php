@@ -7,6 +7,7 @@ use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
 use App\Filament\Support\ListingFilters;
 use App\Models\Listing;
+use App\Support\Portals;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -74,8 +75,8 @@ class ListingsTable
                 TextColumn::make('portal')
                     ->label('Portal')
                     ->badge()
-                    ->formatStateUsing(fn (string $state) => $state === 'olx' ? 'OLX' : 'Otodom')
-                    ->color(fn (string $state) => $state === 'olx' ? 'info' : 'success'),
+                    ->formatStateUsing(fn (string $state) => Portals::label($state))
+                    ->color(fn (string $state) => Portals::color($state)),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -110,7 +111,7 @@ class ListingsTable
                     ->options(ListingStatus::class),
                 SelectFilter::make('portal')
                     ->label('Portal')
-                    ->options(['otodom' => 'Otodom', 'olx' => 'OLX']),
+                    ->options(Portals::allOptions()),
                 Filter::make('hide_rejected')
                     ->label('Ukryj odrzucone')
                     ->default()

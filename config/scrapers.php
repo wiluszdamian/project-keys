@@ -1,16 +1,28 @@
 <?php
 
+use App\Scrapers\AdresowoScraper;
+use App\Scrapers\DomiportaScraper;
+use App\Scrapers\GratkaScraper;
+use App\Scrapers\MorizonScraper;
+use App\Scrapers\NieruchomosciOnlineScraper;
 use App\Scrapers\OlxScraper;
 use App\Scrapers\OtodomScraper;
+use App\Scrapers\RzeszowiakScraper;
 
 return [
     // Portale, które można wybrać w wyszukiwaniu.
-    'portals' => ['otodom', 'olx'],
+    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo'],
 
     // Klasa scrapera dla każdego portalu.
     'classes' => [
         'otodom' => OtodomScraper::class,
         'olx' => OlxScraper::class,
+        'rzeszowiak' => RzeszowiakScraper::class,
+        'morizon' => MorizonScraper::class,
+        'gratka' => GratkaScraper::class,
+        'nieruchomosci_online' => NieruchomosciOnlineScraper::class,
+        'domiporta' => DomiportaScraper::class,
+        'adresowo' => AdresowoScraper::class,
     ],
 
     'interval_minutes' => (int) env('SCRAPE_INTERVAL_MINUTES', 20),
@@ -48,6 +60,67 @@ return [
         'base_url' => 'https://www.olx.pl',
         // Tyle ogłoszeń zwraca endpoint na stronę (jak sama strona OLX).
         'per_page' => 40,
+    ],
+
+    'rzeszowiak' => [
+        'base_url' => 'https://www.rzeszowiak.pl',
+        // Portal rzeszowski: ogłoszenie bez nazwy miejscowości liczymy jako Rzeszów,
+        // chyba że wspomina jedną z tych miejscowości.
+        'home_city' => 'rzeszow',
+        'other_places' => [
+            'Przemyśl', 'Krosno', 'Jasło', 'Dębica', 'Łańcut', 'Tyczyn', 'Boguchwała', 'Głogów Małopolski',
+            'Trzebownisko', 'Krasne', 'Świlcza', 'Strzyżów', 'Ropczyce', 'Sokołów Małopolski', 'Kolbuszowa',
+            'Leżajsk', 'Mielec', 'Sanok', 'Stalowa Wola', 'Tarnobrzeg', 'Jarosław', 'Tajęcina', 'Rudna Mała',
+            'Zaczernie', 'Jasionka', 'Malawa', 'Racławówka', 'Lubenia', 'Błędowa', 'Kraków', 'Warszawa', 'Lublin',
+        ],
+    ],
+
+    'domiporta' => [
+        'base_url' => 'https://www.domiporta.pl',
+        // Miasto (slug) -> lokalizacja w adresie (województwo/miejscowość). Sprawdzone 2026-11-18.
+        'locations' => [
+            'rzeszow' => 'podkarpackie/rzeszow',
+            'boguchwala' => 'podkarpackie/boguchwala',
+            'tajecina' => 'podkarpackie/tajecina',
+            'rudna-mala' => 'podkarpackie/rudna-mala',
+        ],
+    ],
+
+    // Morizon i Gratka mają te same oferty z tym samym id (raw.network_id), duplikaty łączymy dokładnie.
+    'morizon' => [
+        'base_url' => 'https://www.morizon.pl',
+        // Miasto (slug) -> ścieżka lokalizacji. Sprawdzone 2026-11-18.
+        'locations' => [
+            'rzeszow' => 'rzeszow',
+            'boguchwala' => 'rzeszowski/miasto-boguchwala',
+            'tajecina' => 'rzeszowski/gmina-trzebownisko/tajecina',
+            'rudna-mala' => 'rzeszowski/gmina-glogow-malopolski/rudna-mala',
+        ],
+    ],
+
+    'gratka' => [
+        'base_url' => 'https://gratka.pl',
+        'locations' => [
+            'rzeszow' => 'rzeszow',
+            'boguchwala' => 'boguchwala',
+            'tajecina' => 'tajecina',
+            'rudna-mala' => 'rudna-mala-37382',
+        ],
+    ],
+
+    'nieruchomosci_online' => [
+        'base_url' => 'https://www.nieruchomosci-online.pl',
+    ],
+
+    'adresowo' => [
+        'base_url' => 'https://adresowo.pl',
+        // Miasto (slug) -> część adresu. Niektóre mają dopisek (boguchwala-o). Sprawdzone 2026-11-18.
+        'locations' => [
+            'rzeszow' => 'rzeszow',
+            'boguchwala' => 'boguchwala-o',
+            'tajecina' => 'tajecina',
+            'rudna-mala' => 'rudna-mala',
+        ],
     ],
 
     // Ta sama oferta na dwóch portalach: to samo miasto i typ transakcji,

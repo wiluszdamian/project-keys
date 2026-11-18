@@ -9,7 +9,7 @@ Aktualizuje Claude Code po każdej fazie.
 - CPU / RAM / dysk: 4 vCPU AMD EPYC, 7.8 GB RAM, 99 GB dysk, swap 2 GB
 - System: Debian 13 (trixie), kernel 6.12
 - Docker / Compose: Docker 29.10.0, Compose v5.8.0
-- Domena: na razie brak. Panel i API pod `http://155.133.197.67` tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Tunel SSH dalej działa: `ssh -L 8080:localhost:80 project-keys`
+- Domena: `https://nieruchomosci.wilusz.tech` (proxy Cloudflare). Panel i API tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Zapasowo `http://155.133.197.67` (to samo ograniczenie) i tunel `ssh -L 8080:localhost:80 project-keys`
 
 ## Postęp
 
@@ -79,9 +79,13 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-18: Caddy ma własny obraz (`target: web`) z `public/` skopiowanym z obrazu aplikacji. Filament publikuje CSS i JS przy budowaniu, więc pliki zawsze pasują do kodu.
 - 2026-11-18: Powiadomienia ustawiane osobno dla każdego wyszukiwania (panel i API): włącz/wyłącz, kanały, próg oceny i częstotliwość: od razu, zbiorczo co N godzin albo raz dziennie o godzinie. W trybie zbiorczym dobre oferty dostają `notify_skipped_reason = scheduled` i czekają na `notify:send-scheduled` (co minutę). Pierwszy przebieg i obniżki cen idą od razu. Ocena AI działa także przy wyłączonych powiadomieniach, bo wyniki są w panelu.
 - 2026-11-18: Lista ofert i strona główna panelu domyślnie pokazują tylko oferty z oceną od progu wyszukiwania (przełącznik w filtrach, zapamiętywany w sesji). Kolumna Wynajem/Sprzedaż.
+- 2026-11-18: Sześć nowych portali na prośbę właściciela: Rzeszowiak, Morizon, Gratka, Nieruchomości-online, Domiporta, Adresowo (opis w SCRAPERS.md). Wszystkie z `EnrichesListings` (strona ogłoszenia przed oceną AI). Mapy lokalizacji dla Morizon, Gratki, Domiporty i Adresowa w config i w panelu. Filtry i sortowanie zabronione w robots.txt (Morizon, Gratka, Adresowo) zastępuje filtrowanie po pobraniu.
+- 2026-11-18: Gratka ma te same oferty i te same id co Morizon. Duplikaty łączymy dokładnie po `raw.network_id`. Gratki nie włączamy w wyszukiwaniach, bo podwaja zapytania bez nowych ofert.
+- 2026-11-18: Duplikaty po cenie i metrażu wymagają też tej samej liczby pokoi (gdy obie oferty ją podają). Przy ośmiu portalach fałszywe dopasowania byłyby częstsze.
+- 2026-11-18: Domena `nieruchomosci.wilusz.tech` z proxy Cloudflare (ustawił właściciel). Caddy pobiera certyfikat Let's Encrypt (HTTP-01 przez Cloudflare), port 443 tylko IPv4. Adres klienta z `CF-Connecting-IP`, ale tylko gdy połączenie przychodzi z adresów Cloudflare (`trusted_proxies`), więc podrobiony nagłówek prosto na IP serwera nic nie daje. Panel dalej tylko z `PANEL_ALLOWED_IPS`. Blok `:80` po IP i tunel SSH zostają jako zapasowe wejście.
 
 ## Otwarte pytania
 
 - Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji? Dokumentacja: Go jest „dla OpenCode i innych agentów do kodowania”, ruch jest monitorowany. Ocena ogłoszeń to nie jest ruch agenta do kodowania. Alternatywa zgodna z warunkami: pay-as-you-go (`https://opencode.ai/inference/openai/v1`, płatne z kredytów) albo bezpośrednie API DeepSeek.
-- Domena dla HTTPS i 2FA w panelu. Do tego czasu panel działa po HTTP tylko z IP właściciela.
+- 2FA w panelu (domena z HTTPS już jest).
 - Duplikaty po cenie i metrażu mogą się mylić: dwa różne ogłoszenia OLX (2400 zł, 63 m2) wskazały tę samą ofertę Otodom (2390 zł, 63,9 m2). Można zaostrzyć regułę, np. wymagać tej samej liczby pokoi.
