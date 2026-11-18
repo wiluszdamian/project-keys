@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Testy łączą się z hostem "postgres" (phpunit.xml), więc baza i aplikacja są w jednej sieci Dockera.
+      - name: Start PostgreSQL
+        run: |
+          docker network create ci
+          docker run -d --name postgres --network ci \
+            -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=mieszkania_test \
+            postgres:17
+          for i in $(seq 1 30); do
+            docker exec postgres pg_isready -U test -d mieszkania_test && break
+            sleep 2
+          done
+
+      - name: Build app image
+        run: docker build --build-arg INSTALL_DEV=1 -t project-keys-app .
+
+      - name: Pint
+        run: docker run --rm project-keys-app vendor/bin/pint --test
+
+      - name: Pest
+        run: |
+          docker run --rm --network ci \
+            -e APP_KEY="base64:$(openssl rand -base64 32)" \
+            project-keys-app php artisan test

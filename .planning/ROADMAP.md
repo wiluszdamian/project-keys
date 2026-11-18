@@ -88,12 +88,12 @@ Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną po
 
 ## Faza 8: utrwalenie
 
-Status: do zrobienia
+Status: w toku
 
 - Backup i `restore.sh` z testem przywracania.
 - `deploy.sh`.
 - Przegląd logów i błędów po 24 h działania, poprawki.
-- README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować.
+- ✅ README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować. Do tego `CONTRIBUTING.md` i workflow z testami na GitHubie (`.github/workflows/tests.yml`).
 
 Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się przywrócić.
 

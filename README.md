@@ -1,58 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/project-keys-dark.svg"><img src=".github/assets/project-keys-light.svg" alt="project-keys" width="380"></picture></p>
+
+<h3>
+Prywatny serwis, który szuka mieszkań za ciebie.
+</h3>
+
+<p>
+<a href="#jak-to-działa"><b>Jak to działa</b></a> ·
+<a href="#uruchomienie"><b>Uruchomienie</b></a> ·
+<a href="#codzienna-obsługa"><b>Codzienna obsługa</b></a> ·
+<a href="CONTRIBUTING.md"><b>Praca nad kodem</b></a>
 </p>
 
-## About Laravel
+</div>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+project-keys co 20 minut przegląda Otodom i OLX według zapisanych wyszukiwań. Nowe oferty ocenia
+AI według twoich preferencji, a te z dobrą oceną przychodzą na Discorda. Zbudowany na Laravel 13
+i PHP 8.5, działa w Docker Compose na jednym serwerze.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Jak to działa
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Wyszukiwanie.** Zapisujesz kryteria: miasto, wynajem albo sprzedaż, cena, metraż, liczba
+   pokoi, opcjonalnie dzielnice i opis tego, czego szukasz (np. „najchętniej osiedle Projektant”).
+2. **Pobieranie.** Scheduler co minutę sprawdza, które wyszukiwania czekają dłużej niż
+   `SCRAPE_INTERVAL_MINUTES`, i pobiera z obu portali najnowsze oferty. Między zapytaniami robi
+   przerwy, a gdy portal blokuje (403 albo 429), odpuszcza go na 2 godziny.
+3. **Duplikaty.** To samo mieszkanie na Otodom i OLX zapisuje się jako jedna oferta. Jedna oferta
+   pasująca do kilku wyszukiwań przychodzi raz.
+4. **Ocena AI.** Każda nowa oferta dostaje ocenę od 1 do 10, pełny koszt miesięczny (najem,
+   czynsz, opłaty z opisu) i oceny cząstkowe: koszt, lokalizacja, standard, dopasowanie.
+5. **Powiadomienia.** Oferta z oceną od progu wyszukiwania (domyślnie 6) idzie na Discorda jako
+   osobna wiadomość. Pierwszy przebieg i przebiegi z dużą liczbą nowych ofert dają jedno
+   podsumowanie. Obniżka ceny już wysłanej oferty też daje wiadomość.
 
-## Learning Laravel
+Szczegóły (architektura, model danych, scrapery, prompt AI) są w [`.planning`](.planning/README.md).
+Postęp prac i podjęte decyzje: [`.planning/STATUS.md`](.planning/STATUS.md).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Co jest w środku
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Usługa | Rola |
+|---|---|
+| `app` | PHP-FPM z API (Laravel, Sanctum) |
+| `worker` | kolejki `notify`, `scrape`, `default`: pobieranie portali i wysyłka |
+| `worker-ai` | kolejka `ai`, domyślnie 3 kopie (`AI_WORKERS`): ocena ofert |
+| `scheduler` | `schedule:work`: uruchamia wyszukiwania, sprząta kolejki, sprawdza alerty |
+| `postgres` | baza danych (PostgreSQL 17) |
+| `redis` | kolejki, cache, blokady |
+| `caddy` | serwer WWW przed `app` |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Uruchomienie
 
-## Agentic Development
+Potrzebujesz Dockera z Compose. Na serwerze z Debianem lub Ubuntu wystarczy oficjalne
+repozytorium Dockera.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. Sklonuj repozytorium i skopiuj ustawienia:
 
-```bash
-composer require laravel/boost --dev
+   ```bash
+   git clone https://github.com/wiluszdamian/project-keys.git
+   cd project-keys
+   cp .env.example .env
+   chmod 600 .env
+   ```
 
-php artisan boost:install
-```
+2. Uzupełnij w `.env` co najmniej `DB_PASSWORD`, `DISCORD_WEBHOOK_URL` i `OPENCODE_GO_API_KEY`.
+   Bez klucza AI oferty idą bez oceny. Opis zmiennych jest w `.env.example`.
+3. Zbuduj obraz i wygeneruj klucz aplikacji. Wypisany klucz wklej do `.env` jako `APP_KEY`:
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+   ```bash
+   docker compose build
+   docker compose run --rm --no-deps app php artisan key:generate --show
+   ```
 
-## Contributing
+4. Uruchom kontenery i przygotuj bazę:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   ```bash
+   docker compose up -d
+   docker compose exec app php artisan migrate --force
+   ```
 
-## Code of Conduct
+5. Sprawdź Discorda i dodaj pierwsze wyszukiwanie:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+   ```bash
+   docker compose exec app php artisan notify:test
+   docker compose exec app php artisan search:create
+   ```
 
-## Security Vulnerabilities
+> [!IMPORTANT]
+> Bez domeny Caddy słucha tylko na `127.0.0.1:8080`, więc API nie jest dostępne z internetu.
+> Z laptopa łączysz się tunelem: `ssh -L 8080:localhost:8080 <serwer>`, potem
+> `http://localhost:8080/api/health`. Z domeną ustaw `CADDY_DOMAIN`, `CADDY_HTTP_BIND=80` i
+> `CADDY_HTTPS_BIND=443`, a Caddy sam pobierze certyfikat.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Codzienna obsługa
 
-## License
+Polecenia uruchamiasz w kontenerze `app`, np. `docker compose exec app php artisan search:list`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Polecenie | Co robi |
+|---|---|
+| `search:create` | Nowe wyszukiwanie (pyta o pola) |
+| `search:list` | Lista wyszukiwań z ostatnim przebiegiem |
+| `search:run {id}` | Uruchamia wyszukiwanie od razu |
+| `search:pause {id}`, `search:resume {id}` | Wstrzymuje i wznawia wyszukiwanie |
+| `scraper:probe {portal} {id}` | Pobiera oferty na żywo i wypisuje je, bez zapisu |
+| `notify:test` | Wiadomość testowa na Discorda |
+| `ai:usage` | Zużycie tokenów AI dziś i z 30 dni |
+| `alerts:check` | Czy był udany przebieg w 3 godziny i ile błędów AI (scheduler robi to co godzinę) |
+| `api:token {nazwa}` | Token do API, pokazywany raz |
+
+API (wymaga tokenu w nagłówku `Authorization: Bearer …`):
+
+| Endpoint | Opis |
+|---|---|
+| `GET /api/health` | Stan aplikacji, bez tokenu |
+| `GET/POST/PUT/DELETE /api/searches` | Wyszukiwania |
+| `POST /api/searches/{id}/run`, `/pause`, `/resume` | Uruchomienie, wstrzymanie, wznowienie |
+| `GET /api/searches/{id}/listings` | Oferty wyszukiwania (`sort=newest\|score`, `min_score`) |
+| `GET /api/listings/{id}` | Oferta z oceną AI i historią cen |
+| `GET /api/scrape-runs` | Ostatnie przebiegi scraperów |
+
+Pełny opis pól: [`.planning/API.md`](.planning/API.md).
+
+## Gdy coś nie działa
+
+- **Brak nowych wiadomości.** Sprawdź `search:list` (czy wyszukiwanie jest aktywne) i
+  `GET /api/scrape-runs`. Status `blocked` znaczy, że portal odpowiedział 403 lub 429. Aplikacja
+  wraca do niego sama po 2 godzinach.
+- **Oferty bez oceny AI.** Sprawdź `ai:usage` i logi workera AI:
+  `docker compose logs worker-ai --tail 100`. Każdy kontener ma swoje logi.
+- **Portal zmienił stronę.** `scraper:probe otodom {id}` pokaże, czy parser coś odczytuje. Gdy
+  nie, trzeba poprawić scraper w `app/Scrapers` i dane testowe w `tests/Fixtures`.
+
+## Praca nad kodem
+
+Jak wprowadzać zmiany, uruchamiać testy i wdrażać: [CONTRIBUTING.md](CONTRIBUTING.md).

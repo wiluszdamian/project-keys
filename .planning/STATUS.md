@@ -23,7 +23,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 5 Harmonogram | gotowe | 2026-11-17 | Pierwszy automatyczny przebieg 21:13: Otodom 109, OLX 120 ofert. Testy na Postgresie (`scripts/test.sh`) |
 | 6 AI | gotowe | 2026-11-17 | 143 testy. Prawdziwe wywołanie: 12,7 s, ok. 1750 tokenów na ofertę. AI włączone na serwerze |
 | 7 Powiadomienia | w trakcie | 2026-11-17 | Discord gotowy (przed fazą 6, na prośbę właściciela). Telegram do zrobienia |
-| 8 Utrwalenie | do zrobienia | | |
+| 8 Utrwalenie | w toku | | README, CONTRIBUTING i testy w GitHub Actions gotowe. Zostały backup, `deploy.sh` i przegląd po 24 h |
 
 ## Decyzje
 

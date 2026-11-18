@@ -1,0 +1,8 @@
+<svg role="img" aria-label="project-keys" viewBox="0 0 300 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#E0A526" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="22" cy="36" r="13"/>
+    <path d="M35 36h31M56 36v10M64 36v7"/>
+  </g>
+  <text x="84" y="40" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#F5F5F4">project-keys</text>
+  <text x="85" y="60" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#A8A29E">Otodom · OLX · AI · Discord</text>
+</svg>
