@@ -71,12 +71,13 @@ class PanelNotifier
         $this->send(Notification::make()->title($title)->body($body)->danger());
     }
 
+    /**
+     * Zapis od razu (notifyNow). Domyślnie Filament kolejkuje to w "default", a ta kolejka czeka za pobieraniem portali.
+     */
     private function send(Notification $notification): void
     {
-        $users = User::all();
-
-        if ($users->isNotEmpty()) {
-            $notification->sendToDatabase($users);
+        foreach (User::all() as $user) {
+            $user->notifyNow($notification->toDatabase());
         }
     }
 }

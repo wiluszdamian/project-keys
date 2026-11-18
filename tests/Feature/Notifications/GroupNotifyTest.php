@@ -37,7 +37,7 @@ function groupMatch(Search $search, Listing $listing, ?int $score): void
 }
 
 it('przy kanale zbiorczym oferty czekają, także w pierwszym przebiegu, a panel dostaje powiadomienie od razu', function () {
-    Queue::fake([SendDigestJob::class, SendListingNotificationJob::class]);
+    Queue::fake();
     $listing = Listing::factory()->create(['deal_type' => 'rent']);
     groupMatch($this->second, $listing, 8);
 
