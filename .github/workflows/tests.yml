@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       # Testy łączą się z hostem "postgres" (phpunit.xml), więc baza i aplikacja są w jednej sieci Dockera.
       - name: Start PostgreSQL
@@ -28,7 +28,7 @@ jobs:
           done
 
       - name: Build app image
-        run: docker build --build-arg INSTALL_DEV=1 -t project-keys-app .
+        run: docker build --target app --build-arg INSTALL_DEV=1 -t project-keys-app .
 
       - name: Pint
         run: docker run --rm project-keys-app vendor/bin/pint --test

@@ -9,6 +9,7 @@ Prywatny serwis, który szuka mieszkań za ciebie.
 <p>
 <a href="#jak-to-działa"><b>Jak to działa</b></a> ·
 <a href="#uruchomienie"><b>Uruchomienie</b></a> ·
+<a href="#panel"><b>Panel</b></a> ·
 <a href="#codzienna-obsługa"><b>Codzienna obsługa</b></a> ·
 <a href="CONTRIBUTING.md"><b>Praca nad kodem</b></a>
 </p>
@@ -41,13 +42,13 @@ Postęp prac i podjęte decyzje: [`.planning/STATUS.md`](.planning/STATUS.md).
 
 | Usługa | Rola |
 |---|---|
-| `app` | PHP-FPM z API (Laravel, Sanctum) |
+| `app` | PHP-FPM: panel (Filament) i API (Sanctum) |
 | `worker` | kolejki `notify`, `scrape`, `default`: pobieranie portali i wysyłka |
 | `worker-ai` | kolejka `ai`, domyślnie 3 kopie (`AI_WORKERS`): ocena ofert |
 | `scheduler` | `schedule:work`: uruchamia wyszukiwania, sprząta kolejki, sprawdza alerty |
 | `postgres` | baza danych (PostgreSQL 17) |
 | `redis` | kolejki, cache, blokady |
-| `caddy` | serwer WWW przed `app` |
+| `caddy` | serwer WWW przed `app`, filtr adresów IP, pliki `public/` z obrazu aplikacji |
 
 ## Uruchomienie
 
@@ -86,11 +87,35 @@ repozytorium Dockera.
    docker compose exec app php artisan search:create
    ```
 
+6. Załóż konto do panelu:
+
+   ```bash
+   docker compose exec app php artisan make:filament-user
+   ```
+
+## Panel
+
+Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
+
+- **Wyszukiwania:** dodawanie, edycja, wstrzymanie i uruchomienie od razu.
+- **Oferty:** tabela z oceną AI, kosztem miesięcznym i filtrami. Strona oferty pokazuje ocenę
+  AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
+  oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
+- **Przebiegi:** każde pobranie portalu ze statusem i błędem.
+- **Ustawienia:** wszystko, co jest w `.env` i configu: częstotliwość i tempo pobierania,
+  lokalizacje Otodom, powiadomienia, webhooki Discorda, model i klucz AI. Wartość z panelu
+  wygrywa z `.env`. Zapis restartuje workery.
+
 > [!IMPORTANT]
-> Bez domeny Caddy słucha tylko na `127.0.0.1:8080`, więc API nie jest dostępne z internetu.
-> Z laptopa łączysz się tunelem: `ssh -L 8080:localhost:8080 <serwer>`, potem
-> `http://localhost:8080/api/health`. Z domeną ustaw `CADDY_DOMAIN`, `CADDY_HTTP_BIND=80` i
-> `CADDY_HTTPS_BIND=443`, a Caddy sam pobierze certyfikat.
+> Bez domeny są dwie możliwości:
+> - `CADDY_HTTP_BIND=127.0.0.1:8080` (domyślnie): nic nie jest dostępne z internetu, łączysz się
+>   tunelem `ssh -L 8080:localhost:8080 <serwer>` i otwierasz `http://localhost:8080`.
+> - `CADDY_HTTP_BIND=0.0.0.0:80`: panel i API są pod `http://<IP serwera>`, ale Caddy wpuszcza
+>   tylko adresy z `PANEL_ALLOWED_IPS` (spacja między adresami). Pozostali dostają 403. Połączenie
+>   nie jest szyfrowane, więc to rozwiązanie na chwilę, do czasu domeny.
+>
+> Z domeną ustaw `CADDY_DOMAIN`, `CADDY_HTTP_BIND=80` i `CADDY_HTTPS_BIND=443`, a Caddy sam
+> pobierze certyfikat.
 
 ## Codzienna obsługa
 

@@ -9,7 +9,7 @@ Aktualizuje Claude Code po każdej fazie.
 - CPU / RAM / dysk: 4 vCPU AMD EPYC, 7.8 GB RAM, 99 GB dysk, swap 2 GB
 - System: Debian 13 (trixie), kernel 6.12
 - Docker / Compose: Docker 29.10.0, Compose v5.8.0
-- Domena: na razie brak, API przez tunel `ssh -L 8080:localhost:8080 project-keys`
+- Domena: na razie brak. Panel i API pod `http://155.133.197.67` tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Tunel SSH dalej działa: `ssh -L 8080:localhost:80 project-keys`
 
 ## Postęp
 
@@ -23,7 +23,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 5 Harmonogram | gotowe | 2026-11-17 | Pierwszy automatyczny przebieg 21:13: Otodom 109, OLX 120 ofert. Testy na Postgresie (`scripts/test.sh`) |
 | 6 AI | gotowe | 2026-11-17 | 143 testy. Prawdziwe wywołanie: 12,7 s, ok. 1750 tokenów na ofertę. AI włączone na serwerze |
 | 7 Powiadomienia | w trakcie | 2026-11-17 | Discord gotowy (przed fazą 6, na prośbę właściciela). Telegram do zrobienia |
-| 8 Utrwalenie | w toku | | README, CONTRIBUTING i testy w GitHub Actions gotowe. Zostały backup, `deploy.sh` i przegląd po 24 h |
+| 8 Utrwalenie | do zrobienia | | |
 
 ## Decyzje
 
@@ -73,9 +73,13 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Podsumowanie pokazuje tylko oferty z oceną od `min_score_to_notify` (i bez oceny, gdy AI zawiodło). W nagłówku liczba wszystkich i liczba dobrych.
 - 2026-11-18: Otodom: klucz oferty to kod z końca adresu (np. `ID4E1rD`), nie liczbowe `id`. Wyróżnione ogłoszenia mają tymczasowe id (np. 9000062325), wspólne dla różnych ofert. Aplikacja brała je za jedną ofertę, której cena skakała od 2400 do 554 894 zł, i co 20 minut wysyłała „obniżkę ceny”. Migracja przepisała klucze, oferty z id 9000… zostały ze starym kluczem.
 - 2026-11-18: Jedna oferta idzie na Discorda raz, nawet gdy pasuje do kilku wyszukiwań albo ma duplikat z drugiego portalu (`notify_skipped_reason = already_sent`, bez drugiej oceny AI). Obniżka ceny idzie tylko przy nowej najniższej cenie i raz na ofertę.
+- 2026-11-18: Panel Filament 5 pod `/admin`, prośba właściciela. Na razie bez domeny: port 80 otwarty (`CADDY_HTTP_BIND=0.0.0.0:80`), ale Caddy wpuszcza tylko `PANEL_ALLOWED_IPS` (IP właściciela) i sieci prywatne (tunel SSH). Port tylko na IPv4, żeby Docker nie podmieniał adresu klienta. Domena, HTTPS i 2FA później.
+- 2026-11-18: Ustawienia z panelu (tabela `settings`) nadpisują config i `.env`. W bazie tylko wartości różne od domyślnych. Sekrety (webhooki, klucz AI) zaszyfrowane `APP_KEY` i nigdy nie wracają do formularza. Właściciel chciał mieć wszystko do ustawienia w panelu. Zapis robi `queue:restart`, bo workery czytają config przy starcie.
+- 2026-11-18: Statusy ofert w panelu (ulubiona, kontakt, oglądanie, odrzucona) i notatka. Odrzucona nie daje powiadomień ani obniżek ceny.
+- 2026-11-18: Caddy ma własny obraz (`target: web`) z `public/` skopiowanym z obrazu aplikacji. Filament publikuje CSS i JS przy budowaniu, więc pliki zawsze pasują do kodu.
 
 ## Otwarte pytania
 
 - Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji? Dokumentacja: Go jest „dla OpenCode i innych agentów do kodowania”, ruch jest monitorowany. Ocena ogłoszeń to nie jest ruch agenta do kodowania. Alternatywa zgodna z warunkami: pay-as-you-go (`https://opencode.ai/inference/openai/v1`, płatne z kredytów) albo bezpośrednie API DeepSeek.
-- Domena dla HTTPS.
+- Domena dla HTTPS i 2FA w panelu. Do tego czasu panel działa po HTTP tylko z IP właściciela.
 - Duplikaty po cenie i metrażu mogą się mylić: dwa różne ogłoszenia OLX (2400 zł, 63 m2) wskazały tę samą ofertę Otodom (2390 zł, 63,9 m2). Można zaostrzyć regułę, np. wymagać tej samej liczby pokoi.

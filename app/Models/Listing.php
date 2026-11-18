@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DealType;
+use App\Enums\ListingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -21,6 +22,7 @@ class Listing extends Model
     {
         return [
             'deal_type' => DealType::class,
+            'status' => ListingStatus::class,
             'area' => 'decimal:2',
             'is_private_owner' => 'boolean',
             'raw' => 'array',

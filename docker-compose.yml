@@ -1,6 +1,7 @@
 x-app: &app
   build:
     context: .
+    target: app
     args:
       INSTALL_DEV: ${INSTALL_DEV:-0}
   image: project-keys-app
@@ -67,19 +68,24 @@ services:
     logging: *logging
 
   caddy:
-    image: caddy:2
+    build:
+      context: .
+      target: web
+      args:
+        INSTALL_DEV: ${INSTALL_DEV:-0}
+    image: project-keys-web
     restart: unless-stopped
     depends_on:
       - app
     environment:
       CADDY_DOMAIN: ${CADDY_DOMAIN:-:80}
+      # Adresy IP z dostępem (spacja między adresami). Sieci prywatne zawsze: tunel SSH i ruch z serwera.
+      PANEL_ALLOWED_IPS: ${PANEL_ALLOWED_IPS:-127.0.0.1}
     ports:
-      # Bez domeny tylko localhost, dostęp przez tunel SSH.
+      # Bez domeny: 127.0.0.1:8080 (tylko tunel SSH) albo 0.0.0.0:80 (z internetu, tylko z PANEL_ALLOWED_IPS).
       - "${CADDY_HTTP_BIND:-127.0.0.1:8080}:80"
       - "${CADDY_HTTPS_BIND:-127.0.0.1:8443}:443"
     volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./public:/var/www/html/public:ro
       - caddy_data:/data
       - caddy_config:/config
     logging: *logging

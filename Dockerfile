@@ -1,4 +1,4 @@
-FROM php:8.5-fpm
+FROM php:8.5-fpm AS app
 
 # Biblioteki systemowe potrzebne do rozszerzeń PHP
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,3 +29,8 @@ RUN composer dump-autoload --optimize \
 
 USER www-data
 CMD ["php-fpm"]
+
+# Caddy z plikami public/ z obrazu aplikacji (CSS i JS Filamenta pasują wtedy do kodu)
+FROM caddy:2 AS web
+COPY docker/Caddyfile /etc/caddy/Caddyfile
+COPY --from=app /var/www/html/public /var/www/html/public

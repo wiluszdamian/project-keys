@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Enums\ListingStatus;
 use App\Events\ListingPriceChanged;
 use App\Models\ListingPriceChange;
 use App\Notifications\Notifier;
@@ -25,6 +26,7 @@ class SendPriceDropNotification implements ShouldQueue
         return config('notify.price_drops')
             && $event->newPrice < $event->oldPrice
             && $event->listing->duplicate_of_id === null
+            && $event->listing->status !== ListingStatus::Rejected
             && DB::table('search_listing')
                 ->where('search_id', $event->search->id)
                 ->where('listing_id', $event->listing->id)

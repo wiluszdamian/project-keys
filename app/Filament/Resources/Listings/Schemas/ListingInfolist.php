@@ -1,0 +1,180 @@
+<?php
+
+namespace App\Filament\Resources\Listings\Schemas;
+
+use App\Filament\Support\Format;
+use App\Models\Listing;
+use App\Models\ListingAnalysis;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+
+class ListingInfolist
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->columns(3)
+            ->components([
+                Section::make('Oferta')
+                    ->columnSpan(2)
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('title')
+                            ->hiddenLabel()
+                            ->size('lg')
+                            ->weight('bold')
+                            ->columnSpanFull(),
+                        TextEntry::make('url')
+                            ->hiddenLabel()
+                            ->formatStateUsing(fn (Listing $record) => 'Otwórz ogłoszenie na '.($record->portal === 'olx' ? 'OLX' : 'Otodom'))
+                            ->url(fn (Listing $record) => $record->url, shouldOpenInNewTab: true)
+                            ->color('primary')
+                            ->icon('heroicon-o-arrow-top-right-on-square')
+                            ->columnSpanFull(),
+                        TextEntry::make('price')
+                            ->label(fn (Listing $record) => $record->deal_type->value === 'rent' ? 'Najem' : 'Cena')
+                            ->formatStateUsing(fn ($state) => Format::pln($state))
+                            ->placeholder('nie podano'),
+                        TextEntry::make('rent_extra')
+                            ->label('Czynsz')
+                            ->formatStateUsing(fn ($state) => Format::pln($state))
+                            ->placeholder('nie podano'),
+                        TextEntry::make('price_per_m2')
+                            ->label('Cena za m²')
+                            ->formatStateUsing(fn ($state) => Format::pln($state))
+                            ->placeholder('-'),
+                        TextEntry::make('area')
+                            ->label('Metraż')
+                            ->formatStateUsing(fn ($state) => rtrim(rtrim((string) $state, '0'), '.').' m²')
+                            ->placeholder('-'),
+                        TextEntry::make('rooms')
+                            ->label('Pokoje')
+                            ->placeholder('-'),
+                        TextEntry::make('floor')
+                            ->label('Piętro')
+                            ->placeholder('-'),
+                        TextEntry::make('city')
+                            ->label('Lokalizacja')
+                            ->state(fn (Listing $record) => collect([$record->city, $record->district, $record->street])->filter()->unique()->implode(' · '))
+                            ->columnSpan(2),
+                        TextEntry::make('is_private_owner')
+                            ->label('Ogłoszeniodawca')
+                            ->formatStateUsing(fn ($state) => $state ? 'osoba prywatna' : 'agencja / firma')
+                            ->placeholder('nie wiadomo'),
+                        TextEntry::make('first_seen_at')
+                            ->label('Znaleziona')
+                            ->dateTime('d.m.Y H:i'),
+                        TextEntry::make('last_seen_at')
+                            ->label('Ostatnio na portalu')
+                            ->dateTime('d.m.Y H:i'),
+                        TextEntry::make('searches.name')
+                            ->label('Pasuje do')
+                            ->badge(),
+                    ]),
+
+                Grid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        ImageEntry::make('image_url')
+                            ->hiddenLabel()
+                            ->imageWidth('100%')
+                            ->imageHeight('auto')
+                            ->extraImgAttributes(['class' => 'rounded-lg'])
+                            ->visible(fn (Listing $record) => filled($record->image_url)),
+                        Section::make('Twój status')
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->hiddenLabel()
+                                    ->badge()
+                                    ->placeholder('Brak statusu'),
+                                TextEntry::make('note')
+                                    ->hiddenLabel()
+                                    ->placeholder('Bez notatki'),
+                            ]),
+                    ]),
+
+                Section::make('Ocena AI')
+                    ->columnSpanFull()
+                    ->schema([
+                        RepeatableEntry::make('analyses')
+                            ->hiddenLabel()
+                            ->placeholder('Brak oceny AI (AI wyłączone albo błąd).')
+                            ->columns(4)
+                            ->schema([
+                                TextEntry::make('score')
+                                    ->label(fn (?ListingAnalysis $record) => 'Ocena: '.($record?->search?->name ?? 'wyszukiwanie'))
+                                    ->badge()
+                                    ->size('lg')
+                                    ->color(fn ($state) => Format::scoreColor($state))
+                                    ->formatStateUsing(fn ($state) => "{$state}/10"),
+                                TextEntry::make('monthly_cost')
+                                    ->label('Koszt miesięczny')
+                                    ->formatStateUsing(fn ($state) => Format::pln($state))
+                                    ->placeholder('nie wiadomo'),
+                                TextEntry::make('sub_scores')
+                                    ->label('Oceny cząstkowe')
+                                    ->state(fn (ListingAnalysis $record) => collect([
+                                        'cost' => 'Koszt',
+                                        'location' => 'Lokalizacja',
+                                        'standard' => 'Standard',
+                                        'fit' => 'Dopasowanie',
+                                    ])->filter(fn ($label, $key) => isset($record->sub_scores[$key]))
+                                        ->map(fn ($label, $key) => "{$label} {$record->sub_scores[$key]}")
+                                        ->values()->all())
+                                    ->badge()
+                                    ->color('gray')
+                                    ->columnSpan(2),
+                                TextEntry::make('summary')
+                                    ->label('Podsumowanie')
+                                    ->columnSpanFull(),
+                                TextEntry::make('cost_breakdown.note')
+                                    ->label('Koszt: szczegóły')
+                                    ->placeholder('-')
+                                    ->columnSpanFull(),
+                                TextEntry::make('pros')
+                                    ->label('Plusy')
+                                    ->listWithLineBreaks()
+                                    ->bulleted()
+                                    ->placeholder('-')
+                                    ->columnSpan(2),
+                                TextEntry::make('red_flags')
+                                    ->label('Uwaga')
+                                    ->listWithLineBreaks()
+                                    ->bulleted()
+                                    ->color('danger')
+                                    ->placeholder('-')
+                                    ->columnSpan(2),
+                            ]),
+                    ]),
+
+                Section::make('Historia cen')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Listing $record) => $record->priceChanges()->exists())
+                    ->schema([
+                        RepeatableEntry::make('priceChanges')
+                            ->hiddenLabel()
+                            ->columns(3)
+                            ->schema([
+                                TextEntry::make('changed_at')->label('Kiedy')->dateTime('d.m.Y H:i'),
+                                TextEntry::make('old_price')->label('Było')->formatStateUsing(fn ($state) => Format::pln($state)),
+                                TextEntry::make('new_price')->label('Jest')->formatStateUsing(fn ($state) => Format::pln($state)),
+                            ]),
+                    ]),
+
+                Section::make('Opis z ogłoszenia')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->schema([
+                        TextEntry::make('description')
+                            ->hiddenLabel()
+                            ->placeholder('Portal nie podał opisu.')
+                            ->extraAttributes(['class' => 'whitespace-pre-line']),
+                    ]),
+            ]);
+    }
+}

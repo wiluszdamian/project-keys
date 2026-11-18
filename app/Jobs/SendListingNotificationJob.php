@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\ListingStatus;
 use App\Models\Listing;
 use App\Models\Search;
 use App\Notifications\Notifier;
@@ -30,6 +31,12 @@ class SendListingNotificationJob implements ShouldQueue
 
         // notified_at dopiero po udanej wysyłce, żeby nie dublować i nie gubić.
         if ((clone $row)->whereNotNull('notified_at')->exists()) {
+            return;
+        }
+
+        if ($this->listing->status === ListingStatus::Rejected) {
+            $row->update(['notify_skipped_reason' => 'rejected']);
+
             return;
         }
 

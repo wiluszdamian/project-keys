@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\AppSettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Ustawienia z panelu nadpisują config. Workery czytają je przy starcie, zapis w panelu je restartuje.
+        AppSettings::apply();
+
         // 60 zapytań na minutę na token (bez tokenu: na adres IP).
         RateLimiter::for('api', function (Request $request) {
             $key = $request->user()?->currentAccessToken()?->id ?? $request->ip();

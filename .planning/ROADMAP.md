@@ -88,12 +88,12 @@ Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną po
 
 ## Faza 8: utrwalenie
 
-Status: w toku
+Status: do zrobienia
 
 - Backup i `restore.sh` z testem przywracania.
 - `deploy.sh`.
 - Przegląd logów i błędów po 24 h działania, poprawki.
-- ✅ README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować. Do tego `CONTRIBUTING.md` i workflow z testami na GitHubie (`.github/workflows/tests.yml`).
+- README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować.
 
 Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się przywrócić.
 
@@ -101,5 +101,5 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 
 - Morizon, Gratka.
 - Playwright jako osobna usługa, tylko jeśli któryś portal tego wymaga.
-- Prosty panel www (np. Filament) do przeglądania ofert.
+- ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Dostęp po IP serwera tylko z adresów z `PANEL_ALLOWED_IPS`, do czasu domeny z HTTPS i 2FA.
 - Oznaczanie ofert z Telegrama przyciskami („ciekawe”, „odrzuć”), żeby AI uczyło się preferencji z przykładów.

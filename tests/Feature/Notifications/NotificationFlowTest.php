@@ -291,3 +291,17 @@ it('cena skacząca w górę i w dół daje jedną wiadomość o obniżce', funct
     $change(2700, 2500);
     Http::assertSentCount(2);
 });
+
+it('odrzucona oferta nie daje powiadomień', function () {
+    Http::fake([HOOK => Http::response('', 204)]);
+    [$id] = matchListings($this->search, 1);
+    Listing::whereKey($id)->update(['status' => 'rejected']);
+
+    SendListingNotificationJob::dispatchSync($this->search, Listing::find($id));
+    expect(pivot($this->search, $id)->notify_skipped_reason)->toBe('rejected');
+
+    DB::table('search_listing')->where('listing_id', $id)->update(['notified_at' => now()]);
+    ListingPriceChanged::dispatch($this->search, Listing::find($id), 3000, 2500);
+
+    Http::assertNothingSent();
+});

@@ -1,6 +1,10 @@
-# Bez domeny CADDY_DOMAIN=":80" i port tylko na 127.0.0.1 (tunel SSH).
-# Z domeną CADDY_DOMAIN=twoja-domena.pl i Caddy sam pobierze certyfikat.
+# Bez domeny CADDY_DOMAIN=":80". Z domeną CADDY_DOMAIN=twoja-domena.pl i Caddy sam pobierze certyfikat.
 {$CADDY_DOMAIN::80} {
+	# Dostęp tylko z PANEL_ALLOWED_IPS i sieci prywatnych (tunel SSH, kontenery).
+	# Port wystawiony tylko na IPv4 (0.0.0.0:80), więc adres klienta z internetu dochodzi tu bez zmian.
+	@denied not remote_ip {$PANEL_ALLOWED_IPS:127.0.0.1} private_ranges
+	respond @denied "Brak dostępu" 403
+
 	root * /var/www/html/public
 	encode zstd gzip
 	php_fastcgi app:9000
