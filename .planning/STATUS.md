@@ -71,6 +71,8 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-17: Osobne workery: `worker` (notify, scrape, default) i `worker-ai` w 3 kopiach (`AI_WORKERS`). Ocena idzie równolegle w batchu, a nie w łańcuchu. Wcześniej jeden worker oceniał 130 ofert po kolei (ok. 45 min) i w tym czasie nie pobierał portali.
 - 2026-11-17: AI: `reasoning_effort=low` (`AI_REASONING_EFFORT`) i timeout 120 s. Przy domyślnym rozumowaniu część odpowiedzi trwała ponad 60 s i kończyła się błędem połączenia. Sprawdzenie pustego kosztu tylko dla wynajmu: przy sprzedaży koszt to sam czynsz i bywa nieznany.
 - 2026-11-17: Podsumowanie pokazuje tylko oferty z oceną od `min_score_to_notify` (i bez oceny, gdy AI zawiodło). W nagłówku liczba wszystkich i liczba dobrych.
+- 2026-11-18: Otodom: klucz oferty to kod z końca adresu (np. `ID4E1rD`), nie liczbowe `id`. Wyróżnione ogłoszenia mają tymczasowe id (np. 9000062325), wspólne dla różnych ofert. Aplikacja brała je za jedną ofertę, której cena skakała od 2400 do 554 894 zł, i co 20 minut wysyłała „obniżkę ceny”. Migracja przepisała klucze, oferty z id 9000… zostały ze starym kluczem.
+- 2026-11-18: Jedna oferta idzie na Discorda raz, nawet gdy pasuje do kilku wyszukiwań albo ma duplikat z drugiego portalu (`notify_skipped_reason = already_sent`, bez drugiej oceny AI). Obniżka ceny idzie tylko przy nowej najniższej cenie i raz na ofertę.
 
 ## Otwarte pytania
 
