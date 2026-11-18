@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\DealType;
+use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
 use App\Models\Search;
 use Illuminate\Foundation\Http\FormRequest;
@@ -59,6 +60,10 @@ class SearchRequest extends FormRequest
             'notify_channels.*' => ['distinct', Rule::in(config('notify.channels'))],
             'min_score_to_notify' => ['sometimes', 'integer', 'min:1', 'max:10'],
             'is_active' => ['sometimes', 'boolean'],
+            'notify_enabled' => ['sometimes', 'boolean'],
+            'notify_mode' => ['sometimes', Rule::enum(NotifyMode::class)],
+            'notify_every_hours' => ['nullable', 'integer', 'min:1', 'max:72', 'required_if:notify_mode,every_hours'],
+            'notify_daily_at' => ['nullable', 'date_format:H:i', 'required_if:notify_mode,daily'],
         ];
     }
 

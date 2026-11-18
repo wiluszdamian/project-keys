@@ -18,9 +18,11 @@ Wszystkie odpowiedzi JSON. Prefiks `/api`.
 | GET | /listings/{id} | szczegóły oferty, historia cen, oceny |
 | GET | /scrape-runs | ostatnie przebiegi, filtry `portal`, `status`, `search_id` |
 
+Powiadomienia w wyszukiwaniu: `notify_enabled` (bool), `notify_mode` (`instant`, `every_hours`, `daily`), `notify_every_hours` (1 do 72, wymagane przy `every_hours`), `notify_daily_at` (`HH:MM`, wymagane przy `daily`), `min_score_to_notify`.
+
 Limity: 60 zapytań na minutę na token.
 
-Dostęp: API słucha tylko na `127.0.0.1:8080` na serwerze, z zewnątrz przez tunel SSH. Wszystko poza `/health` wymaga tokenu.
+Dostęp: `http://155.133.197.67` tylko z adresów z `PANEL_ALLOWED_IPS`, albo tunel SSH. Wszystko poza `/health` wymaga tokenu. Ten sam adres obsługuje panel `/admin`.
 
 Wszystkie endpointy działają (fazy 2 i 5).
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Listings\Tables;
 use App\Enums\DealType;
 use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
+use App\Filament\Support\ListingFilters;
 use App\Models\Listing;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -42,6 +43,9 @@ class ListingsTable
                     ->wrap()
                     ->lineClamp(2)
                     ->description(fn (Listing $record) => collect([$record->city, $record->district, $record->street])->filter()->unique()->implode(' · ')),
+                TextColumn::make('deal_type')
+                    ->label('Rodzaj')
+                    ->badge(),
                 TextColumn::make('analyses_max_score')
                     ->label('Ocena')
                     ->badge()
@@ -61,7 +65,7 @@ class ListingsTable
                     ->toggleable(),
                 TextColumn::make('area')
                     ->label('Metraż')
-                    ->formatStateUsing(fn ($state) => rtrim(rtrim((string) $state, '0'), '.').' m²')
+                    ->formatStateUsing(fn ($state) => Format::area($state))
                     ->description(fn (Listing $record) => $record->price_per_m2 ? Format::pln($record->price_per_m2).'/m²' : null)
                     ->sortable(),
                 TextColumn::make('rooms')
@@ -83,6 +87,7 @@ class ListingsTable
                     ->sortable(),
             ])
             ->filters([
+                ListingFilters::aboveThreshold(),
                 SelectFilter::make('search')
                     ->label('Wyszukiwanie')
                     ->relationship('searches', 'name'),
@@ -116,6 +121,7 @@ class ListingsTable
                     ->query(fn (Builder $query) => $query->whereNull('duplicate_of_id')),
             ])
             ->filtersFormColumns(2)
+            ->persistFiltersInSession()
             ->recordActions([
                 Action::make('open')
                     ->label('Ogłoszenie')

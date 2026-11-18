@@ -57,7 +57,7 @@ class DiscordMessages
      *
      * @param  Collection<int, Listing>  $listings  oferty do pokazania (najwyżej 10)
      */
-    public function digest(Search $search, Collection $listings, int $total, bool $firstRun, ?int $qualifying = null): array
+    public function digest(Search $search, Collection $listings, int $total, bool $firstRun, ?int $qualifying = null, ?string $period = null): array
     {
         $lines = $listings->map(function (Listing $listing) {
             $score = $listing->getAttribute('score');
@@ -74,9 +74,11 @@ class DiscordMessages
             ]));
         });
 
-        $heading = $firstRun
-            ? "Pierwszy przebieg: {$total} ".$this->offersWord($total).' pasuje do filtrów'
-            : "{$total} nowych ".$this->offersWord($total, genitive: true).' w jednym przebiegu';
+        $heading = match (true) {
+            $period !== null => "{$period}: {$total} nowych ".$this->offersWord($total, genitive: true)." z oceną od {$search->min_score_to_notify}",
+            $firstRun => "Pierwszy przebieg: {$total} ".$this->offersWord($total).' pasuje do filtrów',
+            default => "{$total} nowych ".$this->offersWord($total, genitive: true).' w jednym przebiegu',
+        };
 
         $shown = $qualifying ?? $total;
 
@@ -85,11 +87,11 @@ class DiscordMessages
         }
 
         $more = $shown > $listings->count()
-            ? "\n\nPokazuję {$listings->count()} najlepszych z {$shown}. Reszta w bazie: `search:list`, API `/api/searches/{$search->id}/listings`."
+            ? "\n\nPokazuję {$listings->count()} najlepszych z {$shown}. Wszystkie w panelu: ".rtrim(config('app.url'), '/')."/admin/listings?filters[search][value]={$search->id}"
             : '';
 
         if ($listings->isEmpty()) {
-            $lines = collect(["Żadna oferta nie dostała oceny od {$search->min_score_to_notify}. Nowe dobre oferty przyjdą osobno."]);
+            $lines = collect(["Żadna oferta nie dostała oceny od {$search->min_score_to_notify}.".($period === null ? ' Nowe dobre oferty przyjdą osobno.' : '')]);
         }
 
         return ['embeds' => [[

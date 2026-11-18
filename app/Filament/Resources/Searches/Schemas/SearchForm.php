@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Searches\Schemas;
 
 use App\Enums\DealType;
+use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
 use Closure;
 use Filament\Forms\Components\CheckboxList;
@@ -10,6 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -68,7 +70,7 @@ class SearchForm
                         ...self::range('rooms', 'Pokoje', null, min: 1, max: 20),
                     ]),
 
-                Section::make('Portale, AI i powiadomienia')
+                Section::make('Portale i AI')
                     ->columns(2)
                     ->schema([
                         CheckboxList::make('portals')
@@ -81,25 +83,9 @@ class SearchForm
                             ->default(config('scrapers.portals'))
                             ->required()
                             ->live(),
-                        CheckboxList::make('notify_channels')
-                            ->label('Powiadomienia')
-                            ->options(collect(config('notify.channels'))->mapWithKeys(fn ($channel) => [$channel => match ($channel) {
-                                'discord' => 'Discord',
-                                'telegram' => 'Telegram (jeszcze nie działa)',
-                                default => $channel,
-                            }])->all())
-                            ->default(['discord'])
-                            ->required(),
-                        TextInput::make('min_score_to_notify')
-                            ->label('Minimalna ocena AI do powiadomienia')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(10)
-                            ->default(6)
-                            ->required()
-                            ->suffix('/ 10'),
                         Toggle::make('is_active')
-                            ->label('Aktywne')
+                            ->label('Wyszukiwanie aktywne')
+                            ->helperText('Wyłączone: portale nie są sprawdzane.')
                             ->default(true)
                             ->inline(false),
                         Textarea::make('ai_preferences')
@@ -110,7 +96,75 @@ class SearchForm
                             ->maxLength(2000)
                             ->columnSpanFull(),
                     ]),
+
+                Section::make('Powiadomienia')
+                    ->columns(2)
+                    ->schema([
+                        Toggle::make('notify_enabled')
+                            ->label('Wysyłaj powiadomienia')
+                            ->helperText('Wyłączone: oferty dalej są pobierane i oceniane, widzisz je tylko w panelu.')
+                            ->default(true)
+                            ->live()
+                            ->inline(false)
+                            ->columnSpanFull(),
+                        CheckboxList::make('notify_channels')
+                            ->label('Kanały')
+                            ->options(collect(config('notify.channels'))->mapWithKeys(fn ($channel) => [$channel => match ($channel) {
+                                'discord' => 'Discord',
+                                'telegram' => 'Telegram (jeszcze nie działa)',
+                                default => $channel,
+                            }])->all())
+                            ->default(['discord'])
+                            ->required()
+                            ->visible(fn (Get $get) => $get('notify_enabled'))
+                            ->dehydratedWhenHidden(),
+                        TextInput::make('min_score_to_notify')
+                            ->label('Wysyłaj oferty z oceną AI od')
+                            ->helperText('Słabsze oferty są tylko w panelu.')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(10)
+                            ->default(6)
+                            ->required()
+                            ->suffix('/ 10')
+                            ->visible(fn (Get $get) => $get('notify_enabled'))
+                            ->dehydratedWhenHidden(),
+                        Select::make('notify_mode')
+                            ->label('Jak często')
+                            ->options(NotifyMode::class)
+                            ->default(NotifyMode::Instant->value)
+                            ->required()
+                            ->native(false)
+                            ->live()
+                            ->helperText(fn (Get $get) => match (self::modeValue($get('notify_mode'))) {
+                                NotifyMode::Instant->value => 'Każda dobra oferta osobno. Gdy w jednym przebiegu jest ich dużo, przychodzi jedno podsumowanie.',
+                                default => 'Dobre oferty czekają i przychodzą razem w jednym podsumowaniu. Obniżki cen dalej od razu.',
+                            })
+                            ->visible(fn (Get $get) => $get('notify_enabled'))
+                            ->dehydratedWhenHidden(),
+                        TextInput::make('notify_every_hours')
+                            ->label('Co ile godzin')
+                            ->integer()
+                            ->minValue(1)
+                            ->maxValue(72)
+                            ->default(3)
+                            ->suffix('h')
+                            ->required(fn (Get $get) => self::modeValue($get('notify_mode')) === NotifyMode::EveryHours->value)
+                            ->visible(fn (Get $get) => $get('notify_enabled') && self::modeValue($get('notify_mode')) === NotifyMode::EveryHours->value),
+                        TimePicker::make('notify_daily_at')
+                            ->label('O której godzinie')
+                            ->seconds(false)
+                            ->format('H:i')
+                            ->default('20:00')
+                            ->required(fn (Get $get) => self::modeValue($get('notify_mode')) === NotifyMode::Daily->value)
+                            ->visible(fn (Get $get) => $get('notify_enabled') && self::modeValue($get('notify_mode')) === NotifyMode::Daily->value),
+                    ]),
             ]);
+    }
+
+    private static function modeValue(mixed $mode): ?string
+    {
+        return $mode instanceof NotifyMode ? $mode->value : $mode;
     }
 
     /**

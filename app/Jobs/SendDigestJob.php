@@ -23,7 +23,7 @@ class SendDigestJob implements ShouldQueue
     /**
      * @param  list<int>  $listingIds
      */
-    public function __construct(public Search $search, public array $listingIds, public bool $firstRun)
+    public function __construct(public Search $search, public array $listingIds, public bool $firstRun, public ?string $period = null)
     {
         $this->onQueue('notify');
     }
@@ -55,10 +55,10 @@ class SendDigestJob implements ShouldQueue
             ->where(fn ($query) => $query->whereNull('listing_analyses.score')->orWhere('listing_analyses.score', '>=', $minScore))
             ->count();
 
-        $notifier->digest($this->search, $top, count($this->listingIds), $this->firstRun, $qualifying);
+        $notifier->digest($this->search, $top, count($this->listingIds), $this->firstRun, $qualifying, $this->period);
 
         $rows = DB::table('search_listing')->where('search_id', $this->search->id);
-        (clone $rows)->whereIn('listing_id', $top->modelKeys())->update(['notified_at' => now()]);
+        (clone $rows)->whereIn('listing_id', $top->modelKeys())->update(['notified_at' => now(), 'notify_skipped_reason' => null]);
         (clone $rows)->whereIn('listing_id', array_diff($this->listingIds, $top->modelKeys()))
             ->whereNull('notified_at')
             ->update(['notify_skipped_reason' => 'digest']);

@@ -11,6 +11,11 @@ class Format
         return $value === null || $value === '' ? null : Number::format((float) $value, locale: 'pl').' zł';
     }
 
+    public static function area(int|float|string|null $value): ?string
+    {
+        return $value === null || $value === '' ? null : Number::format((float) $value, maxPrecision: 2, locale: 'pl').' m²';
+    }
+
     public static function scoreColor(?int $score): string
     {
         return match (true) {

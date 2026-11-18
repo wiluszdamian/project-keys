@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\NotifyMode;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
@@ -50,12 +51,6 @@ class NotifyRunResultsJob implements ShouldQueue
             return;
         }
 
-        if (! $notifier->canNotify($search)) {
-            $this->skip($pendingIds->all(), 'no_channel');
-
-            return;
-        }
-
         if (! $this->analyzed && ListingScorer::isEnabled()) {
             $jobs = Listing::whereKey($pendingIds)->orderBy('id')->get()
                 ->map(fn (Listing $listing) => new AnalyzeListingJob($search, $listing))
@@ -79,19 +74,38 @@ class NotifyRunResultsJob implements ShouldQueue
             return;
         }
 
+        // Ocena AI idzie zawsze (wyniki są w panelu), wysyłka tylko przy włączonych powiadomieniach.
+        if (! $search->notify_enabled) {
+            $this->skip($pendingIds->all(), 'notifications_off');
+
+            return;
+        }
+
+        if (! $notifier->canNotify($search)) {
+            $this->skip($pendingIds->all(), 'no_channel');
+
+            return;
+        }
+
+        // Tryb zbiorczy: dobre oferty czekają na podsumowanie (notify:send-scheduled).
+        if (! $this->firstRun && $search->notify_mode !== NotifyMode::Instant) {
+            foreach ($this->belowThreshold($pendingIds) as $listingId => $below) {
+                $this->skip([$listingId], $below ? 'below_threshold' : 'scheduled');
+            }
+
+            return;
+        }
+
         if ($this->firstRun || $pendingIds->count() > config('notify.digest_threshold')) {
             SendDigestJob::dispatch($search, $pendingIds->all(), $this->firstRun);
 
             return;
         }
 
-        $analyses = ListingAnalysis::where('search_id', $search->id)->whereIn('listing_id', $pendingIds)->get()->keyBy('listing_id');
+        $below = $this->belowThreshold($pendingIds);
 
         foreach (Listing::whereKey($pendingIds)->orderBy('first_seen_at')->get() as $listing) {
-            $analysis = $analyses->get($listing->id);
-
-            // Bez oceny (błąd AI) oferta idzie dalej z dopiskiem. Z oceną poniżej progu: pomijamy.
-            if ($analysis && $analysis->score < $search->min_score_to_notify) {
+            if ($below[$listing->id]) {
                 $this->skip([$listing->id], 'below_threshold');
 
                 continue;
@@ -99,6 +113,20 @@ class NotifyRunResultsJob implements ShouldQueue
 
             SendListingNotificationJob::dispatch($search, $listing);
         }
+    }
+
+    /**
+     * listing_id => czy ocena jest poniżej progu. Bez oceny (błąd AI) oferta idzie dalej z dopiskiem.
+     *
+     * @return array<int, bool>
+     */
+    private function belowThreshold($listingIds): array
+    {
+        $scores = ListingAnalysis::where('search_id', $this->search->id)->whereIn('listing_id', $listingIds)->pluck('score', 'listing_id');
+
+        return collect($listingIds)->mapWithKeys(fn ($id) => [
+            $id => $scores->has($id) && $scores[$id] < $this->search->min_score_to_notify,
+        ])->all();
     }
 
     private function pendingIds()

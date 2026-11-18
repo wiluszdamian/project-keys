@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Searches\Tables;
 
+use App\Enums\NotifyMode;
 use App\Filament\Resources\Listings\ListingResource;
 use App\Jobs\RunSearchJob;
 use App\Models\Search;
@@ -41,9 +42,15 @@ class SearchesTable
                 TextColumn::make('portals')
                     ->label('Portale')
                     ->badge(),
-                TextColumn::make('min_score_to_notify')
-                    ->label('Próg AI')
-                    ->suffix('/10'),
+                TextColumn::make('notify_mode')
+                    ->label('Powiadomienia')
+                    ->state(fn (Search $record) => ! $record->notify_enabled ? 'wyłączone' : match ($record->notify_mode) {
+                        NotifyMode::Instant => 'od razu',
+                        NotifyMode::EveryHours => 'co '.$record->notify_every_hours.' h',
+                        NotifyMode::Daily => 'codziennie '.$record->notify_daily_at,
+                    })
+                    ->description(fn (Search $record) => $record->notify_enabled ? "ocena od {$record->min_score_to_notify}/10" : null)
+                    ->color(fn (Search $record) => $record->notify_enabled ? null : 'gray'),
                 TextColumn::make('listings_count')
                     ->label('Oferty')
                     ->url(fn (Search $record) => ListingResource::getUrl('index', ['filters' => ['search' => ['value' => $record->id]]])),

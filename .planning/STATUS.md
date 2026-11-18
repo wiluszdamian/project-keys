@@ -77,6 +77,8 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-18: Ustawienia z panelu (tabela `settings`) nadpisują config i `.env`. W bazie tylko wartości różne od domyślnych. Sekrety (webhooki, klucz AI) zaszyfrowane `APP_KEY` i nigdy nie wracają do formularza. Właściciel chciał mieć wszystko do ustawienia w panelu. Zapis robi `queue:restart`, bo workery czytają config przy starcie.
 - 2026-11-18: Statusy ofert w panelu (ulubiona, kontakt, oglądanie, odrzucona) i notatka. Odrzucona nie daje powiadomień ani obniżek ceny.
 - 2026-11-18: Caddy ma własny obraz (`target: web`) z `public/` skopiowanym z obrazu aplikacji. Filament publikuje CSS i JS przy budowaniu, więc pliki zawsze pasują do kodu.
+- 2026-11-18: Powiadomienia ustawiane osobno dla każdego wyszukiwania (panel i API): włącz/wyłącz, kanały, próg oceny i częstotliwość: od razu, zbiorczo co N godzin albo raz dziennie o godzinie. W trybie zbiorczym dobre oferty dostają `notify_skipped_reason = scheduled` i czekają na `notify:send-scheduled` (co minutę). Pierwszy przebieg i obniżki cen idą od razu. Ocena AI działa także przy wyłączonych powiadomieniach, bo wyniki są w panelu.
+- 2026-11-18: Lista ofert i strona główna panelu domyślnie pokazują tylko oferty z oceną od progu wyszukiwania (przełącznik w filtrach, zapamiętywany w sesji). Kolumna Wynajem/Sprzedaż.
 
 ## Otwarte pytania
 

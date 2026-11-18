@@ -2,9 +2,10 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-enum DealType: string implements HasLabel
+enum DealType: string implements HasColor, HasLabel
 {
     case Rent = 'rent';
     case Sale = 'sale';
@@ -14,6 +15,14 @@ enum DealType: string implements HasLabel
         return match ($this) {
             self::Rent => 'Wynajem',
             self::Sale => 'Sprzedaż',
+        };
+    }
+
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Rent => 'info',
+            self::Sale => 'success',
         };
     }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
+use App\Filament\Support\ListingFilters;
 use App\Models\Listing;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -32,6 +33,10 @@ class BestNewListings extends TableWidget
             ->defaultSort('analyses_max_score', 'desc')
             ->paginated([10])
             ->recordUrl(fn (Listing $record) => route('filament.admin.resources.listings.view', $record))
+            ->filters([
+                ListingFilters::aboveThreshold(),
+            ])
+            ->persistFiltersInSession()
             ->columns([
                 ImageColumn::make('image_url')
                     ->label('')
@@ -43,6 +48,9 @@ class BestNewListings extends TableWidget
                     ->wrap()
                     ->lineClamp(2)
                     ->description(fn (Listing $record) => collect([$record->city, $record->district])->filter()->unique()->implode(' · ')),
+                TextColumn::make('deal_type')
+                    ->label('Rodzaj')
+                    ->badge(),
                 TextColumn::make('analyses_max_score')
                     ->label('Ocena')
                     ->badge()
@@ -58,7 +66,7 @@ class BestNewListings extends TableWidget
                     ->placeholder('-'),
                 TextColumn::make('area')
                     ->label('Metraż')
-                    ->formatStateUsing(fn ($state) => rtrim(rtrim((string) $state, '0'), '.').' m²'),
+                    ->formatStateUsing(fn ($state) => Format::area($state)),
                 TextColumn::make('first_seen_at')
                     ->label('Znaleziona')
                     ->since(),

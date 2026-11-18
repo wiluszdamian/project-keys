@@ -49,7 +49,7 @@ class ListingInfolist
                             ->placeholder('-'),
                         TextEntry::make('area')
                             ->label('Metraż')
-                            ->formatStateUsing(fn ($state) => rtrim(rtrim((string) $state, '0'), '.').' m²')
+                            ->formatStateUsing(fn ($state) => Format::area($state))
                             ->placeholder('-'),
                         TextEntry::make('rooms')
                             ->label('Pokoje')

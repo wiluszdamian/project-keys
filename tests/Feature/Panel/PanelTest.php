@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ListingStatus;
+use App\Enums\NotifyMode;
 use App\Filament\Resources\Listings\Pages\EditListing;
 use App\Filament\Resources\Listings\Pages\ListListings;
 use App\Filament\Resources\Searches\Pages\CreateSearch;
@@ -132,10 +133,11 @@ it('ustawia status oferty i domyślnie ukrywa odrzucone oraz duplikaty', functio
     [$keep, $reject] = Listing::factory()->count(2)->create();
     $duplicate = Listing::factory()->create(['duplicate_of_id' => $keep->id]);
 
-    Livewire::test(ListListings::class)->callTableAction('status_rejected', $reject);
+    Livewire::test(ListListings::class)->removeTableFilter('above_threshold')->callTableAction('status_rejected', $reject);
     expect($reject->fresh()->status)->toBe(ListingStatus::Rejected);
 
     Livewire::test(ListListings::class)
+        ->removeTableFilter('above_threshold')
         ->assertCanSeeTableRecords([$keep])
         ->assertCanNotSeeTableRecords([$reject, $duplicate]);
 
@@ -145,4 +147,35 @@ it('ustawia status oferty i domyślnie ukrywa odrzucone oraz duplikaty', functio
         ->assertHasNoFormErrors();
 
     expect($keep->fresh())->status->toBe(ListingStatus::Viewing)->note->toBe('sobota 12:00');
+});
+
+it('domyślnie pokazuje tylko oferty z oceną od progu wyszukiwania', function () {
+    $search = Search::factory()->create(['min_score_to_notify' => 6]);
+    [$good, $weak, $unscored] = Listing::factory()->count(3)->create();
+    ListingAnalysis::factory()->create(['listing_id' => $good->id, 'search_id' => $search->id, 'score' => 7]);
+    ListingAnalysis::factory()->create(['listing_id' => $weak->id, 'search_id' => $search->id, 'score' => 4]);
+
+    Livewire::test(ListListings::class)
+        ->assertCanSeeTableRecords([$good])
+        ->assertCanNotSeeTableRecords([$weak, $unscored])
+        ->removeTableFilter('above_threshold')
+        ->assertCanSeeTableRecords([$good, $weak, $unscored]);
+});
+
+it('zapisuje tryb powiadomień z formularza', function () {
+    $search = Search::factory()->create(['notify_channels' => ['discord']]);
+
+    Livewire::test(EditSearch::class, ['record' => $search->getRouteKey()])
+        ->fillForm(['notify_mode' => 'daily', 'notify_daily_at' => '19:30'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($search->fresh())->notify_mode->toBe(NotifyMode::Daily)->notify_daily_at->toBe('19:30');
+
+    Livewire::test(EditSearch::class, ['record' => $search->getRouteKey()])
+        ->fillForm(['notify_enabled' => false])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($search->fresh())->notify_enabled->toBeFalse()->notify_channels->toBe(['discord']);
 });
