@@ -5,6 +5,7 @@ use App\Models\CommutePlace;
 use App\Models\Listing;
 use App\Models\ListingCommute;
 use App\Services\Geo\CommuteCalculator;
+use App\Services\Geo\Geocoder;
 use App\Services\Geo\ListingLocator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -98,9 +99,9 @@ it('dojazdy są w danych oferty w API', function () {
 });
 
 it('upraszcza adres z ul. i kodem pocztowym, gdy pełny nie daje wyniku', function () {
-    expect(\App\Services\Geo\Geocoder::simplify('ul. Rejtana 36, 35-310 Rzeszów, Polska'))->toBe('Rejtana 36, Rzeszów, Polska');
+    expect(Geocoder::simplify('ul. Rejtana 36, 35-310 Rzeszów, Polska'))->toBe('Rejtana 36, Rzeszów, Polska');
 
     Http::fake(['nominatim.openstreetmap.org/*' => Http::sequence()->push([])->push([['lat' => '50.02059', 'lon' => '22.01572', 'display_name' => 'Rejtana 36']])]);
 
-    expect(app(\App\Services\Geo\Geocoder::class)->geocode('ul. Rejtana 36, 35-310 Rzeszów, Polska'))->toMatchArray(['lat' => 50.02059, 'lng' => 22.01572]);
+    expect(app(Geocoder::class)->geocode('ul. Rejtana 36, 35-310 Rzeszów, Polska'))->toMatchArray(['lat' => 50.02059, 'lng' => 22.01572]);
 });
