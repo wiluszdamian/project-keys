@@ -104,7 +104,8 @@ class RcnClient
         $date = $time('DOK_DATA');
         $position = preg_split('/\s+/', trim((string) $ms->GEOMETRIA?->children(self::GML)->Point?->pos));
 
-        if ($area < 10 || $price <= 0 || $date === null || count($position) !== 2) {
+        // Data z przyszłości to błąd w rejestrze.
+        if ($area < 10 || $price <= 0 || $date === null || substr($date, 0, 10) > now()->toDateString() || count($position) !== 2) {
             return null;
         }
 

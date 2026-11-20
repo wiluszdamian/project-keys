@@ -56,7 +56,8 @@ class TransactionComparator
             }
 
             if ($used->count() >= $min) {
-                return $this->result($used, $offerPerM2, $radius, $usedMarket, $market, $months);
+                return $this->result($used, $offerPerM2, $radius, $usedMarket, $market, $months)
+                    + ['approximate' => $listing->geo_precision === 'city'];
             }
         }
 
@@ -90,7 +91,8 @@ class TransactionComparator
             default => 'W granicach rynku ('.($diff > 0 ? '+' : '').Number::format($diff, maxPrecision: 0, locale: 'pl').'%):',
         };
 
-        return "{$verdict} mediana transakcji ".self::money($comparison['median_price_per_m2']).'/m² ('
+        return (! empty($comparison['approximate']) ? 'Położenie oferty znane tylko z dokładnością do miasta, porównanie z całym miastem. ' : '')
+            ."{$verdict} mediana transakcji ".self::money($comparison['median_price_per_m2']).'/m² ('
             .self::details($comparison).').';
     }
 
@@ -142,7 +144,7 @@ class TransactionComparator
         $dLng = rad2deg($radius / (self::EARTH_M * cos(deg2rad($lat))));
 
         return RcnTransaction::query()
-            ->where('date', '>=', now()->subMonths($months)->toDateString())
+            ->whereBetween('date', [now()->subMonths($months)->toDateString(), now()->toDateString()])
             ->whereBetween('area', [$minArea, $maxArea])
             ->whereBetween('lat', [$lat - $dLat, $lat + $dLat])
             ->whereBetween('lng', [$lng - $dLng, $lng + $dLng])

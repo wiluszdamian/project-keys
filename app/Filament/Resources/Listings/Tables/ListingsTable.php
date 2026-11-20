@@ -87,9 +87,9 @@ class ListingsTable
                 TextColumn::make('transaction_comparison')
                     ->label('Vs transakcje')
                     ->state(fn (Listing $record) => $record->transaction_comparison['diff_percent'] ?? null)
-                    ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').round($state).'%')
+                    ->formatStateUsing(fn ($state, Listing $record) => ($state > 0 ? '+' : '').round($state).'%'.(! empty($record->transaction_comparison['approximate']) ? ' ~' : ''))
                     ->badge()
-                    ->color(fn (Listing $record) => match ($record->transaction_comparison['status'] ?? null) {
+                    ->color(fn (Listing $record) => ! empty($record->transaction_comparison['approximate']) ? 'gray' : match ($record->transaction_comparison['status'] ?? null) {
                         TransactionComparator::ABOVE => 'danger',
                         TransactionComparator::BELOW => 'success',
                         default => 'gray',

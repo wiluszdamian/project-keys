@@ -126,6 +126,18 @@ it('woli ten sam rynek, gdy wie, że oferta jest z rynku pierwotnego', function 
         ->and(app(TransactionComparator::class)->compare($unknown))->toMatchArray(['market' => null, 'count' => 16]);
 });
 
+it('przy położeniu z dokładnością do miasta wynik jest oznaczony jako przybliżony', function () {
+    foreach (range(1, 8) as $i) {
+        rcnTransaction(['lat' => RZ_LAT + 0.03]);
+    }
+    rcnTransaction(['date' => now()->addMonths(5)->toDateString()]);
+
+    $result = app(TransactionComparator::class)->compare(saleListing(['geo_precision' => 'city']));
+
+    expect($result)->toMatchArray(['approximate' => true, 'radius_m' => 6000, 'count' => 8])
+        ->and(TransactionComparator::describe($result))->toStartWith('Położenie oferty znane tylko z dokładnością do miasta');
+});
+
 it('rozpoznaje rynek z danych portali', function () {
     expect(saleListing(['raw' => ['market' => 'secondary']])->market())->toBe('secondary')
         ->and(saleListing(['portal' => 'olx', 'raw' => ['params' => [['key' => 'market', 'value' => ['key' => 'primary']]]]])->market())->toBe('primary')

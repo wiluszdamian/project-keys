@@ -135,6 +135,8 @@ class ListingScorer
             '- mediana: '.$comparison['median_price_per_m2'].' zł za m2 ('.TransactionComparator::details($comparison).')',
             '- połowa transakcji między '.$comparison['p25_price_per_m2'].' a '.$comparison['p75_price_per_m2'].' zł za m2',
             '- oferta: '.$comparison['offer_price_per_m2'].' zł za m2, różnica '.($comparison['diff_percent'] > 0 ? '+' : '').$comparison['diff_percent'].'%',
+            empty($comparison['approximate']) ? null : '- uwaga: położenie oferty znane tylko z dokładnością do miasta, porównanie z całym miastem jest mało dokładne',
+            '- porównanie nie uwzględnia wieku i standardu budynku',
             '',
         ];
     }
