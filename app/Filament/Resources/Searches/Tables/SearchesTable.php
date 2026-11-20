@@ -7,6 +7,7 @@ use App\Filament\Resources\Listings\ListingResource;
 use App\Jobs\RunSearchJob;
 use App\Models\Search;
 use App\Notifications\NotifyGroups;
+use App\Support\Portals;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -30,19 +31,26 @@ class SearchesTable
                 TextColumn::make('name')
                     ->label('Nazwa')
                     ->searchable()
+                    ->weight('medium')
+                    ->wrap()
                     ->description(fn (Search $record) => $record->city.($record->districts ? ' · '.implode(', ', $record->districts) : '')),
                 TextColumn::make('deal_type')
                     ->label('Rodzaj')
-                    ->badge(),
+                    ->badge()
+                    ->visibleFrom('sm'),
                 TextColumn::make('price_max')
                     ->label('Cena')
-                    ->state(fn (Search $record) => self::range($record->price_min, $record->price_max, 'zł')),
-                TextColumn::make('rooms_min')
-                    ->label('Pokoje')
-                    ->state(fn (Search $record) => self::range($record->rooms_min, $record->rooms_max)),
+                    ->state(fn (Search $record) => self::range($record->price_min, $record->price_max, 'zł'))
+                    ->description(fn (Search $record) => 'pokoje: '.self::range($record->rooms_min, $record->rooms_max))
+                    ->visibleFrom('md'),
                 TextColumn::make('portals')
                     ->label('Portale')
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (string $state) => Portals::label($state))
+                    ->limitList(3)
+                    ->expandableLimitedList()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom('2xl'),
                 TextColumn::make('notify_mode')
                     ->label('Powiadomienia')
                     ->state(fn (Search $record) => ! $record->notify_enabled ? 'wyłączone' : (NotifyGroups::isCombined($record->deal_type) ? 'zbiorczo kanału' : match ($record->notify_mode) {
@@ -51,21 +59,27 @@ class SearchesTable
                         NotifyMode::Daily => 'codziennie '.$record->notify_daily_at,
                     }))
                     ->description(fn (Search $record) => $record->notify_enabled ? "ocena od {$record->min_score_to_notify}/10" : null)
-                    ->color(fn (Search $record) => $record->notify_enabled ? null : 'gray'),
+                    ->color(fn (Search $record) => $record->notify_enabled ? null : 'gray')
+                    ->visibleFrom('xl'),
                 TextColumn::make('listings_count')
                     ->label('Oferty')
-                    ->url(fn (Search $record) => ListingResource::getUrl('index', ['filters' => ['search' => ['value' => $record->id]]])),
+                    ->url(fn (Search $record) => ListingResource::getUrl('index', ['filters' => ['search' => ['value' => $record->id]]]))
+                    ->color('primary')
+                    ->visibleFrom('xl'),
                 TextColumn::make('last_run_at')
                     ->label('Ostatni przebieg')
                     ->since()
                     ->description(fn (Search $record) => $record->latestScrapeRun?->status?->getLabel())
-                    ->placeholder('jeszcze nie'),
+                    ->placeholder('jeszcze nie')
+                    ->visibleFrom('2xl'),
                 ToggleColumn::make('is_active')
                     ->label('Aktywne'),
             ])
             ->recordActions([
                 Action::make('run')
                     ->label('Uruchom teraz')
+                    ->tooltip('Uruchom teraz')
+                    ->iconButton()
                     ->icon(Heroicon::OutlinedPlay)
                     ->action(function (Search $record) {
                         RunSearchJob::dispatch($record);

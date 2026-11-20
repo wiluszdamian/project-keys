@@ -4,6 +4,7 @@ use App\Enums\ListingStatus;
 use App\Enums\NotifyMode;
 use App\Filament\Resources\Listings\Pages\EditListing;
 use App\Filament\Resources\Listings\Pages\ListListings;
+use App\Filament\Resources\Listings\Pages\ViewListing;
 use App\Filament\Resources\Searches\Pages\CreateSearch;
 use App\Filament\Resources\Searches\Pages\EditSearch;
 use App\Filament\Resources\Searches\Pages\ListSearches;
@@ -149,6 +150,30 @@ it('ustawia status oferty i domyślnie ukrywa odrzucone oraz duplikaty', functio
         ->assertHasNoFormErrors();
 
     expect($keep->fresh())->status->toBe(ListingStatus::Viewing)->note->toBe('sobota 12:00');
+});
+
+it('na stronie oferty zmienia status i notatkę bez przechodzenia do edycji', function () {
+    $listing = Listing::factory()->create(['title' => 'Mieszkanie przy parku']);
+
+    Livewire::test(ViewListing::class, ['record' => $listing->getRouteKey()])
+        ->assertSee('Mieszkanie przy parku')
+        ->assertActionVisible('open')
+        ->callAction('status_favorite')
+        ->callAction('note', data: ['note' => 'zadzwonić po 17']);
+
+    expect($listing->fresh())->status->toBe(ListingStatus::Favorite)->note->toBe('zadzwonić po 17');
+});
+
+it('pokazuje ofertę jako kartę z oceną i ceną dla wąskiego ekranu', function () {
+    $search = Search::factory()->create();
+    $listing = Listing::factory()->create(['title' => 'Kawalerka na Baranówce', 'price' => 2100, 'rooms' => 1, 'district' => 'Baranówka']);
+    ListingAnalysis::factory()->create(['listing_id' => $listing->id, 'search_id' => $search->id, 'score' => 9]);
+
+    $this->get('/admin/listings')
+        ->assertOk()
+        ->assertSee('pk-card', false)
+        ->assertSee('9/10')
+        ->assertSee('1 pok.');
 });
 
 it('domyślnie pokazuje tylko oferty z oceną od progu wyszukiwania', function () {

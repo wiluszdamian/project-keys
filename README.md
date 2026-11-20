@@ -107,9 +107,12 @@ repozytorium Dockera.
 Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 
 - **Wyszukiwania:** dodawanie, edycja, wstrzymanie i uruchomienie od razu.
-- **Oferty:** tabela z oceną AI, kosztem miesięcznym i filtrami. Strona oferty pokazuje ocenę
-  AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
-  oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
+- **Oferty:** tabela z oceną AI, kosztem miesięcznym i filtrami. Na telefonie i tablecie każda oferta
+  jest kartą (zdjęcie, ocena, cena, metraż, status), od 1280 px zwykłą tabelą. Kolumny dojazdu, kosztu
+  i portalu pokazują się na szerokim ekranie albo po włączeniu w ikonie kolumn. Strona oferty zaczyna się
+  od oceny AI, ceny i metrażu, niżej jest ocena AI z plusami i minusami, ceny transakcyjne, dojazd,
+  historia cen i opis. Status (ulubiona, kontakt, oglądanie, odrzucona) i notatkę zmieniasz przyciskami
+  na górze strony oferty albo ikoną przy ofercie w tabeli. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
 - **Ceny transakcyjne:** każda oferta sprzedaży jest porównana z prawdziwymi cenami sprzedaży mieszkań
   z Rejestru Cen Nieruchomości (GUGiK): transakcje w promieniu 800 m do 3 km, podobny metraż, ostatnie

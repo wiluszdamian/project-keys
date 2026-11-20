@@ -22,7 +22,8 @@ class ScrapeRunsTable
                     ->dateTime('d.m H:i')
                     ->sortable(),
                 TextColumn::make('search.name')
-                    ->label('Wyszukiwanie'),
+                    ->label('Wyszukiwanie')
+                    ->visibleFrom('md'),
                 TextColumn::make('portal')
                     ->label('Portal')
                     ->badge()
@@ -30,23 +31,29 @@ class ScrapeRunsTable
                     ->color(fn (string $state) => Portals::color($state)),
                 TextColumn::make('status')
                     ->label('Status')
-                    ->badge(),
+                    ->badge()
+                    ->tooltip(fn (ScrapeRun $record) => $record->error_message),
                 TextColumn::make('pages_fetched')
-                    ->label('Strony'),
+                    ->label('Strony')
+                    ->visibleFrom('2xl'),
                 TextColumn::make('found_count')
-                    ->label('Znalezione'),
+                    ->label('Znalezione')
+                    ->visibleFrom('xl'),
                 TextColumn::make('new_count')
                     ->label('Nowe')
-                    ->weight(fn ($state) => $state > 0 ? 'bold' : null),
+                    ->weight(fn ($state) => $state > 0 ? 'bold' : null)
+                    ->visibleFrom('sm'),
                 TextColumn::make('finished_at')
                     ->label('Czas')
                     ->state(fn (ScrapeRun $record) => $record->finished_at ? (int) $record->started_at->diffInSeconds($record->finished_at, true).' s' : null)
-                    ->placeholder('trwa'),
+                    ->placeholder('trwa')
+                    ->visibleFrom('xl'),
                 TextColumn::make('error_message')
                     ->label('Błąd')
-                    ->limit(60)
+                    ->limit(30)
                     ->tooltip(fn (ScrapeRun $record) => $record->error_message)
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->visibleFrom('2xl'),
             ])
             ->filters([
                 SelectFilter::make('search')

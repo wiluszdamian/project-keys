@@ -18,6 +18,14 @@ class StatsOverview extends StatsOverviewWidget
 
     protected ?string $pollingInterval = '60s';
 
+    /**
+     * Na telefonie dwa kafelki w rzędzie zamiast pięciu wysokich kart jedna pod drugą.
+     */
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 2, 'md' => 3, 'xl' => 5];
+    }
+
     protected function getStats(): array
     {
         $since = now()->subDay();
@@ -41,12 +49,12 @@ class StatsOverview extends StatsOverviewWidget
             ->first();
 
         return [
-            Stat::make('Nowe oferty (24 h)', $new)
-                ->description('bez duplikatów'),
-            Stat::make('Dobre oferty (24 h)', $good)
-                ->description('ocena od progu wyszukiwania')
+            Stat::make('Nowe (24 h)', $new)
+                ->description('ofert bez duplikatów'),
+            Stat::make('Dobre (24 h)', $good)
+                ->description('ocena od progu')
                 ->color('success'),
-            Stat::make('Ostatni udany przebieg', $lastOk ? now()->parse($lastOk)->diffForHumans() : 'brak')
+            Stat::make('Ostatni przebieg', $lastOk ? now()->parse($lastOk)->diffForHumans(short: true) : 'brak')
                 ->description($problems ? "{$problems} blokad lub błędów w 3 h" : 'bez problemów w 3 h')
                 ->descriptionColor($problems ? 'danger' : 'success'),
             Stat::make('AI dzisiaj', $tokens->calls.' ocen')

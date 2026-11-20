@@ -26,6 +26,11 @@
         .pk-report a { color: var(--primary-600); } .dark .pk-report a { color: var(--primary-400); }
         .pk-report__muted { color: var(--gray-500); font-size: .875rem; }
         .pk-report__select { width: 100%; max-width: 28rem; }
+        /* Telefon: szeroka tabela przewija się w bok zamiast wychodzić poza kartę. */
+        @media (max-width: 767px) {
+            .pk-report table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .pk-report td:first-child { min-width: 8rem; }
+        }
     </style>
 
     <div class="pk-report__select">

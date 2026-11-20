@@ -186,3 +186,11 @@ it('harmonogram pobiera RCN w niedziele o 4:30', function () {
 
     expect($event->expression)->toBe('30 4 * * 0');
 });
+
+it('krótki opis porównania do tabeli ofert', function () {
+    expect(TransactionComparator::short(['status' => 'below', 'diff_percent' => -14.2]))->toBe('14% taniej niż transakcje')
+        ->and(TransactionComparator::short(['status' => 'above', 'diff_percent' => 17.8, 'approximate' => true]))->toBe('18% drożej niż transakcje ~')
+        ->and(TransactionComparator::short(['status' => 'market', 'diff_percent' => 3.1]))->toBe('rynkowo (+3%)')
+        ->and(TransactionComparator::short(['status' => 'too_few', 'count' => 2, 'months' => 24]))->toBeNull()
+        ->and(TransactionComparator::short(null))->toBeNull();
+});

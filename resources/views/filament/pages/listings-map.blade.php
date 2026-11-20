@@ -6,6 +6,7 @@
 
     <style>
         .pk-map { height: calc(100vh - 19rem); min-height: 28rem; border-radius: .75rem; overflow: hidden; z-index: 0; }
+        @media (max-width: 767px) { .pk-map { height: 65vh; min-height: 22rem; } }
         .pk-map-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .8125rem; color: var(--gray-600); }
         .dark .pk-map-legend { color: var(--gray-400); }
         .pk-map-dot { display: inline-block; width: .75rem; height: .75rem; border-radius: 999px; margin-right: .35rem; vertical-align: -1px; }

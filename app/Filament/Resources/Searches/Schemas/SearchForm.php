@@ -65,7 +65,8 @@ class SearchForm
 
                 Section::make('Filtry')
                     ->description('Puste pole = bez ograniczenia.')
-                    ->columns(2)
+                    // Od i do obok siebie także na telefonie.
+                    ->columns(['default' => 2])
                     ->schema([
                         ...self::range('price', 'Cena', 'zł'),
                         ...self::range('area', 'Metraż', 'm²', max: 10000),
@@ -78,7 +79,7 @@ class SearchForm
                         CheckboxList::make('portals')
                             ->label('Portale')
                             ->options(Portals::options())
-                            ->columns(2)
+                            ->columns(['default' => 2])
                             ->default(config('scrapers.portals'))
                             ->required()
                             ->live(),

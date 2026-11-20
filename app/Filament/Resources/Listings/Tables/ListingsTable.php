@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Listings\Tables;
 use App\Enums\DealType;
 use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
+use App\Filament\Support\ListingCard;
 use App\Filament\Support\ListingFilters;
 use App\Models\CommutePlace;
 use App\Models\Listing;
@@ -37,53 +38,78 @@ class ListingsTable
             ->defaultSort('first_seen_at', 'desc')
             ->recordUrl(fn (Listing $record) => route('filament.admin.resources.listings.view', $record))
             ->columns([
+                // Telefon: jedna karta z najważniejszymi danymi. Od md zwykłe kolumny.
+                ListingCard::column(),
                 ImageColumn::make('image_url')
                     ->label('')
-                    ->imageWidth(96)
-                    ->imageHeight(64)
-                    ->extraImgAttributes(['class' => 'rounded-md object-cover', 'loading' => 'lazy']),
+                    ->imageWidth(80)
+                    ->imageHeight(56)
+                    ->extraImgAttributes(['class' => 'rounded-md object-cover', 'loading' => 'lazy'])
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('title')
                     ->label('Oferta')
                     ->searchable()
                     ->wrap()
                     ->lineClamp(2)
-                    ->description(fn (Listing $record) => collect([$record->city, $record->district, $record->street])->filter()->unique()->implode(' · ')),
+                    ->weight('medium')
+                    ->extraAttributes(['class' => 'pk-col-title'])
+                    ->description(fn (Listing $record) => collect([$record->district ?: $record->city, $record->street, $record->first_seen_at?->diffForHumans(short: true)])->filter()->unique()->implode(' · '))
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('deal_type')
                     ->label('Rodzaj')
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('analyses_max_score')
                     ->label('Ocena')
                     ->badge()
                     ->color(fn ($state) => Format::scoreColor($state))
                     ->formatStateUsing(fn ($state) => "{$state}/10")
                     ->placeholder('-')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('price')
                     ->label('Cena')
                     ->formatStateUsing(fn ($state) => Format::pln($state))
-                    ->description(fn (Listing $record) => $record->rent_extra ? '+ '.Format::pln($record->rent_extra).' czynsz' : null)
-                    ->sortable(),
+                    // Najem: czynsz. Sprzedaż: krótko, jak cena wypada wobec transakcji w okolicy.
+                    ->wrap()
+                    ->extraAttributes(['class' => 'pk-col-price'])
+                    ->description(fn (Listing $record) => $record->rent_extra
+                        ? '+ '.Format::pln($record->rent_extra).' czynsz'
+                        : TransactionComparator::short($record->transaction_comparison))
+                    ->sortable()
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('analyses_max_monthly_cost')
                     ->label('Koszt / mies.')
                     ->formatStateUsing(fn ($state) => Format::pln($state))
                     ->placeholder('-')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl'),
                 TextColumn::make('area')
                     ->label('Metraż')
                     ->formatStateUsing(fn ($state) => Format::area($state))
-                    ->description(fn (Listing $record) => $record->price_per_m2 ? Format::pln($record->price_per_m2).'/m²' : null)
-                    ->sortable(),
+                    ->wrap()
+                    ->description(fn (Listing $record) => collect([
+                        $record->rooms ? $record->rooms.' pok.' : null,
+                        $record->price_per_m2 ? Format::pln($record->price_per_m2).'/m²' : null,
+                    ])->filter()->implode(' · ') ?: null)
+                    ->sortable()
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('rooms')
                     ->label('Pokoje')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('commutes')
                     ->label('Dojazd')
-                    ->state(fn (Listing $record) => Format::commutes($record))
+                    // Krótko, żeby kolumna się mieściła: "Praca 🚗 24 · 🚲 17 min".
+                    ->state(fn (Listing $record) => array_map(fn (string $line) => str_replace([': ', ' min ·'], [' ', ' ·'], $line), Format::commutes($record)))
                     ->listWithLineBreaks()
                     ->size('xs')
                     ->description(fn (Listing $record) => in_array($record->geo_precision, ['district', 'city'], true) ? 'położenie przybliżone' : null)
                     ->placeholder('-')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('2xl'),
                 TextColumn::make('transaction_comparison')
                     ->label('Vs transakcje')
                     ->state(fn (Listing $record) => $record->transaction_comparison['diff_percent'] ?? null)
@@ -96,30 +122,33 @@ class ListingsTable
                     })
                     ->tooltip(fn (Listing $record) => TransactionComparator::describe($record->transaction_comparison))
                     ->placeholder('-')
-                    ->toggleable(),
-                TextColumn::make('risk_flags')
-                    ->label('Ryzyko')
-                    ->state(fn (Listing $record) => $record->risk_flags ? count($record->risk_flags) : null)
-                    ->formatStateUsing(fn ($state) => "⚠ {$state}")
-                    ->badge()
-                    ->color('danger')
-                    ->tooltip(fn (Listing $record) => collect($record->risk_flags ?? [])->pluck('message')->implode("\n"))
-                    ->placeholder('')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom('2xl'),
                 TextColumn::make('portal')
                     ->label('Portal')
                     ->badge()
                     ->formatStateUsing(fn (string $state) => Portals::label($state))
-                    ->color(fn (string $state) => Portals::color($state)),
+                    ->color(fn (string $state) => Portals::color($state))
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom('2xl'),
                 TextColumn::make('status')
                     ->label('Status')
+                    ->state(fn (Listing $record) => array_values(array_filter([
+                        $record->status?->getLabel(),
+                        $record->risk_flags ? '⚠ '.count($record->risk_flags) : null,
+                    ])))
                     ->badge()
-                    ->placeholder('-'),
+                    ->color(fn (string $state, Listing $record) => str_starts_with($state, '⚠') ? 'danger' : ($record->status?->getColor() ?? 'gray'))
+                    ->tooltip(fn (Listing $record) => $record->risk_flags ? collect($record->risk_flags)->pluck('message')->implode("\n") : null)
+                    ->placeholder('-')
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('first_seen_at')
                     ->label('Znaleziona')
                     ->since()
                     ->dateTimeTooltip('d.m.Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visibleFrom(ListingCard::BREAKPOINT),
             ])
             ->filters([
                 ListingFilters::aboveThreshold(),
@@ -190,7 +219,9 @@ class ListingsTable
             ->persistFiltersInSession()
             ->recordActions([
                 Action::make('open')
-                    ->label('Ogłoszenie')
+                    ->label('Otwórz ogłoszenie')
+                    ->tooltip('Otwórz ogłoszenie na portalu')
+                    ->iconButton()
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->url(fn (Listing $record) => $record->url, shouldOpenInNewTab: true),
                 ActionGroup::make([
@@ -202,7 +233,7 @@ class ListingsTable
                         ->label('Bez statusu')
                         ->action(fn (Listing $record) => $record->update(['status' => null])),
                     EditAction::make()->label('Notatka'),
-                ])->label('Status')->icon(Heroicon::OutlinedTag),
+                ])->label('Status')->tooltip('Status i notatka')->iconButton()->icon(Heroicon::OutlinedTag),
             ])
             ->toolbarActions([
                 BulkAction::make('reject')

@@ -96,6 +96,25 @@ class TransactionComparator
             .self::details($comparison).').';
     }
 
+    /**
+     * Krótko do tabeli, np. "14% taniej niż transakcje", "rynkowo (+3%)". Null, gdy nie ma porównania.
+     */
+    public static function short(?array $comparison): ?string
+    {
+        if (! $comparison || ! isset($comparison['diff_percent']) || ($comparison['status'] ?? null) === self::TOO_FEW) {
+            return null;
+        }
+
+        $diff = round($comparison['diff_percent']);
+        $text = match ($comparison['status']) {
+            self::ABOVE => abs($diff).'% drożej niż transakcje',
+            self::BELOW => abs($diff).'% taniej niż transakcje',
+            default => 'rynkowo ('.($diff > 0 ? '+' : '').$diff.'%)',
+        };
+
+        return $text.(! empty($comparison['approximate']) ? ' ~' : '');
+    }
+
     public static function details(array $comparison): string
     {
         $radius = $comparison['radius_m'] >= 1000
