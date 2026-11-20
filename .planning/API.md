@@ -30,7 +30,7 @@ Zbiorcze powiadomienia kanałów (wynajem i sprzedaż osobno):
 
 Limity: 60 zapytań na minutę na token.
 
-Dostęp: `http://155.133.197.67` tylko z adresów z `PANEL_ALLOWED_IPS`, albo tunel SSH. Wszystko poza `/health` wymaga tokenu. Ten sam adres obsługuje panel `/admin`.
+Dostęp: `https://nieruchomosci.wilusz.tech/api` z każdego adresu (API nie ma hasła przeglądarki, tylko token). Zapasowo `http://155.133.197.67` tylko z adresów z `PANEL_ALLOWED_IPS`, albo tunel SSH. Wszystko poza `/health` wymaga tokenu. Ten sam adres obsługuje panel `/admin`.
 
 Wszystkie endpointy działają (fazy 2 i 5).
 

@@ -148,7 +148,10 @@ gdy nie masz telefonu. Gdy zgubisz telefon i kody, wyłącz 2FA na serwerze:
 >   nie jest szyfrowane, więc to rozwiązanie na chwilę, do czasu domeny.
 >
 > Z domeną ustaw `CADDY_DOMAIN`, `CADDY_HTTP_BIND=80` i `CADDY_HTTPS_BIND=443`, a Caddy sam
-> pobierze certyfikat.
+> pobierze certyfikat. Domena jest dostępna z każdego adresu, ale przeglądarka najpierw pyta o hasło
+> (`PANEL_BASIC_AUTH_USER` i `PANEL_BASIC_AUTH_HASH`). Hash zrobisz poleceniem
+> `docker compose exec caddy caddy hash-password` i wpiszesz do `.env` w pojedynczych cudzysłowach.
+> Bez hasła działają tylko `/api` (token) i `/up`.
 
 ## Codzienna obsługa
 

@@ -7,24 +7,28 @@
 	}
 }
 
-(app) {
-	# Dostęp tylko z PANEL_ALLOWED_IPS i sieci prywatnych (tunel SSH, kontenery).
-	# client_ip to adres klienta: przez Cloudflare z nagłówka, bez Cloudflare adres połączenia.
-	@denied not client_ip {$PANEL_ALLOWED_IPS:127.0.0.1} private_ranges
-	respond @denied "Brak dostępu" 403
-
+(site) {
 	root * /var/www/html/public
 	encode zstd gzip
 	php_fastcgi app:9000
 	file_server
 }
 
-# Domena (np. przez proxy Cloudflare): HTTPS z certyfikatem Let's Encrypt. Bez domeny zostaje tylko blok :80 niżej.
+# Domena (np. przez proxy Cloudflare): HTTPS z certyfikatem Let's Encrypt, dostęp z każdego adresu.
+# Na wejściu hasło przeglądarki (basic auth), potem logowanie do panelu z 2FA.
+# Bez hasła są tylko /api (ma własne tokeny w nagłówku Authorization) i /up (sprawdzenie w deploy.sh).
 {$CADDY_DOMAIN:http://localhost} {
-	import app
+	@locked not path /api/* /up
+	basic_auth @locked {
+		{$PANEL_BASIC_AUTH_USER:panel} {$PANEL_BASIC_AUTH_HASH}
+	}
+	import site
 }
 
-# Adres IP serwera i tunel SSH, zwykły HTTP.
+# Adres IP serwera i tunel SSH, zwykły HTTP. Tylko z PANEL_ALLOWED_IPS i sieci prywatnych.
+# client_ip to adres klienta: przez Cloudflare z nagłówka, bez Cloudflare adres połączenia.
 :80 {
-	import app
+	@denied not client_ip {$PANEL_ALLOWED_IPS:127.0.0.1} private_ranges
+	respond @denied "Brak dostępu" 403
+	import site
 }

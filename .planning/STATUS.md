@@ -9,7 +9,7 @@ Aktualizuje Claude Code po każdej fazie.
 - CPU / RAM / dysk: 4 vCPU AMD EPYC, 7.8 GB RAM, 99 GB dysk, swap 2 GB
 - System: Debian 13 (trixie), kernel 6.12
 - Docker / Compose: Docker 29.10.0, Compose v5.8.0
-- Domena: `https://nieruchomosci.wilusz.tech` (proxy Cloudflare). Panel z 2FA. Panel i API tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Zapasowo `http://155.133.197.67` (to samo ograniczenie) i tunel `ssh -L 8080:localhost:80 project-keys`
+- Domena: `https://nieruchomosci.wilusz.tech` (proxy Cloudflare). Dostęp z każdego adresu: hasło przeglądarki (basic auth, poza `/api` i `/up`), potem logowanie do panelu z 2FA. Zapasowo `http://155.133.197.67` (tylko z `PANEL_ALLOWED_IPS`) i tunel `ssh -L 8080:localhost:80 project-keys`
 
 ## Postęp
 
@@ -100,6 +100,7 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-20: Usunięte 161 fałszywych zmian cen ofert Otodom #37 i #497 (tymczasowe id sprzed poprawki z 2026-11-18), zgoda właściciela. Kopia: `~/backup-price-changes-otodom-placeholder-20261120.csv` na serwerze.
 - 2026-11-20: Nieruchomości-online: w ofertach deweloperów miasto i dzielnica bez przecinka ("Załęże Rzeszów"). Scraper odcina dzielnicę z `rlocqtn`, migracja poprawiła zapisane oferty.
 - 2026-11-20: Ceny transakcyjne (prośba właściciela, pomysł z Deweloperucha): zamiast pobierać dane z deweloperuch.pl (brak API) bierzemy to samo źródło, Rejestr Cen Nieruchomości, z usługi WFS GUGiK `https://mapy.geoportal.gov.pl/wss/service/rcn` (warstwa `ms:lokale`, bezpłatna od 13.02.2026). Powiaty 1863 i 1816, 36 miesięcy, tylko `wolnyRynek` i lokale mieszkalne, cena lokalu, a gdy jej nie ma cena nieruchomości. Bez stron transakcji i notariusza. Usługa zwraca punkty w EPSG:2180 mimo prośby o 4326, więc przeliczamy sami (`Puwg92`). Porównanie: podobny metraż (±30%), 24 miesiące, promień 800 m, 1,5 km, 3 km (przy położeniu z dokładnością do dzielnicy 1,5 i 3 km, miasta 6 km), co najmniej 8 transakcji, najpierw ten sam rynek. Różnica do 10% = w granicach rynku, bo ceny ofertowe są zwykle wyższe. Import co niedzielę o 4:30.
+- 2026-11-20: Domena bez ograniczenia po IP (prośba właściciela). Zamiast tego basic auth w Caddy (`PANEL_BASIC_AUTH_USER`, `PANEL_BASIC_AUTH_HASH` w `.env`, hash bcrypt). Bez hasła tylko `/api/*`, bo token Sanctum idzie w tym samym nagłówku Authorization, i `/up` dla `deploy.sh`. Blok `:80` po IP serwera dalej tylko z `PANEL_ALLOWED_IPS`.
 
 ## Otwarte pytania
 
