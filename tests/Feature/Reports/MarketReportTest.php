@@ -53,6 +53,21 @@ it('liczy oferty, mediany, dzielnice, obniżki i najlepsze nowe', function () {
         ->and($data['has_previous'])->toBeFalse();
 });
 
+it('cena skacząca w górę i w dół to najwyżej jedna obniżka', function () {
+    $flapping = seenListing($this->search, ['price' => 2400]);
+    $up = seenListing($this->search, ['price' => 3000]);
+    foreach ([[2500, 1900], [1900, 554894], [554894, 2400]] as $i => [$old, $new]) {
+        ListingPriceChange::create(['listing_id' => $flapping->id, 'old_price' => $old, 'new_price' => $new, 'changed_at' => now()->subDays(3)->addMinutes($i)]);
+    }
+    ListingPriceChange::create(['listing_id' => $up->id, 'old_price' => 3000, 'new_price' => 2000, 'changed_at' => now()->subDays(2)]);
+    ListingPriceChange::create(['listing_id' => $up->id, 'old_price' => 2000, 'new_price' => 3000, 'changed_at' => now()->subDay()]);
+
+    $drops = app(MarketReportBuilder::class)->build(DealType::Rent, now()->subDays(7), now())['price_drops'];
+
+    expect($drops['count'])->toBe(1)
+        ->and($drops['top'][0])->toMatchArray(['id' => $flapping->id, 'old_price' => 2500, 'new_price' => 2400, 'percent' => 4.0]);
+});
+
 it('porównuje z poprzednim raportem', function () {
     MarketReport::create([
         'deal_type' => 'rent',

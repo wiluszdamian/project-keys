@@ -139,7 +139,8 @@ class MarketReportBuilder
     }
 
     /**
-     * Obniżki z tygodnia: liczba, mediana spadku i największe obniżki (ostatnia zmiana oferty w tygodniu).
+     * Obniżki z tygodnia: dla każdej oferty pierwsza cena w tygodniu kontra ostatnia.
+     * Cena skacząca w górę i w dół liczy się raz i tylko, gdy na koniec jest niższa.
      *
      * @return array{count: int, median_percent: float|null, top: list<array<string, mixed>>}
      */
@@ -150,30 +151,30 @@ class MarketReportBuilder
             ->where('listings.deal_type', $dealType->value)
             ->whereNull('listings.duplicate_of_id')
             ->whereBetween('changes.changed_at', [$from, $to])
-            ->whereColumn('changes.new_price', '<', 'changes.old_price')
-            ->where('changes.old_price', '>', 0)
-            ->select('listings.id', 'listings.title', 'listings.url', 'changes.old_price', 'changes.new_price')
-            ->selectRaw('(changes.old_price - changes.new_price) * 100.0 / changes.old_price as percent')
-            ->get();
+            ->orderBy('changes.changed_at')
+            ->orderBy('changes.id')
+            ->get(['listings.id', 'listings.title', 'listings.url', 'changes.old_price', 'changes.new_price'])
+            ->groupBy('id')
+            ->map(function ($changes) {
+                $first = $changes->first();
+                $old = (int) $first->old_price;
+                $new = (int) $changes->last()->new_price;
 
-        $percents = $drops->pluck('percent')->map(fn ($value) => (float) $value)->sort()->values();
+                return $old > 0 && $new > 0 && $new < $old ? [
+                    'id' => $first->id,
+                    'title' => $first->title,
+                    'url' => $first->url,
+                    'old_price' => $old,
+                    'new_price' => $new,
+                    'percent' => round(($old - $new) * 100 / $old, 1),
+                ] : null;
+            })
+            ->filter();
 
         return [
             'count' => $drops->count(),
-            'median_percent' => $percents->isEmpty() ? null : round((float) $percents->median(), 1),
-            'top' => $drops->sortByDesc(fn (object $drop) => (float) $drop->percent)
-                ->unique('id')
-                ->take(5)
-                ->map(fn (object $drop) => [
-                    'id' => $drop->id,
-                    'title' => $drop->title,
-                    'url' => $drop->url,
-                    'old_price' => (int) $drop->old_price,
-                    'new_price' => (int) $drop->new_price,
-                    'percent' => round((float) $drop->percent, 1),
-                ])
-                ->values()
-                ->all(),
+            'median_percent' => $drops->isEmpty() ? null : round((float) $drops->pluck('percent')->median(), 1),
+            'top' => $drops->sortByDesc('percent')->take(5)->values()->all(),
         ];
     }
 
