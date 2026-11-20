@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
+use App\Enums\DealType;
 use App\Models\Listing;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\Geo\ListingLocator;
+use App\Services\Rcn\TransactionComparator;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Dodatkowe dane oferty przed oceną AI: współrzędne, czasy dojazdu, hash zdjęcia i sygnały ryzyka.
+ * Dodatkowe dane oferty przed oceną AI: współrzędne, czasy dojazdu, hash zdjęcia, sygnały ryzyka i ceny transakcyjne.
  * Każdy krok może się nie udać i nie blokuje oceny.
  */
 class ListingExtras
@@ -19,6 +21,7 @@ class ListingExtras
         private CommuteCalculator $commutes,
         private ImageHasher $hasher,
         private RiskDetector $risks,
+        private TransactionComparator $transactions,
     ) {}
 
     public function prepare(Listing $listing): void
@@ -32,6 +35,14 @@ class ListingExtras
         });
 
         $this->attempt('risk', fn () => $listing->forceFill(['risk_flags' => $this->risks->detect($listing) ?: null])->save());
+
+        // Bez współrzędnych nie porównujemy: listings:enrich-missing zrobi to po geokodowaniu.
+        if (config('rcn.enabled') && $listing->deal_type === DealType::Sale && $listing->hasCoordinates()) {
+            $this->attempt('transactions', fn () => $listing->forceFill([
+                'transaction_comparison' => $this->transactions->compare($listing),
+                'transactions_compared_at' => now(),
+            ])->save());
+        }
     }
 
     private function attempt(string $step, callable $callback): void

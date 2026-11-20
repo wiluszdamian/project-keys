@@ -9,6 +9,7 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
 use App\Services\Geo\CommuteCalculator;
+use App\Services\Rcn\TransactionComparator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -101,6 +102,7 @@ class ListingScorer
             '## Sygnały ryzyka wykryte automatycznie',
             ...($listing->risk_flags ? array_map(fn (array $flag) => "- {$flag['message']}", $listing->risk_flags) : ['- brak']),
             '',
+            ...$this->transactionLines($listing),
             '## Rynek (nasza baza, ostatnie '.MarketStats::DAYS.' dni, '.$market['scope'].')',
             '- mediana ceny za m2: '.$this->value($market['median_price_per_m2'], 'zł'),
             $rent ? '- mediana kosztu (najem + czynsz) za m2: '.$this->value($market['median_total_cost_per_m2'], 'zł') : null,
@@ -109,6 +111,32 @@ class ListingScorer
         ];
 
         return implode("\n", array_filter($lines, fn ($line) => $line !== null));
+    }
+
+    /**
+     * Ceny transakcyjne z RCN dla ofert sprzedaży (sekcja z pustą linią na końcu albo nic).
+     *
+     * @return list<string>
+     */
+    private function transactionLines(Listing $listing): array
+    {
+        $comparison = $listing->transaction_comparison;
+
+        if ($listing->deal_type !== DealType::Sale || ! $comparison) {
+            return [];
+        }
+
+        if (($comparison['status'] ?? null) === TransactionComparator::TOO_FEW) {
+            return ['## Ceny transakcyjne (Rejestr Cen Nieruchomości)', '- za mało transakcji w okolicy do porównania', ''];
+        }
+
+        return [
+            '## Ceny transakcyjne (Rejestr Cen Nieruchomości, prawdziwe ceny sprzedaży)',
+            '- mediana: '.$comparison['median_price_per_m2'].' zł za m2 ('.TransactionComparator::details($comparison).')',
+            '- połowa transakcji między '.$comparison['p25_price_per_m2'].' a '.$comparison['p75_price_per_m2'].' zł za m2',
+            '- oferta: '.$comparison['offer_price_per_m2'].' zł za m2, różnica '.($comparison['diff_percent'] > 0 ? '+' : '').$comparison['diff_percent'].'%',
+            '',
+        ];
     }
 
     /**

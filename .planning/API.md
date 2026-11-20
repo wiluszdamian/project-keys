@@ -41,3 +41,11 @@ Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 - `search:run {id}`
 - `search:pause {id}`, `search:resume {id}`
 - `api:token {nazwa}`, `scraper:probe {portal} {id}`, `notify:test`, `ai:usage`, `alerts:check`, `search:dispatch-due` (uruchamia scheduler)
+
+## Ceny transakcyjne (od 2026-11-20)
+
+Oferta (`GET /listings/{id}` i listy ofert) ma pole `transaction_comparison` (tylko sprzedaż, inaczej `null`):
+`status` (`below`, `market`, `above`, `too_few`), `median_price_per_m2`, `p25_price_per_m2`, `p75_price_per_m2`,
+`offer_price_per_m2`, `diff_percent`, `count`, `radius_m`, `months`, `market` (`primary`, `secondary` albo `null` = oba rynki),
+`listing_market`, `latest_date`, `nearest` (5 najbliższych transakcji: `date`, `area`, `rooms`, `floor`, `price`, `price_per_m2`, `market`, `distance_m`).
+Raport rynku sprzedaży ma w `data.transactions`: `compared`, `above`, `market`, `below`, `median_diff_percent`, `last_3_months.{primary,secondary}`.

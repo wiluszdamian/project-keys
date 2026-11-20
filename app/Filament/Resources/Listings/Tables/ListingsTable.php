@@ -8,6 +8,7 @@ use App\Filament\Support\Format;
 use App\Filament\Support\ListingFilters;
 use App\Models\CommutePlace;
 use App\Models\Listing;
+use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -83,6 +84,19 @@ class ListingsTable
                     ->description(fn (Listing $record) => in_array($record->geo_precision, ['district', 'city'], true) ? 'położenie przybliżone' : null)
                     ->placeholder('-')
                     ->toggleable(),
+                TextColumn::make('transaction_comparison')
+                    ->label('Vs transakcje')
+                    ->state(fn (Listing $record) => $record->transaction_comparison['diff_percent'] ?? null)
+                    ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').round($state).'%')
+                    ->badge()
+                    ->color(fn (Listing $record) => match ($record->transaction_comparison['status'] ?? null) {
+                        TransactionComparator::ABOVE => 'danger',
+                        TransactionComparator::BELOW => 'success',
+                        default => 'gray',
+                    })
+                    ->tooltip(fn (Listing $record) => TransactionComparator::describe($record->transaction_comparison))
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('risk_flags')
                     ->label('Ryzyko')
                     ->state(fn (Listing $record) => $record->risk_flags ? count($record->risk_flags) : null)
@@ -148,6 +162,14 @@ class ListingsTable
                     ))
                     ->indicateUsing(fn (array $data) => filled($data['place'] ?? null) && filled($data['minutes'] ?? null)
                         ? 'Dojazd do '.CommutePlace::find($data['place'])?->name." do {$data['minutes']} min" : null),
+                SelectFilter::make('transactions')
+                    ->label('Cena wobec transakcji (sprzedaż)')
+                    ->options([
+                        TransactionComparator::BELOW => 'Taniej niż transakcje w okolicy',
+                        TransactionComparator::MARKET => 'W granicach rynku',
+                        TransactionComparator::ABOVE => 'Drożej niż transakcje w okolicy',
+                    ])
+                    ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn (Builder $query, string $status) => $query->where('transaction_comparison->status', $status))),
                 Filter::make('risky')
                     ->label('Tylko z sygnałami ryzyka')
                     ->toggle()

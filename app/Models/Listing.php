@@ -30,6 +30,8 @@ class Listing extends Model
             'lat' => 'float',
             'lng' => 'float',
             'geocoded_at' => 'datetime',
+            'transaction_comparison' => 'array',
+            'transactions_compared_at' => 'datetime',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];
@@ -50,6 +52,27 @@ class Listing extends Model
     public function commutes(): HasMany
     {
         return $this->hasMany(ListingCommute::class);
+    }
+
+    /**
+     * Rynek pierwotny albo wtórny, gdy portal to podaje (RcnTransaction::PRIMARY / SECONDARY), inaczej null.
+     */
+    public function market(): ?string
+    {
+        $raw = $this->raw ?? [];
+        $value = $raw['market'] ?? collect($raw['params'] ?? [])->firstWhere('key', 'market')['value']['key'] ?? null;
+
+        $market = match (mb_strtolower((string) $value)) {
+            'primary', 'pierwotny' => RcnTransaction::PRIMARY,
+            'secondary', 'wtórny', 'wtorny' => RcnTransaction::SECONDARY,
+            default => null,
+        };
+
+        if ($market === null && $this->portal === 'domiporta' && str_starts_with((string) $this->external_id, 'nowe-')) {
+            return RcnTransaction::PRIMARY;
+        }
+
+        return $market;
     }
 
     public function hasCoordinates(): bool

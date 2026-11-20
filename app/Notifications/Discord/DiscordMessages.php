@@ -9,6 +9,7 @@ use App\Models\MarketReport;
 use App\Models\Search;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
+use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -200,6 +201,25 @@ class DiscordMessages
             ];
         }
 
+        if ($transactions = $data['transactions'] ?? null) {
+            $lines = [];
+
+            if ($transactions['compared'] > 0) {
+                $lines[] = "Oferty z tygodnia na tle transakcji w okolicy: **{$transactions['below']}** taniej, **{$transactions['market']}** w granicach rynku, **{$transactions['above']}** drożej"
+                    .' (mediana różnicy '.($transactions['median_diff_percent'] > 0 ? '+' : '').$this->percent($transactions['median_diff_percent']).').';
+            }
+
+            foreach (['primary' => 'pierwotny', 'secondary' => 'wtórny'] as $market => $label) {
+                if ($row = $transactions['last_3_months'][$market] ?? null) {
+                    $lines[] = "Rynek {$label}, ostatnie 3 mies.: mediana **".$this->money($row['median_price_per_m2'])."/m²** ({$row['count']} transakcji).";
+                }
+            }
+
+            if ($lines !== []) {
+                $fields[] = ['name' => '📑 Ceny transakcyjne (RCN)', 'value' => Str::limit(implode("\n", $lines), 1000), 'inline' => false];
+            }
+        }
+
         $drops = $data['price_drops'];
 
         if ($drops['count'] > 0) {
@@ -359,6 +379,7 @@ class DiscordMessages
             $location !== '' ? ['name' => '📍 Lokalizacja', 'value' => Str::limit($location, 1000), 'inline' => true] : null,
             ['name' => '👤 Ogłoszeniodawca', 'value' => $owner, 'inline' => true],
             ['name' => '🔗 Portal', 'value' => $this->portalName($listing->portal), 'inline' => true],
+            ($transactions = $listing->deal_type === DealType::Sale ? TransactionComparator::describe($listing->transaction_comparison) : null) ? ['name' => '📑 Ceny transakcyjne', 'value' => Str::limit($transactions, 1000), 'inline' => false] : null,
             ($commutes = app(CommuteCalculator::class)->describe($listing)) ? ['name' => '🚗 Dojazd', 'value' => Str::limit(implode("\n", $commutes), 1000), 'inline' => false] : null,
             $listing->risk_flags ? ['name' => '⚠️ Uwaga', 'value' => Str::limit(collect($listing->risk_flags)->pluck('message')->implode("\n"), 1000), 'inline' => false] : null,
         ]));

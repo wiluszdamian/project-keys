@@ -14,6 +14,9 @@ Schedule::command('listings:enrich-missing')->everyTenMinutes()->withoutOverlapp
 // Raport rynku z ostatnich 7 dni: każda sobota o 20:00 (strefa APP_TIMEZONE).
 Schedule::command('reports:weekly-market')->weeklyOn(6, '20:00')->when(fn () => (bool) config('notify.weekly_report'));
 
+// Ceny transakcyjne z RCN: pobranie i porównanie ofert sprzedaży, co niedzielę o 4:30.
+Schedule::command('rcn:import')->weeklyOn(0, '04:30')->withoutOverlapping()->runInBackground()->when(fn () => (bool) config('rcn.enabled'));
+
 // Sprzątanie kolejki: stare batche i nieudane joby.
 Schedule::command('queue:prune-batches --hours=48')->daily();
 Schedule::command('queue:prune-failed --hours=168')->daily();

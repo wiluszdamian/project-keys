@@ -86,6 +86,23 @@ class Settings extends Page
                                     ]),
                             ]),
 
+                        Tab::make('Ceny transakcyjne')
+                            ->icon(Heroicon::OutlinedDocumentText)
+                            ->schema([
+                                Section::make('Rejestr Cen Nieruchomości (RCN)')
+                                    ->description('Prawdziwe ceny sprzedaży mieszkań z aktów notarialnych, z usługi GUGiK (bezpłatnej od lutego 2026). Pobieranie w każdą niedzielę o 4:30. Każda oferta sprzedaży dostaje porównanie z transakcjami w okolicy o podobnym metrażu.')
+                                    ->columns(2)
+                                    ->schema([
+                                        Toggle::make('rcn_enabled')
+                                            ->label('Porównuj oferty sprzedaży z cenami transakcyjnymi')
+                                            ->inline(false),
+                                        TextInput::make('rcn_counties')
+                                            ->label('Powiaty (kody TERYT, po przecinku)')
+                                            ->helperText('1863 to Rzeszów, 1816 powiat rzeszowski. Kod powiatu to 4 pierwsze cyfry kodu TERYT gminy.')
+                                            ->regex('/^\s*\d{4}(\s*,\s*\d{4})*\s*$/'),
+                                    ]),
+                            ]),
+
                         Tab::make('Powiadomienia')
                             ->icon(Heroicon::OutlinedBell)
                             ->schema([

@@ -88,6 +88,29 @@
                 </x-filament::section>
             @endif
 
+            @if ($transactions = $data['transactions'] ?? null)
+                <x-filament::section heading="Ceny transakcyjne (RCN)" description="Prawdziwe ceny sprzedaży z aktów notarialnych. Rejestr ma kilka tygodni opóźnienia." style="margin-top: 1.5rem">
+                    <div class="pk-report__stats">
+                        <div>
+                            <div class="pk-report__label">Oferty taniej niż transakcje</div>
+                            <div class="pk-report__value">{{ $transactions['below'] }}</div>
+                        </div>
+                        <div>
+                            <div class="pk-report__label">W granicach rynku / drożej</div>
+                            <div class="pk-report__value">{{ $transactions['market'] }} / {{ $transactions['above'] }}</div>
+                            <div class="pk-report__change">mediana różnicy {{ $transactions['median_diff_percent'] !== null ? ($transactions['median_diff_percent'] > 0 ? '+' : '').str_replace('.', ',', (string) $transactions['median_diff_percent']).'%' : '-' }}</div>
+                        </div>
+                        @foreach (['primary' => 'Rynek pierwotny', 'secondary' => 'Rynek wtórny'] as $market => $label)
+                            <div>
+                                <div class="pk-report__label">{{ $label }}, ostatnie 3 mies.</div>
+                                <div class="pk-report__value">{{ Format::pln($transactions['last_3_months'][$market]['median_price_per_m2'] ?? null) ?? '-' }}</div>
+                                <div class="pk-report__change">{{ ($transactions['last_3_months'][$market]['count'] ?? 0) }} transakcji, za m²</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </x-filament::section>
+            @endif
+
             <div class="pk-report__grid" style="margin-top: 1.5rem">
                 <x-filament::section heading="Dzielnice" description="Dzielnice z co najmniej 3 ofertami.">
                     @if ($data['districts'] === [])

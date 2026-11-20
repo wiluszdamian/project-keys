@@ -58,6 +58,9 @@ class AppSettings
         'discord_webhook_url_rent' => ['notify.discord.webhook_url_rent', 'secret'],
         'discord_webhook_url_sale' => ['notify.discord.webhook_url_sale', 'secret'],
 
+        'rcn_enabled' => ['rcn.enabled', 'bool'],
+        'rcn_counties' => ['rcn.counties', 'string'],
+
         'ai_enabled' => ['scoring.enabled', 'bool'],
         'ai_max_per_minute' => ['scoring.max_per_minute', 'int'],
         'ai_reasoning_effort' => ['scoring.reasoning_effort', 'string'],

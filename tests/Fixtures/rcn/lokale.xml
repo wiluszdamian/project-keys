@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding="UTF-8" ?>
+<wfs:FeatureCollection
+   xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
+   xmlns:gml="http://www.opengis.net/gml/3.2"
+   xmlns:wfs="http://www.opengis.net/wfs/2.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://mapserver.gis.umn.edu/mapserver https://mapy.geoportal.gov.pl/wss/service/rcn?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;TYPENAME=ms:lokale&amp;OUTPUTFORMAT=application%2Fgml%2Bxml%3B%20version%3D3.2 http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd"
+   timeStamp="2026-11-20T12:02:25" numberMatched="2" numberReturned="2">
+      <wfs:boundedBy>
+      	<gml:Envelope srsName="urn:ogc:def:crs:EPSG::2180">
+      		<gml:lowerCorner>237433.066777 710418.231972</gml:lowerCorner>
+      		<gml:upperCorner>250891.856590 719359.603631</gml:upperCorner>
+      	</gml:Envelope>
+      </wfs:boundedBy>
+    <wfs:member>
+      <ms:lokale gml:id="lokale.64285072">
+        <gml:boundedBy>
+        	<gml:Envelope srsName="urn:ogc:def:crs:EPSG::2180">
+        		<gml:lowerCorner>242919.077568 717638.249299</gml:lowerCorner>
+        		<gml:upperCorner>242919.077568 717638.249299</gml:upperCorner>
+        	</gml:Envelope>
+        </gml:boundedBy>
+        <ms:GEOMETRIA>
+          <gml:Point gml:id="lokale.64285072.1" srsName="urn:ogc:def:crs:EPSG::2180">
+            <gml:pos>242919.077568 717638.249299</gml:pos>
+          </gml:Point>
+        </ms:GEOMETRIA>
+        <ms:gid>64285072</ms:gid>
+        <ms:SERWIS_RCN></ms:SERWIS_RCN>
+        <ms:TERYT>1863</ms:TERYT>
+        <ms:TRAN_PRZESTRZEN_NAZW>PL.PZGiK.9125.RCN</ms:TRAN_PRZESTRZEN_NAZW>
+        <ms:TRAN_LOKALNY_ID_IIP>23D2DDD0-583C-4A5D-A291-F7398FBCE5CE</ms:TRAN_LOKALNY_ID_IIP>
+        <ms:TRAN_WERSJA_ID gml:id="lokale.64285072.TRAN_WERSJA_ID"><gml:timePosition>2026-11-17T14:40:57Z</gml:timePosition></ms:TRAN_WERSJA_ID>
+        <ms:TRAN_OZNACZENIE_TRANS>RCN_T_69549</ms:TRAN_OZNACZENIE_TRANS>
+        <ms:TRAN_RODZAJ_TRANS>wolnyRynek</ms:TRAN_RODZAJ_TRANS>
+        <ms:TRAN_RODZAJ_RYNKU>rynekPierwotny</ms:TRAN_RODZAJ_RYNKU>
+        <ms:TRAN_SPRZEDAJACY>osobaFizyczna</ms:TRAN_SPRZEDAJACY>
+        <ms:TRAN_KUPUJACY>osobaFizyczna</ms:TRAN_KUPUJACY>
+        <ms:TRAN_CENA_BRUTTO>500000</ms:TRAN_CENA_BRUTTO>
+        <ms:TRAN_VAT></ms:TRAN_VAT>
+        <ms:DOK_OZNACZENIE>Rep. A 3734/2026</ms:DOK_OZNACZENIE>
+        <ms:DOK_DATA gml:id="lokale.64285072.DOK_DATA"><gml:timePosition>2026-08-31</gml:timePosition></ms:DOK_DATA>
+        <ms:DOK_TWORCA>not. Notariusz Testowy</ms:DOK_TWORCA>
+        <ms:NIER_RODZAJ>nieruchomoscLokalowa</ms:NIER_RODZAJ>
+        <ms:NIER_PRAWO>wlasnoscLokaluWrazZPrawemZwiazanym</ms:NIER_PRAWO>
+        <ms:NIER_UDZIAL>1/1</ms:NIER_UDZIAL>
+        <ms:NIER_POW_GRUNTU>0.2985</ms:NIER_POW_GRUNTU>
+        <ms:NIER_OPIS></ms:NIER_OPIS>
+        <ms:NIER_CENA_BRUTTO>500000</ms:NIER_CENA_BRUTTO>
+        <ms:NIER_VAT></ms:NIER_VAT>
+        <ms:LOK_ID_LOKALU>186301_1.0209.3016_BUD.1_LOK</ms:LOK_ID_LOKALU>
+        <ms:LOK_FUNKCJA>mieszkalna</ms:LOK_FUNKCJA>
+        <ms:LOK_LICZBA_IZB>3</ms:LOK_LICZBA_IZB>
+        <ms:LOK_NR_KOND>1</ms:LOK_NR_KOND>
+        <ms:LOK_POW_UZYT>65.24</ms:LOK_POW_UZYT>
+        <ms:LOK_POW_PRZYN></ms:LOK_POW_PRZYN>
+        <ms:LOK_CENA_BRUTTO></ms:LOK_CENA_BRUTTO>
+        <ms:LOK_VAT></ms:LOK_VAT>
+        <ms:LOK_INFO></ms:LOK_INFO>
+        <ms:LOK_ADRES></ms:LOK_ADRES>
+      </ms:lokale>
+    </wfs:member>
+    <wfs:member>
+      <ms:lokale gml:id="lokale.64285074">
+        <gml:boundedBy>
+        	<gml:Envelope srsName="urn:ogc:def:crs:EPSG::2180">
+        		<gml:lowerCorner>240904.235590 716301.200371</gml:lowerCorner>
+        		<gml:upperCorner>240904.235590 716301.200371</gml:upperCorner>
+        	</gml:Envelope>
+        </gml:boundedBy>
+        <ms:GEOMETRIA>
+          <gml:Point gml:id="lokale.64285074.1" srsName="urn:ogc:def:crs:EPSG::2180">
+            <gml:pos>240904.235590 716301.200371</gml:pos>
+          </gml:Point>
+        </ms:GEOMETRIA>
+        <ms:gid>64285074</ms:gid>
+        <ms:SERWIS_RCN></ms:SERWIS_RCN>
+        <ms:TERYT>1863</ms:TERYT>
+        <ms:TRAN_PRZESTRZEN_NAZW>PL.PZGiK.9125.RCN</ms:TRAN_PRZESTRZEN_NAZW>
+        <ms:TRAN_LOKALNY_ID_IIP>E653DC13-3D90-4674-B04B-3C1A6CB1B056</ms:TRAN_LOKALNY_ID_IIP>
+        <ms:TRAN_WERSJA_ID gml:id="lokale.64285074.TRAN_WERSJA_ID"><gml:timePosition>2026-11-17T14:18:11Z</gml:timePosition></ms:TRAN_WERSJA_ID>
+        <ms:TRAN_OZNACZENIE_TRANS>RCN_T_69545</ms:TRAN_OZNACZENIE_TRANS>
+        <ms:TRAN_RODZAJ_TRANS>wolnyRynek</ms:TRAN_RODZAJ_TRANS>
+        <ms:TRAN_RODZAJ_RYNKU>rynekWtorny</ms:TRAN_RODZAJ_RYNKU>
+        <ms:TRAN_SPRZEDAJACY>osobaPrawna</ms:TRAN_SPRZEDAJACY>
+        <ms:TRAN_KUPUJACY>osobaFizyczna</ms:TRAN_KUPUJACY>
+        <ms:TRAN_CENA_BRUTTO>720001.23</ms:TRAN_CENA_BRUTTO>
+        <ms:TRAN_VAT></ms:TRAN_VAT>
+        <ms:DOK_OZNACZENIE>Rep. A 5558/2026</ms:DOK_OZNACZENIE>
+        <ms:DOK_DATA gml:id="lokale.64285074.DOK_DATA"><gml:timePosition>2026-09-03</gml:timePosition></ms:DOK_DATA>
+        <ms:DOK_TWORCA>not. Notariusz Testowy</ms:DOK_TWORCA>
+        <ms:NIER_RODZAJ>nieruchomoscLokalowa</ms:NIER_RODZAJ>
+        <ms:NIER_PRAWO>wlasnoscLokaluWrazZPrawemZwiazanym</ms:NIER_PRAWO>
+        <ms:NIER_UDZIAL>1/1</ms:NIER_UDZIAL>
+        <ms:NIER_POW_GRUNTU>0.14</ms:NIER_POW_GRUNTU>
+        <ms:NIER_OPIS></ms:NIER_OPIS>
+        <ms:NIER_CENA_BRUTTO>719500</ms:NIER_CENA_BRUTTO>
+        <ms:NIER_VAT></ms:NIER_VAT>
+        <ms:LOK_ID_LOKALU>186301_1.0209.3093_BUD.4_LOK</ms:LOK_ID_LOKALU>
+        <ms:LOK_FUNKCJA>mieszkalna</ms:LOK_FUNKCJA>
+        <ms:LOK_LICZBA_IZB>3</ms:LOK_LICZBA_IZB>
+        <ms:LOK_NR_KOND>2</ms:LOK_NR_KOND>
+        <ms:LOK_POW_UZYT>64.15</ms:LOK_POW_UZYT>
+        <ms:LOK_POW_PRZYN></ms:LOK_POW_PRZYN>
+        <ms:LOK_CENA_BRUTTO></ms:LOK_CENA_BRUTTO>
+        <ms:LOK_VAT></ms:LOK_VAT>
+        <ms:LOK_INFO></ms:LOK_INFO>
+        <ms:LOK_ADRES></ms:LOK_ADRES>
+      </ms:lokale>
+    </wfs:member>
+</wfs:FeatureCollection>

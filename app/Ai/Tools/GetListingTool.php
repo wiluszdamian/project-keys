@@ -5,6 +5,7 @@ namespace App\Ai\Tools;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Str;
@@ -21,7 +22,7 @@ class GetListingTool implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, historia cen, status i notatka właściciela.';
+        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, historia cen, porównanie z cenami transakcyjnymi z RCN (sprzedaż), status i notatka właściciela.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -53,6 +54,10 @@ class GetListingTool implements Tool
             'commutes' => Format::commutes($listing),
             'location_precision' => $listing->geo_precision,
             'risk_flags' => collect($listing->risk_flags ?? [])->pluck('message')->all(),
+            'transaction_prices' => $listing->transaction_comparison ? [
+                'summary' => TransactionComparator::describe($listing->transaction_comparison),
+                'details' => $listing->transaction_comparison,
+            ] : null,
             'analyses' => $listing->analyses->map(fn (ListingAnalysis $analysis) => [
                 'search' => $analysis->search?->name,
                 'score' => $analysis->score,

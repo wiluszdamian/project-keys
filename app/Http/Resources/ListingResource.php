@@ -32,6 +32,7 @@ class ListingResource extends JsonResource
             'status' => $this->status,
             'note' => $this->note,
             'risk_flags' => $this->risk_flags ?? [],
+            'transaction_comparison' => $this->transaction_comparison,
             'description' => $this->when($request->routeIs('listings.show'), $this->description),
             'image_url' => $this->image_url,
             'duplicate_of_id' => $this->duplicate_of_id,

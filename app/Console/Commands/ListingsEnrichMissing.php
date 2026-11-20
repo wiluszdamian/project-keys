@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\DealType;
 use App\Models\CommutePlace;
 use App\Models\Listing;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\Geo\ListingLocator;
 use App\Services\ImageHasher;
+use App\Services\Rcn\TransactionComparator;
 use App\Services\RiskDetector;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -14,10 +16,10 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('listings:enrich-missing {--geocode=120 : Ile ofert geokodować (OpenStreetMap, 1 na sekundę)} {--images=150 : Ile zdjęć pobrać do porównania}')]
-#[Description('Uzupełnia aktualne oferty: współrzędne, czasy dojazdu, hash zdjęcia i sygnały ryzyka')]
+#[Description('Uzupełnia aktualne oferty: współrzędne, czasy dojazdu, hash zdjęcia, sygnały ryzyka i ceny transakcyjne')]
 class ListingsEnrichMissing extends Command
 {
-    public function handle(ListingLocator $locator, CommuteCalculator $commutes, ImageHasher $hasher, RiskDetector $risks): int
+    public function handle(ListingLocator $locator, CommuteCalculator $commutes, ImageHasher $hasher, RiskDetector $risks, TransactionComparator $transactions): int
     {
         $located = 0;
 
@@ -44,7 +46,20 @@ class ListingsEnrichMissing extends Command
             $hashed++;
         }
 
-        $this->info("Współrzędne: {$located}, czasy dojazdu: {$routed}, zdjęcia: {$hashed}.");
+        $compared = 0;
+
+        if (config('rcn.enabled')) {
+            // Oferty sprzedaży, które dostały współrzędne po ocenie: porównanie z transakcjami z RCN.
+            $this->current()->where('deal_type', DealType::Sale)->whereNotNull('lat')->whereNull('transactions_compared_at')
+                ->chunkById(200, function ($chunk) use ($transactions, &$compared) {
+                    foreach ($chunk as $listing) {
+                        $listing->forceFill(['transaction_comparison' => $transactions->compare($listing), 'transactions_compared_at' => now()])->save();
+                        $compared++;
+                    }
+                });
+        }
+
+        $this->info("Współrzędne: {$located}, czasy dojazdu: {$routed}, zdjęcia: {$hashed}, ceny transakcyjne: {$compared}.");
 
         return self::SUCCESS;
     }

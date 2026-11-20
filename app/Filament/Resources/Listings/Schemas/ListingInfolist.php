@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Listings\Schemas;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\RcnTransaction;
+use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -110,6 +112,54 @@ class ListingInfolist
                             ->listWithLineBreaks()
                             ->bulleted()
                             ->color('danger'),
+                    ]),
+
+                Section::make('Ceny transakcyjne w okolicy')
+                    ->icon('heroicon-o-document-text')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Listing $record) => filled($record->transaction_comparison))
+                    ->description(fn (Listing $record) => 'Prawdziwe ceny sprzedaży mieszkań z Rejestru Cen Nieruchomości (akty notarialne), podobny metraż.'
+                        .(in_array($record->geo_precision, ['district', 'city'], true) ? ' Położenie oferty jest przybliżone, więc okolica jest szersza.' : ''))
+                    ->schema([
+                        TextEntry::make('transactionSummary')
+                            ->hiddenLabel()
+                            ->state(fn (Listing $record) => TransactionComparator::describe($record->transaction_comparison))
+                            ->weight('bold')
+                            ->color(fn (Listing $record) => match ($record->transaction_comparison['status'] ?? null) {
+                                TransactionComparator::ABOVE => 'danger',
+                                TransactionComparator::BELOW => 'success',
+                                default => null,
+                            }),
+                        Grid::make(4)
+                            ->visible(fn (Listing $record) => isset($record->transaction_comparison['median_price_per_m2']))
+                            ->schema([
+                                TextEntry::make('tc_offer')->label('Oferta za m²')->state(fn (Listing $record) => Format::pln($record->transaction_comparison['offer_price_per_m2'] ?? null)),
+                                TextEntry::make('tc_median')->label('Mediana transakcji za m²')->state(fn (Listing $record) => Format::pln($record->transaction_comparison['median_price_per_m2'] ?? null)),
+                                TextEntry::make('tc_range')->label('Połowa transakcji w przedziale')->state(fn (Listing $record) => isset($record->transaction_comparison['p25_price_per_m2'])
+                                    ? Format::pln($record->transaction_comparison['p25_price_per_m2']).' – '.Format::pln($record->transaction_comparison['p75_price_per_m2']) : null),
+                                TextEntry::make('tc_latest')->label('Najnowsza transakcja')->state(fn (Listing $record) => $record->transaction_comparison['latest_date'] ?? null)->date('d.m.Y'),
+                            ]),
+                        RepeatableEntry::make('tc_nearest')
+                            ->label('Najbliższe transakcje')
+                            ->visible(fn (Listing $record) => filled($record->transaction_comparison['nearest'] ?? null))
+                            ->state(fn (Listing $record) => collect($record->transaction_comparison['nearest'] ?? [])->map(fn (array $row) => $row + [
+                                'rooms_floor' => ($row['rooms'] ?? '?').' / '.($row['floor'] ?? '?'),
+                                'where' => $row['distance_m'].' m, '.match ($row['market'] ?? null) {
+                                    RcnTransaction::PRIMARY => 'pierwotny',
+                                    RcnTransaction::SECONDARY => 'wtórny',
+                                    default => 'rynek ?',
+                                },
+                            ])->all())
+                            ->columns(6)
+                            ->schema([
+                                TextEntry::make('date')->label('Data')->date('m.Y'),
+                                TextEntry::make('area')->label('Metraż')->formatStateUsing(fn ($state) => Format::area($state)),
+                                TextEntry::make('rooms_floor')->label('Izby / piętro'),
+                                TextEntry::make('price')->label('Cena')->formatStateUsing(fn ($state) => Format::pln($state)),
+                                TextEntry::make('price_per_m2')->label('Za m²')->formatStateUsing(fn ($state) => Format::pln($state)),
+                                TextEntry::make('where')->label('Odległość, rynek'),
+                            ]),
                     ]),
 
                 Section::make('Dojazd')

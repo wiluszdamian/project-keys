@@ -111,6 +111,11 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   AI z plusami i minusami, historię cen i opis. Możesz nadać status (ulubiona, kontakt,
   oglądanie, odrzucona) i dopisać notatkę. Odrzucone znikają z listy i nie dają powiadomień.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
+- **Ceny transakcyjne:** każda oferta sprzedaży jest porównana z prawdziwymi cenami sprzedaży mieszkań
+  z Rejestru Cen Nieruchomości (GUGiK): transakcje w promieniu 800 m do 3 km, podobny metraż, ostatnie
+  2 lata, ten sam rynek (pierwotny albo wtórny), gdy portal go podaje. Przy ofercie widać, czy cena jest
+  rynkowa, o ile drożej albo taniej, i najbliższe transakcje. Wynik trafia też do oceny AI, na Discorda
+  i do sobotniego raportu.
 - **Mapa:** oferty na mapie w kolorze oceny, twoje miejsca dojazdu, filtry.
 - **Miejsca dojazdu:** np. praca. Z każdej oferty liczę dojazd autem i rowerem (własny serwer tras OSRM).
   Czasy widać przy ofercie, można po nich filtrować, a AI bierze je pod uwagę w ocenie.
@@ -161,6 +166,7 @@ Polecenia uruchamiasz w kontenerze `app`, np. `docker compose exec app php artis
 | `alerts:check` | Czy był udany przebieg w 3 godziny i ile błędów AI (scheduler robi to co godzinę) |
 | `reports:weekly-market` | Raport rynku z 7 dni (scheduler: soboty 20:00). `--no-send` tylko zapisuje |
 | `user:reset-2fa {email}` | Wyłącza 2FA konta, np. po utracie telefonu |
+| `rcn:import` | Pobiera ceny transakcyjne z RCN i porównuje oferty sprzedaży (scheduler: niedziele 4:30). `--compare-only` bez pobierania |
 | `api:token {nazwa}` | Token do API, pokazywany raz |
 
 API (wymaga tokenu w nagłówku `Authorization: Bearer …`):

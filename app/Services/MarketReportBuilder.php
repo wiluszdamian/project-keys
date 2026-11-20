@@ -6,7 +6,9 @@ use App\Enums\DealType;
 use App\Enums\ListingStatus;
 use App\Models\Listing;
 use App\Models\MarketReport;
+use App\Models\RcnTransaction;
 use App\Models\Search;
+use App\Services\Rcn\TransactionComparator;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +64,44 @@ class MarketReportBuilder
             'price_drops' => $this->priceDrops($dealType, $from, $to),
             'best_new' => $this->bestNew($dealType, $from, $to),
             'has_previous' => $previous !== null,
+            'transactions' => $dealType === DealType::Sale ? $this->transactions($from, $to) : null,
+        ];
+    }
+
+    /**
+     * Oferty sprzedaży z tygodnia na tle cen transakcyjnych z RCN i mediany transakcji z ostatnich 3 miesięcy.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function transactions(CarbonInterface $from, CarbonInterface $to): ?array
+    {
+        $comparisons = $this->seen(DealType::Sale, $from, $to)
+            ->whereNotNull('transaction_comparison')
+            ->pluck('transaction_comparison')
+            ->filter(fn (array $comparison) => isset($comparison['diff_percent']));
+
+        $byMarket = RcnTransaction::query()
+            ->where('date', '>=', $to->copy()->subMonths(3)->toDateString())
+            ->whereNotNull('market')
+            ->groupBy('market')
+            ->select('market')
+            ->selectRaw('count(*) as count')
+            ->selectRaw('percentile_cont(0.5) within group (order by price_per_m2) as median')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->market => ['count' => (int) $row->count, 'median_price_per_m2' => $this->round($row->median)]])
+            ->all();
+
+        if ($comparisons->isEmpty() && $byMarket === []) {
+            return null;
+        }
+
+        return [
+            'compared' => $comparisons->count(),
+            'above' => $comparisons->where('status', TransactionComparator::ABOVE)->count(),
+            'market' => $comparisons->where('status', TransactionComparator::MARKET)->count(),
+            'below' => $comparisons->where('status', TransactionComparator::BELOW)->count(),
+            'median_diff_percent' => $comparisons->isEmpty() ? null : round((float) $comparisons->pluck('diff_percent')->median(), 1),
+            'last_3_months' => $byMarket,
         ];
     }
 
