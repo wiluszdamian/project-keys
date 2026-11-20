@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CommutePlaceController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\MarketReportController;
 use App\Http\Controllers\Api\NotificationSettingsController;
 use App\Http\Controllers\Api\ScrapeRunController;
 use App\Http\Controllers\Api\SearchController;
@@ -23,4 +24,5 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('commute-places', CommutePlaceController::class);
     Route::get('notification-settings', [NotificationSettingsController::class, 'show']);
     Route::put('notification-settings', [NotificationSettingsController::class, 'update']);
+    Route::get('market-reports', [MarketReportController::class, 'index']);
 });

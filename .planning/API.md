@@ -24,8 +24,9 @@ Miejsca dojazdu (np. praca): `GET/POST /commute-places`, `GET/PATCH/DELETE /comm
 
 Zbiorcze powiadomienia kanałów (wynajem i sprzedaż osobno):
 
-- `GET /notification-settings`: `{"data": {"rent": {"schedule", "every_hours", "daily_at", "last_sent_at"}, "sale": {...}}}`.
-- `PUT /notification-settings`: np. `{"rent": {"schedule": "daily", "daily_at": "20:00"}, "sale": {"schedule": "every_hours", "every_hours": 4}}`. `schedule`: `per_search` (decydują wyszukiwania), `every_hours`, `daily`.
+- `GET /notification-settings`: `{"data": {"rent": {"schedule", "every_hours", "daily_at", "last_sent_at"}, "sale": {...}, "weekly_report": true, "alerts_discord": false}}`.
+- `PUT /notification-settings`: np. `{"rent": {"schedule": "daily", "daily_at": "20:00"}, "sale": {"schedule": "every_hours", "every_hours": 4}}`. `schedule`: `per_search` (decydują wyszukiwania), `every_hours`, `daily`. Dodatkowo `weekly_report` (raport rynku w soboty o 20:00) i `alerts_discord` (alerty także na Discorda), oba bool.
+- `GET /market-reports?deal_type=rent&limit=4`: tygodniowe raporty rynku od najnowszego: `id`, `deal_type`, `period_start`, `period_end`, `sent_at`, `data` (`totals`, `searches`, `districts`, `rooms`, `price_drops`, `best_new`, `has_previous`).
 
 Limity: 60 zapytań na minutę na token.
 

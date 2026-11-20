@@ -23,7 +23,10 @@ class NotificationSettingsController extends Controller
 
     public function update(Request $request): JsonResponse
     {
-        $rules = [];
+        $rules = [
+            'weekly_report' => ['sometimes', 'boolean'],
+            'alerts_discord' => ['sometimes', 'boolean'],
+        ];
 
         foreach (DealType::cases() as $deal) {
             $key = $deal->value;
@@ -37,6 +40,13 @@ class NotificationSettingsController extends Controller
 
         $data = $request->validate($rules);
         $settings = [];
+
+        foreach (['weekly_report', 'alerts_discord'] as $flag) {
+            if (array_key_exists($flag, $data)) {
+                $settings["notify_{$flag}"] = (bool) $data[$flag];
+                unset($data[$flag]);
+            }
+        }
 
         foreach ($data as $deal => $values) {
             foreach ($values as $field => $value) {
@@ -56,6 +66,10 @@ class NotificationSettingsController extends Controller
             'every_hours' => (int) config("notify.groups.{$deal->value}.every_hours"),
             'daily_at' => config("notify.groups.{$deal->value}.daily_at"),
             'last_sent_at' => Cache::get("notify:group:{$deal->value}:last_sent"),
-        ]])->all();
+        ]])->all() + [
+            // Raport rynku: soboty 20:00. Alerty zawsze w panelu, na Discorda opcjonalnie.
+            'weekly_report' => (bool) config('notify.weekly_report'),
+            'alerts_discord' => (bool) config('notify.alerts_discord'),
+        ];
     }
 }

@@ -10,6 +10,10 @@ return [
     'price_drops' => (bool) env('NOTIFY_PRICE_DROPS', true),
     // Ten sam alert systemowy najwyżej raz na tyle godzin.
     'alert_cooldown_hours' => 6,
+    // Tygodniowy raport rynku w każdą sobotę o 20:00: Discord (kanał wynajmu i sprzedaży) i panel.
+    'weekly_report' => (bool) env('NOTIFY_WEEKLY_REPORT', true),
+    // Alerty systemowe zawsze idą do panelu. Na Discorda tylko po włączeniu.
+    'alerts_discord' => (bool) env('NOTIFY_ALERTS_DISCORD', false),
 
     // Zbiorcze powiadomienie dla kanału (wynajem i sprzedaż osobno), zamiast ustawień każdego wyszukiwania.
     // schedule: per_search (decyduje wyszukiwanie), every_hours (co N godzin) albo daily (raz dziennie o daily_at).

@@ -7,6 +7,9 @@ x-app: &app
   image: project-keys-app
   restart: unless-stopped
   env_file: .env
+  # Logi Laravela wspólne dla app, workerów i schedulera (strona Logi w panelu).
+  volumes:
+    - logs:/var/www/html/storage/logs
   depends_on:
     postgres:
       condition: service_healthy
@@ -108,6 +111,7 @@ services:
     logging: *logging
 
 volumes:
+  logs:
   pgdata:
   redisdata:
   caddy_data:

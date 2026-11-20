@@ -116,12 +116,23 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   Czasy widać przy ofercie, można po nich filtrować, a AI bierze je pod uwagę w ocenie.
 - **Asystent:** czat z AI o ofertach z bazy. Widzi twoje wyszukiwania, oferty, oceny AI, historię cen
   i ceny w okolicy (tylko odczyt). Odpowiada z linkami do ofert w panelu. Rozmowy są zapisywane.
-- **Dzwoneczek:** nowe dobre oferty, obniżki cen i alerty pojawiają się w panelu od razu, niezależnie
-  od tego, jak często idzie Discord.
+- **Raport rynku:** w każdą sobotę o 20:00 raport z ostatnich 7 dni, osobno dla wynajmu i sprzedaży:
+  liczba ofert, nowe, mediany cen z porównaniem do poprzedniego tygodnia, dzielnice, pokoje, obniżki
+  i najlepsze nowe oferty. Idzie na Discorda i do panelu. W panelu jest też podgląd na żywo.
+- **Logi:** wpisy z logów aplikacji, workerów i schedulera z filtrem poziomu i wyszukiwaniem, pobranie
+  pliku i lista nieudanych zadań kolejki.
+- **Dzwoneczek:** nowe dobre oferty, obniżki cen, raport rynku i alerty pojawiają się w panelu od razu,
+  niezależnie od tego, jak często idzie Discord. Alerty systemowe (blokada portalu, brak przebiegów,
+  błędy AI) idą tylko do panelu, chyba że włączysz Discorda w ustawieniach.
 - **Ustawienia:** wszystko, co jest w `.env` i configu: częstotliwość i tempo pobierania,
   lokalizacje miejscowości dla portali, powiadomienia (w tym jedno zbiorcze podsumowanie dziennie
   albo co kilka godzin osobno dla wynajmu i sprzedaży), webhooki Discorda, model i klucz AI. Wartość z panelu
   wygrywa z `.env`. Zapis restartuje workery.
+
+Logowanie wymaga hasła i kodu z aplikacji 2FA (Google Authenticator, Aegis, 1Password).
+Przy pierwszym wejściu panel pokaże kod QR i kody zapasowe. Zapisz kody zapasowe: każdy działa raz,
+gdy nie masz telefonu. Gdy zgubisz telefon i kody, wyłącz 2FA na serwerze:
+`docker compose exec app php artisan user:reset-2fa twoj@email`.
 
 > [!IMPORTANT]
 > Bez domeny są dwie możliwości:
@@ -148,6 +159,8 @@ Polecenia uruchamiasz w kontenerze `app`, np. `docker compose exec app php artis
 | `notify:test` | Wiadomość testowa na Discorda |
 | `ai:usage` | Zużycie tokenów AI dziś i z 30 dni |
 | `alerts:check` | Czy był udany przebieg w 3 godziny i ile błędów AI (scheduler robi to co godzinę) |
+| `reports:weekly-market` | Raport rynku z 7 dni (scheduler: soboty 20:00). `--no-send` tylko zapisuje |
+| `user:reset-2fa {email}` | Wyłącza 2FA konta, np. po utracie telefonu |
 | `api:token {nazwa}` | Token do API, pokazywany raz |
 
 API (wymaga tokenu w nagłówku `Authorization: Bearer …`):
@@ -160,6 +173,8 @@ API (wymaga tokenu w nagłówku `Authorization: Bearer …`):
 | `GET /api/searches/{id}/listings` | Oferty wyszukiwania (`sort=newest\|score`, `min_score`) |
 | `GET /api/listings/{id}` | Oferta z oceną AI i historią cen |
 | `GET /api/scrape-runs` | Ostatnie przebiegi scraperów |
+| `GET/PUT /api/notification-settings` | Zbiorcze powiadomienia kanałów, raport rynku, alerty na Discordzie |
+| `GET /api/market-reports` | Raporty rynku (`deal_type=rent\|sale`, `limit`) |
 
 Pełny opis pól: [`.planning/API.md`](.planning/API.md).
 
@@ -168,8 +183,9 @@ Pełny opis pól: [`.planning/API.md`](.planning/API.md).
 - **Brak nowych wiadomości.** Sprawdź `search:list` (czy wyszukiwanie jest aktywne) i
   `GET /api/scrape-runs`. Status `blocked` znaczy, że portal odpowiedział 403 lub 429. Aplikacja
   wraca do niego sama po 2 godzinach.
-- **Oferty bez oceny AI.** Sprawdź `ai:usage` i logi workera AI:
-  `docker compose logs worker-ai --tail 100`. Każdy kontener ma swoje logi.
+- **Oferty bez oceny AI.** Sprawdź `ai:usage` i stronę Logi w panelu (logi app, workerów i
+  schedulera są we wspólnym wolumenie `logs`). Wyjście samych procesów:
+  `docker compose logs worker-ai --tail 100`.
 - **Portal zmienił stronę.** `scraper:probe otodom {id}` pokaże, czy parser coś odczytuje. Gdy
   nie, trzeba poprawić scraper w `app/Scrapers` i dane testowe w `tests/Fixtures`.
 

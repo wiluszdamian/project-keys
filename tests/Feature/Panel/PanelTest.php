@@ -48,6 +48,8 @@ it('otwiera wszystkie strony panelu', function () {
         "/admin/listings/{$listing->id}/edit",
         '/admin/scrape-runs',
         '/admin/settings',
+        '/admin/logs',
+        '/admin/market-report',
     ] as $url) {
         $this->get($url)->assertOk();
     }

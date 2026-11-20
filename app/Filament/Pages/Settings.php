@@ -98,6 +98,14 @@ class Settings extends Page
                                         Toggle::make('notify_price_drops')
                                             ->label('Wysyłaj obniżki cen wysłanych ofert')
                                             ->inline(false),
+                                        Toggle::make('notify_weekly_report')
+                                            ->label('Tygodniowy raport rynku')
+                                            ->helperText('W każdą sobotę o 20:00, na Discordzie i w panelu (Raport rynku).')
+                                            ->inline(false),
+                                        Toggle::make('notify_alerts_discord')
+                                            ->label('Alerty systemowe także na Discorda')
+                                            ->helperText('Alerty (blokada portalu, brak przebiegów, błędy AI) zawsze trafiają do dzwoneczka w panelu.')
+                                            ->inline(false),
                                     ]),
                                 Section::make('Zbiorcze powiadomienia kanałów')
                                     ->description('Jedna wiadomość na Discordzie dla wszystkich wyszukiwań danego typu: nowe dobre oferty i obniżki cen. Gdy ustawisz tryb zbiorczy, wygrywa on z ustawieniami pojedynczych wyszukiwań. Dzwoneczek w panelu dostaje powiadomienia od razu.')

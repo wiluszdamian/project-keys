@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\MarketReport;
 use App\Models\Search;
 use App\Notifications\Discord\DiscordMessages;
 use App\Notifications\Discord\DiscordWebhook;
@@ -52,6 +53,16 @@ class Notifier
         $this->discord->send($this->messages->groupDigest($dealType, $listings, $total, $priceDrops, $period), $dealType);
     }
 
+    /**
+     * Tygodniowy raport rynku na kanał wynajmu albo sprzedaży.
+     */
+    public function marketReport(MarketReport $report): void
+    {
+        if ($this->discord->isConfigured($report->deal_type)) {
+            $this->discord->send($this->messages->marketReport($report), $report->deal_type);
+        }
+    }
+
     public function canNotifyGroup(DealType $dealType): bool
     {
         return $this->discord->isConfigured($dealType);
@@ -63,22 +74,21 @@ class Notifier
     }
 
     /**
-     * Alert systemowy na główny kanał. Ten sam klucz najwyżej raz na 6 godzin.
+     * Alert systemowy w panelu (dzwoneczek). Na Discorda tylko, gdy włączysz to w ustawieniach.
+     * Ten sam klucz najwyżej raz na notify.alert_cooldown_hours.
      */
     public function alert(string $key, string $title, string $body): bool
     {
-        if (! $this->discord->isConfigured()) {
-            Log::warning("Alert bez kanału: {$title}. {$body}");
-
-            return false;
-        }
-
         if (! Cache::add("alert:{$key}", true, now()->addHours(config('notify.alert_cooldown_hours')))) {
             return false;
         }
 
-        $this->discord->send($this->messages->alert($title, $body));
+        Log::warning("Alert: {$title}. {$body}");
         app(PanelNotifier::class)->alert($title, $body);
+
+        if (config('notify.alerts_discord') && $this->discord->isConfigured()) {
+            $this->discord->send($this->messages->alert($title, $body));
+        }
 
         return true;
     }

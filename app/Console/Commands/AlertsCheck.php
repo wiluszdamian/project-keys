@@ -27,7 +27,7 @@ class AlertsCheck extends Command
             $notifier->alert(
                 'no-successful-run',
                 'Brak udanego przebiegu od 3 godzin',
-                'Ostatni udany przebieg: '.($lastOk ?? 'nigdy').'. Sprawdź `docker compose logs worker scheduler` i `GET /api/scrape-runs`.',
+                'Ostatni udany przebieg: '.($lastOk ?? 'nigdy').'. Sprawdź Logi i Przebiegi w panelu.',
             );
             $this->warn('Brak udanego przebiegu od 3 godzin.');
         }
@@ -50,7 +50,7 @@ class AlertsCheck extends Command
             $notifier->alert(
                 'ai-errors',
                 'Ocena AI często się nie udaje',
-                "Błędy w {$errors} z {$calls} wywołań w ostatniej godzinie. Oferty idą bez oceny. Sprawdź `docker compose logs worker` i klucz OPENCODE_GO_API_KEY.",
+                "Błędy w {$errors} z {$calls} wywołań w ostatniej godzinie. Oferty idą bez oceny. Sprawdź Logi w panelu i klucz API w Ustawieniach → AI.",
             );
             $this->warn('Dużo błędów AI.');
         }

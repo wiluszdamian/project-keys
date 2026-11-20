@@ -9,7 +9,7 @@ Aktualizuje Claude Code po każdej fazie.
 - CPU / RAM / dysk: 4 vCPU AMD EPYC, 7.8 GB RAM, 99 GB dysk, swap 2 GB
 - System: Debian 13 (trixie), kernel 6.12
 - Docker / Compose: Docker 29.10.0, Compose v5.8.0
-- Domena: `https://nieruchomosci.wilusz.tech` (proxy Cloudflare). Panel i API tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Zapasowo `http://155.133.197.67` (to samo ograniczenie) i tunel `ssh -L 8080:localhost:80 project-keys`
+- Domena: `https://nieruchomosci.wilusz.tech` (proxy Cloudflare). Panel z 2FA. Panel i API tylko z IP właściciela (`PANEL_ALLOWED_IPS`), z innych adresów 403. Zapasowo `http://155.133.197.67` (to samo ograniczenie) i tunel `ssh -L 8080:localhost:80 project-keys`
 
 ## Postęp
 
@@ -23,7 +23,7 @@ Aktualizuje Claude Code po każdej fazie.
 | 5 Harmonogram | gotowe | 2026-11-17 | Pierwszy automatyczny przebieg 21:13: Otodom 109, OLX 120 ofert. Testy na Postgresie (`scripts/test.sh`) |
 | 6 AI | gotowe | 2026-11-17 | 143 testy. Prawdziwe wywołanie: 12,7 s, ok. 1750 tokenów na ofertę. AI włączone na serwerze |
 | 7 Powiadomienia | w trakcie | 2026-11-17 | Discord gotowy (przed fazą 6, na prośbę właściciela). Telegram do zrobienia |
-| 8 Utrwalenie | do zrobienia | | |
+| 8 Utrwalenie | w trakcie | 2026-11-20 | `deploy.sh`, logi w panelu. Backup do zrobienia |
 
 ## Decyzje
 
@@ -92,9 +92,13 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-18: Mapa w panelu: Leaflet 1.9.4 z unpkg i kafelki OpenStreetMap (ładowane przez przeglądarkę właściciela).
 - 2026-11-18: Wykrywanie oszustw (`risk_flags`): typowe zwroty (przedpłata, klucze kurierem, właściciel za granicą), cena za m² poniżej 60% mediany w okolicy, to samo zdjęcie (dHash, GD) w ofercie z innego miasta, innego typu albo z ceną różną o ponad 30%. Ta sama oferta z innego portalu to duplikat, nie ryzyko. Sygnały idą do oceny AI, na Discorda i do panelu.
 - 2026-11-18: `listings:enrich-missing` co 10 minut uzupełnia porcjami starsze oferty (współrzędne, dojazdy, zdjęcia, ryzyko).
+- 2026-11-20: 2FA w panelu (prośba właściciela): wbudowane MFA Filamenta z aplikacją TOTP i kodami zapasowymi, wymagane dla każdego konta. Sekret i kody zaszyfrowane `APP_KEY`. Reset przez `user:reset-2fa {email}`. Lista IP w Caddy zostaje jako druga warstwa.
+- 2026-11-20: `scripts/deploy.sh` z laptopa zamiast `git pull` na serwerze (serwer nie ma repozytorium git, kod idzie rsync). Migracje w nowym obrazie przed restartem, potem `up -d --wait`, `queue:restart` i sprawdzenie `/up` przez Caddy. Wpis w `~/deploys.log`.
+- 2026-11-20: Alerty systemowe tylko w panelu (prośba właściciela), z przyciskiem do logów. Discord jako opcja (`notify_alerts_discord`, domyślnie wyłączone). Każdy alert trafia też do logu jako warning.
+- 2026-11-20: Logi w panelu: wolumen `logs` wspólny dla app, workerów i schedulera (wcześniej każdy kontener miał własny plik). Kanał `daily` (14 dni). Strona czyta tylko końcówkę pliku (3 MB) i tylko pliki z `storage/logs`.
+- 2026-11-20: Tygodniowy raport rynku (prośba właściciela): soboty 20:00, osobno wynajem i sprzedaż, z ofert widzianych w ostatnich 7 dniach (bez duplikatów). Zapis w `market_reports`, zmiany liczone względem poprzedniego zapisanego raportu. Discord (kanał wynajmu albo sprzedaży), dzwoneczek, strona Raport rynku z podglądem na żywo, `GET /api/market-reports`. Włącznik w ustawieniach i w `/api/notification-settings`.
 
 ## Otwarte pytania
 
 - Czy warunki OpenCode Go pozwalają na użycie z własnej aplikacji? Dokumentacja: Go jest „dla OpenCode i innych agentów do kodowania”, ruch jest monitorowany. Ocena ogłoszeń to nie jest ruch agenta do kodowania. Alternatywa zgodna z warunkami: pay-as-you-go (`https://opencode.ai/inference/openai/v1`, płatne z kredytów) albo bezpośrednie API DeepSeek.
-- 2FA w panelu (domena z HTTPS już jest).
 - Duplikaty po cenie i metrażu mogą się mylić: dwa różne ogłoszenia OLX (2400 zł, 63 m2) wskazały tę samą ofertę Otodom (2390 zł, 63,9 m2). Można zaostrzyć regułę, np. wymagać tej samej liczby pokoi.

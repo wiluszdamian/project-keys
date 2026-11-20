@@ -5,6 +5,7 @@ namespace App\Notifications\Discord;
 use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\MarketReport;
 use App\Models\Search;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
@@ -161,6 +162,87 @@ class DiscordMessages
         ]]];
     }
 
+    /**
+     * Tygodniowy raport rynku: liczby z naszej bazy, osobno wynajem i sprzedaż.
+     */
+    public function marketReport(MarketReport $report): array
+    {
+        $data = $report->data;
+        $totals = $data['totals'];
+        $deal = $report->deal_type->getLabel();
+        $fields = [];
+
+        foreach ($data['searches'] as $search) {
+            $fields[] = [
+                'name' => '🔎 '.Str::limit($search['name'], 240),
+                'value' => $this->reportLine($search),
+                'inline' => false,
+            ];
+        }
+
+        if ($data['districts'] !== []) {
+            $fields[] = [
+                'name' => '🏘️ Dzielnice (mediana za m²)',
+                'value' => Str::limit(collect($data['districts'])->take(8)
+                    ->map(fn (array $district) => "{$district['name']}: **".$this->money($district['median_price_per_m2'])."** ({$district['count']})")
+                    ->implode("\n"), 1000),
+                'inline' => true,
+            ];
+        }
+
+        if ($data['rooms'] !== []) {
+            $fields[] = [
+                'name' => '🚪 Pokoje (mediana ceny)',
+                'value' => collect($data['rooms'])
+                    ->map(fn (array $row) => "{$row['rooms']} pok.: **".$this->money($row['median_price'])."** ({$row['count']})")
+                    ->implode("\n"),
+                'inline' => true,
+            ];
+        }
+
+        $drops = $data['price_drops'];
+
+        if ($drops['count'] > 0) {
+            $fields[] = [
+                'name' => "📉 Obniżki cen: {$drops['count']}, mediana −".$this->percent($drops['median_percent']),
+                'value' => Str::limit(collect($drops['top'])->take(3)
+                    ->map(fn (array $drop) => '['.Str::limit(str_replace(['[', ']'], '', $drop['title']), 50)."]({$drop['url']}): "
+                        .$this->money($drop['old_price']).' → '.$this->money($drop['new_price']).' (−'.$this->percent($drop['percent']).')')
+                    ->implode("\n"), 1000),
+                'inline' => false,
+            ];
+        }
+
+        if ($data['best_new'] !== []) {
+            $fields[] = [
+                'name' => '⭐ Najlepsze nowe oferty',
+                'value' => Str::limit(collect($data['best_new'])
+                    ->map(fn (array $listing) => "`{$listing['score']}/10` [".Str::limit(str_replace(['[', ']'], '', $listing['title']), 50)."]({$listing['url']}) · "
+                        .implode(' · ', array_filter([$this->money($listing['price']), $listing['area'] ? $this->area($listing['area']) : null, $listing['district']])))
+                    ->implode("\n"), 1000),
+                'inline' => false,
+            ];
+        }
+
+        $median = array_filter([
+            $totals['median_price'] !== null ? '**'.$this->money($totals['median_price']).'**'.$this->changeText($totals['median_price_change']) : null,
+            $totals['median_price_per_m2'] !== null ? '**'.$this->money($totals['median_price_per_m2']).'/m²**'.$this->changeText($totals['median_price_per_m2_change']) : null,
+        ]);
+
+        return ['embeds' => [[
+            'author' => ['name' => "📊 Raport tygodnia · {$deal}"],
+            'title' => "{$deal}: rynek {$report->periodLabel()}",
+            'url' => rtrim(config('app.url'), '/')."/admin/market-report?report={$report->id}",
+            'description' => "**{$totals['active']}** ".$this->offersWord($totals['active'])." w tym tygodniu, z tego **{$totals['new']}** ".($totals['new'] === 1 ? 'nowa' : 'nowych').'.'
+                .($median !== [] ? "\nMediana: ".implode(', ', $median).'.' : '')
+                .($data['has_previous'] ? '' : "\nPierwszy raport, porównanie z poprzednim tygodniem będzie od następnego."),
+            'fields' => array_slice($fields, 0, 25),
+            'color' => self::COLOR_INFO,
+            'footer' => ['text' => 'Oferty widziane przez nasze wyszukiwania w ostatnich 7 dniach, bez duplikatów.'],
+            'timestamp' => now()->toIso8601String(),
+        ]]];
+    }
+
     public function test(): array
     {
         return ['embeds' => [[
@@ -310,6 +392,34 @@ class DiscordMessages
             $this->portalName($listing->portal),
             $searchNames,
         ])).($listing->risk_flags ? "\n⚠️ ".collect($listing->risk_flags)->pluck('message')->first() : '');
+    }
+
+    /**
+     * @param  array{active: int, new: int, median_price: int|null, median_price_per_m2: int|null, median_price_change: float|null, median_price_per_m2_change: float|null}  $summary
+     */
+    private function reportLine(array $summary): string
+    {
+        return "{$summary['active']} ".$this->offersWord($summary['active']).", {$summary['new']} ".($summary['new'] === 1 ? 'nowa' : 'nowych')
+            .($summary['median_price'] !== null ? "\nmediana ".$this->money($summary['median_price']).$this->changeText($summary['median_price_change']) : '')
+            .($summary['median_price_per_m2'] !== null ? ' · '.$this->money($summary['median_price_per_m2']).'/m²'.$this->changeText($summary['median_price_per_m2_change']) : '');
+    }
+
+    private function changeText(?float $change): string
+    {
+        if ($change === null) {
+            return '';
+        }
+
+        return match (true) {
+            $change > 0 => ' (▲ '.$this->percent($change).')',
+            $change < 0 => ' (▼ '.$this->percent(abs($change)).')',
+            default => ' (bez zmian)',
+        };
+    }
+
+    private function percent(?float $value): string
+    {
+        return $value === null ? '?' : str_replace('.', ',', (string) round($value, 1)).'%';
     }
 
     private function portalName(string $portal): string

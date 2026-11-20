@@ -11,6 +11,7 @@ use App\Models\ListingAnalysis;
 use App\Models\ListingPriceChange;
 use App\Models\ScrapeRun;
 use App\Models\Search;
+use App\Models\User;
 use App\Notifications\Notifier;
 use App\Notifications\PanelNotifier;
 use Illuminate\Support\Facades\Bus;
@@ -169,6 +170,7 @@ it('wysyła obniżkę tylko dla już wysłanej oferty', function (bool $notified
 
 it('alert o blokadzie najwyżej raz na 6 godzin', function () {
     Http::fake([HOOK => Http::response('', 204)]);
+    config(['notify.alerts_discord' => true]);
 
     PortalBlockedRepeatedly::dispatch('olx', 3, 'Portal olx odpowiedział 403');
     PortalBlockedRepeatedly::dispatch('olx', 4, 'Portal olx odpowiedział 403');
@@ -183,6 +185,7 @@ it('alert o blokadzie najwyżej raz na 6 godzin', function () {
 
 it('alerts:check zgłasza brak udanego przebiegu od 3 godzin', function () {
     Http::fake([HOOK => Http::response('', 204)]);
+    config(['notify.alerts_discord' => true]);
     ScrapeRun::factory()->for($this->search)->create(['status' => 'ok', 'finished_at' => now()->subHours(4)]);
 
     $this->artisan('alerts:check')->assertSuccessful();
@@ -192,6 +195,21 @@ it('alerts:check zgłasza brak udanego przebiegu od 3 godzin', function () {
     Cache::flush();
     $this->artisan('alerts:check')->assertSuccessful();
     Http::assertSentCount(1);
+});
+
+it('alert domyślnie idzie tylko do panelu, z linkiem do logów', function () {
+    Http::fake();
+    $user = User::factory()->create();
+    ScrapeRun::factory()->for($this->search)->create(['status' => 'ok', 'finished_at' => now()]);
+    Cache::put('ai:calls:'.now()->format('YmdH'), 6);
+    Cache::put('ai:errors:'.now()->format('YmdH'), 4);
+
+    $this->artisan('alerts:check')->assertSuccessful();
+
+    Http::assertNothingSent();
+    $notification = $user->notifications()->sole();
+    expect($notification->data['title'])->toContain('AI')
+        ->and($notification->data['actions'][0]['url'])->toEndWith('/admin/logs');
 });
 
 it('przy włączonym AI najpierw ocenia oferty w batchu', function () {
@@ -222,6 +240,7 @@ it('po ocenie wysyła tylko oferty od progu i te bez oceny', function () {
 
 it('alerts:check zgłasza dużo błędów AI', function () {
     Http::fake([HOOK => Http::response('', 204)]);
+    config(['notify.alerts_discord' => true]);
     ScrapeRun::factory()->for($this->search)->create(['status' => 'ok', 'finished_at' => now()]);
     Cache::put('ai:calls:'.now()->format('YmdH'), 6);
     Cache::put('ai:errors:'.now()->format('YmdH'), 4);

@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Filament\Support\Format;
 use App\Models\Listing;
+use App\Models\MarketReport;
 use App\Models\Search;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -66,9 +67,37 @@ class PanelNotifier
         );
     }
 
+    public function marketReport(MarketReport $report): void
+    {
+        $totals = $report->data['totals'];
+
+        $this->send(
+            Notification::make()
+                ->title("Raport rynku: {$report->deal_type->getLabel()}, {$report->periodLabel()}")
+                ->body(implode(' · ', array_filter([
+                    "{$totals['active']} ofert",
+                    "{$totals['new']} nowych",
+                    $totals['median_price'] !== null ? 'mediana '.Format::pln($totals['median_price']) : null,
+                ])))
+                ->icon('heroicon-o-chart-bar')
+                ->iconColor('info')
+                ->actions([
+                    Action::make('open')->label('Zobacz raport')->url(route('filament.admin.pages.market-report', ['report' => $report->id]))->markAsRead(),
+                ]),
+        );
+    }
+
     public function alert(string $title, string $body): void
     {
-        $this->send(Notification::make()->title($title)->body($body)->danger());
+        $this->send(
+            Notification::make()
+                ->title($title)
+                ->body($body)
+                ->danger()
+                ->actions([
+                    Action::make('logs')->label('Zobacz logi')->url(route('filament.admin.pages.logs'))->markAsRead(),
+                ]),
+        );
     }
 
     /**

@@ -79,7 +79,7 @@ Status: w trakcie (Discord zrobiony wcześniej, na prośbę właściciela)
 - [ ] Discord i Telegram według NOTIFICATIONS.md, digest, obniżki cen, alerty systemowe.
   - [x] Discord: embed oferty, podsumowanie, obniżki cen, osobne webhooki dla wynajmu i sprzedaży.
   - [x] Alerty: blokada portalu 3 razy z rzędu, brak udanego przebiegu od 3 h (najwyżej raz na 6 h).
-  - [ ] Alert: błędy AI w ponad połowie wywołań (po fazie 6).
+  - [x] Alert: błędy AI w ponad połowie wywołań. Od 2026-11-20 alerty idą do panelu, na Discorda tylko po włączeniu.
   - [ ] Telegram.
 - [ ] `notify:test`, `telegram:chat-id`.
   - [x] `notify:test discord`.
@@ -91,7 +91,8 @@ Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną po
 Status: do zrobienia
 
 - Backup i `restore.sh` z testem przywracania.
-- `deploy.sh`.
+- ✅ `scripts/deploy.sh` (2026-11-20): wdrożenie jedną komendą z laptopa.
+- ✅ Logi w panelu (2026-11-20): wspólny wolumen `logs`, strona Logi, nieudane zadania.
 - Przegląd logów i błędów po 24 h działania, poprawki.
 - README projektu (w katalogu głównym): jak dodać wyszukiwanie, jak sprawdzić status, jak zaktualizować.
 
@@ -101,7 +102,7 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 
 - ✅ Kolejne portale (2026-11-18): Rzeszowiak, Morizon, Gratka, Nieruchomości-online, Domiporta, Adresowo. Szczegóły w SCRAPERS.md.
 - Playwright jako osobna usługa, tylko jeśli któryś portal tego wymaga.
-- ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Domena `nieruchomosci.wilusz.tech` przez proxy Cloudflare, HTTPS (Let's Encrypt), dostęp tylko z adresów z `PANEL_ALLOWED_IPS`. 2FA do zrobienia.
+- ✅ Panel Filament (2026-11-18): wyszukiwania, oferty ze statusami i notatkami, przebiegi, ustawienia całej aplikacji, strona główna z liczbami. Domena `nieruchomosci.wilusz.tech` przez proxy Cloudflare, HTTPS (Let's Encrypt), dostęp tylko z adresów z `PANEL_ALLOWED_IPS`. ✅ 2FA (2026-11-20).
 - Oznaczanie ofert z Telegrama przyciskami („ciekawe”, „odrzuć”), żeby AI uczyło się preferencji z przykładów.
 
 ## Zrobione 2026-11-18 (pomysły z listy)
@@ -118,6 +119,6 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - Oferty, które zniknęły z portalu: status nieaktualnej, czas schodzenia ofert, dokładniejsze statystyki.
 - Okazje: oferty wyraźnie tańsze niż mediana za m² w dzielnicy, obniżki cen w jednym miejscu.
 - Asystent z działaniami: statusy, notatki, nowe wyszukiwania z czatu.
-- Tygodniowy raport rynku na Discordzie i w panelu.
-- Nadal otwarte z wcześniej: backup bazy (faza 8), 2FA w panelu, `deploy.sh`, Telegram.
+- ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).
+- Nadal otwarte z wcześniej: backup bazy (faza 8), Telegram.
 

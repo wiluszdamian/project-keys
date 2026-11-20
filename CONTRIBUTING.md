@@ -56,17 +56,17 @@ docker compose exec postgres psql -U mieszkania -d mieszkania \
 
 ## Wdrożenie
 
-Na serwerze, w katalogu projektu:
+Z laptopa, w katalogu repozytorium:
 
 ```bash
-git pull
-docker compose build app
-docker compose up -d
-docker compose exec app php artisan migrate --force
+scripts/deploy.sh            # kod na serwer, obrazy, migracje, restart, sprawdzenie /up
+scripts/deploy.sh --tests    # to samo, a przed restartem testy na serwerze
 ```
 
-`up -d` restartuje też workery, więc biorą nowy kod. Po zmianie `.env` wystarczy
-`docker compose up -d`.
+Skrypt nie wdroży niezacommitowanych zmian (chyba że dodasz `--dirty`). Kolejno: rsync kodu
+(bez `.env`, `vendor` i logów), `docker compose build`, migracje w nowym obrazie, `up -d`,
+`queue:restart` i sprawdzenie, czy aplikacja odpowiada 200. Historia wdrożeń jest w
+`~/deploys.log` na serwerze. Po samej zmianie `.env` wystarczy `docker compose up -d`.
 
 ## Gdzie co jest
 

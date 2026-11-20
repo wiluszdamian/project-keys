@@ -45,6 +45,8 @@ class AppSettings
         'notify_digest_size' => ['notify.digest_size', 'int'],
         'notify_price_drops' => ['notify.price_drops', 'bool'],
         'notify_alert_cooldown_hours' => ['notify.alert_cooldown_hours', 'int'],
+        'notify_alerts_discord' => ['notify.alerts_discord', 'bool'],
+        'notify_weekly_report' => ['notify.weekly_report', 'bool'],
         'notify_rent_schedule' => ['notify.groups.rent.schedule', 'string'],
         'notify_rent_every_hours' => ['notify.groups.rent.every_hours', 'int'],
         'notify_rent_daily_at' => ['notify.groups.rent.daily_at', 'string'],
