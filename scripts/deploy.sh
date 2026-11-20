@@ -45,22 +45,23 @@ rsync -a --delete \
 ssh "$HOST" TESTS="$TESTS" REV="'$REV'" bash -s <<'REMOTE'
 set -euo pipefail
 cd ~/project-keys
+# Skrypt przychodzi przez stdin, więc polecenia docker dostają </dev/null, żeby go nie zjadły.
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 
 step "Buduję obrazy"
-docker compose build -q
+docker compose build -q </dev/null
 
 if [ "$TESTS" = 1 ]; then
     step "Testy"
-    scripts/test.sh
+    scripts/test.sh </dev/null
 fi
 
 step "Migracje (nowy kod, przed restartem)"
-docker compose run --rm -T app php artisan migrate --force
+docker compose run --rm -T app php artisan migrate --force </dev/null
 
 step "Restart usług"
-docker compose up -d --remove-orphans --wait
-docker compose exec -T app php artisan queue:restart
+docker compose up -d --remove-orphans --wait </dev/null
+docker compose exec -T app php artisan queue:restart </dev/null
 
 step "Sprawdzam, czy aplikacja odpowiada"
 DOMAIN="$(grep -E '^CADDY_DOMAIN=' .env | cut -d= -f2- | tr -d '"' || true)"
