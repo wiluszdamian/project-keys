@@ -148,6 +148,14 @@ class NieruchomosciOnlineScraper implements EnrichesListings, PortalScraper
         $floorText = $tile->querySelector('.attributes__box')?->textContent ?? '';
         $floor = preg_match('/Piętro:\s*(parter|-?\d+)/u', preg_replace('/\s+/u', ' ', $floorText), $match) ? $match[1] : null;
         $description = $tile->querySelector('p.desc')?->textContent;
+        $district = $record['rlocqtn'] ?? null;
+        $city = end($province) ?: $search->city;
+
+        // Oferty deweloperów mają dzielnicę i miasto bez przecinka: "Załęże Rzeszów".
+        if ($district && str_starts_with($city, "{$district} ")) {
+            $city = trim(substr($city, strlen($district)));
+        }
+
         $image = $tile->querySelector('ul.thumb-slider img')?->getAttribute('src');
 
         return new ListingData(
@@ -160,9 +168,9 @@ class NieruchomosciOnlineScraper implements EnrichesListings, PortalScraper
             area: isset($record['rsur']) ? (float) $record['rsur'] : null,
             rooms: isset($record['rooms']) ? (int) $record['rooms'] : null,
             floor: $floor === '0' ? 'parter' : $floor,
-            // "Biała, Rzeszów" (dzielnica, miasto) albo "Rzeszów, podkarpackie".
-            city: end($province) ?: $search->city,
-            district: $record['rlocqtn'] ?? null,
+            // "Biała, Rzeszów" (dzielnica, miasto), "Rzeszów, podkarpackie" albo "Załęże Rzeszów".
+            city: $city,
+            district: $district,
             street: $record['rlocstsn'] ?? null,
             isPrivateOwner: match ($record['pbh'] ?? null) {
                 'priv' => true,

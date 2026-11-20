@@ -22,6 +22,15 @@ it('buduje adres wyszukiwarki z filtrami', function () {
     expect($this->scraper->buildSearchUrl($sale))->toBe('https://www.nieruchomosci-online.pl/szukaj.html?3,mieszkanie,sprzedaz,,Rudna%20Ma%C5%82a');
 });
 
+it('oddziela dzielnicę od miasta w ofertach deweloperów', function () {
+    $listings = collect($this->scraper->parse(nolFixture('search_sale_rzeszow'), Search::factory()->make(['deal_type' => 'sale', 'city' => 'Rzeszów']))['listings']);
+
+    expect($listings->pluck('city')->unique()->values()->all())->toBe(['Rzeszów'])
+        ->and($listings->firstWhere('externalId', '25878905'))
+        ->city->toBe('Rzeszów')
+        ->district->toBe('Załęże');
+});
+
 it('odczytuje oferty na wynajem', function () {
     $result = $this->scraper->parse(nolFixture('search_rent'), Search::factory()->make(['deal_type' => 'rent', 'city' => 'Rzeszów']));
 
