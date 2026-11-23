@@ -115,7 +115,8 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 
 - **Wyszukiwania:** dodawanie, edycja, wstrzymanie i uruchomienie od razu.
 - **Oferty:** tabela z oceną AI, kosztem miesięcznym i filtrami. Na telefonie i tablecie każda oferta
-  jest kartą (zdjęcie, ocena, cena, metraż, status), od 1280 px zwykłą tabelą. Kolumny dojazdu, kosztu
+  jest kartą (zdjęcie, ocena, cena, metraż, status, źródło), od 1280 px zwykłą tabelą. Etykiety
+  w kolumnie Źródło pokazują portale i biura, na których jest ta oferta. Kolumny dojazdu, kosztu
   i portalu pokazują się na szerokim ekranie albo po włączeniu w ikonie kolumn. Strona oferty zaczyna się
   od oceny AI, ceny i metrażu, niżej jest ocena AI z plusami i minusami, ceny transakcyjne, dojazd,
   historia cen i opis. Status (ulubiona, kontakt, oglądanie, odrzucona) i notatkę zmieniasz przyciskami

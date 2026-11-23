@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Listing;
 use Illuminate\Support\Str;
 
 /**
@@ -50,6 +51,28 @@ class Portals
     {
         return in_array($portal, self::WITH_LOCATIONS, true)
             && ! array_key_exists(Str::slug($city), config("scrapers.{$portal}.locations", []));
+    }
+
+    // Krótkie nazwy na etykiety w tabeli i na karcie oferty.
+    private const SHORT = [
+        'nieruchomosci_online' => 'N-online',
+        'rzeszowskie' => 'Rzeszowskie',
+        'pierwsze_pietro' => '1 Piętro',
+    ];
+
+    public static function short(?string $portal): string
+    {
+        return self::SHORT[$portal] ?? self::label($portal);
+    }
+
+    /**
+     * Portal oferty i portale jej duplikatów, bez powtórzeń. Wymaga wczytanych duplicates.
+     *
+     * @return list<string>
+     */
+    public static function sources(Listing $listing): array
+    {
+        return collect([$listing->portal, ...$listing->duplicates->pluck('portal')])->filter()->unique()->values()->all();
     }
 
     public static function label(?string $portal): string

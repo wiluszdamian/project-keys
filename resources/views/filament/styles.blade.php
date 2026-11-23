@@ -24,6 +24,8 @@
     /* Kolumna z tytułem oferty na komputerze: szersza, żeby tytuł nie łamał się co słowo. */
     .pk-col-title { min-width: 13rem; max-width: 22rem; }
     .pk-col-price { min-width: 6.5rem; max-width: 8.5rem; }
+    /* Etykiety źródła oferty: jedna pod drugą, kolumna wąska. */
+    .pk-col-source { min-width: 6rem; max-width: 8rem; }
 
     /* Szerokie tabele w widokach (raport rynku): przewijanie w poziomie zamiast ucinania. */
     .pk-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }

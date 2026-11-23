@@ -240,7 +240,7 @@ it('pokazuje, na jakich portalach jest też ta oferta, i filtruje po portalu dup
         ->assertSee('https://stoprocent-nieruchomosci.pl/nieruchomosci/x', false);
 
     ListingAnalysis::factory()->create(['listing_id' => $original->id, 'search_id' => $search->id, 'score' => 8]);
-    $this->get('/admin/listings')->assertSee('też: Stoprocent');
+    $this->get('/admin/listings')->assertSee('Źródło')->assertSee('Stoprocent')->assertSee('Otodom');
 
     Livewire::test(ListListings::class)
         ->removeTableFilter('above_threshold')

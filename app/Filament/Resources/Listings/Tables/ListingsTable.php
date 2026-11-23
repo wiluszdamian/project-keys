@@ -61,7 +61,6 @@ class ListingsTable
                         $record->district ?: $record->city,
                         $record->street,
                         $record->first_seen_at?->diffForHumans(short: true),
-                        $record->duplicates->isNotEmpty() ? 'też: '.$record->duplicates->map(fn (Listing $duplicate) => Portals::label($duplicate->portal))->unique()->implode(', ') : null,
                     ])->filter()->unique()->implode(' · '))
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('deal_type')
@@ -133,14 +132,18 @@ class ListingsTable
                     ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visibleFrom('2xl'),
+                // Skąd jest oferta: portal i portale tej samej oferty (duplikaty), każdy jako etykieta.
                 TextColumn::make('portal')
-                    ->label('Portal')
+                    ->label('Źródło')
+                    ->state(fn (Listing $record) => Portals::sources($record))
                     ->badge()
-                    ->formatStateUsing(fn (string $state) => Portals::label($state))
+                    ->formatStateUsing(fn (string $state) => Portals::short($state))
                     ->color(fn (string $state) => Portals::color($state))
-                    ->description(fn (Listing $record) => $record->duplicates->isNotEmpty() ? 'też: '.$record->duplicates->map(fn (Listing $duplicate) => Portals::label($duplicate->portal))->unique()->implode(', ') : null)
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->visibleFrom('2xl'),
+                    ->tooltip(fn (Listing $record) => collect(Portals::sources($record))->map(Portals::label(...))->implode(', '))
+                    ->listWithLineBreaks()
+                    ->extraAttributes(['class' => 'pk-col-source'])
+                    ->toggleable()
+                    ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(fn (Listing $record) => array_values(array_filter([
