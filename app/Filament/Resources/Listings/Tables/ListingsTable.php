@@ -36,7 +36,12 @@ class ListingsTable
             // Tylko oferty, które pasują do jakiegoś wyszukiwania. Odłączone (np. po zmianie filtrów) znikają z listy.
             ->modifyQueryUsing(fn (Builder $query) => $query
                 ->whereHas('searches')
-                ->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,url,price,rent_extra', 'analyses:id,listing_id,cost_breakdown'])
+                ->with([
+                    'commutes.place',
+                    'duplicates:id,duplicate_of_id,portal,url,price,rent_extra',
+                    'analyses:id,listing_id,cost_breakdown',
+                    'originalListing' => fn ($query) => $query->withMax('analyses', 'score')->withMax('analyses', 'monthly_cost')->with(['analyses:id,listing_id,cost_breakdown', 'duplicates:id,duplicate_of_id,portal,rent_extra']),
+                ])
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))
             ->defaultSort('first_seen_at', 'desc')
@@ -68,11 +73,14 @@ class ListingsTable
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visibleFrom(ListingCard::BREAKPOINT),
+                // Duplikat (ta sama oferta z innego portalu) nie ma własnej oceny: pokazujemy ocenę oryginału.
                 TextColumn::make('analyses_max_score')
                     ->label('Ocena')
+                    ->state(fn (Listing $record) => $record->bestScore())
                     ->badge()
                     ->color(fn ($state) => Format::scoreColor($state))
                     ->formatStateUsing(fn ($state) => "{$state}/10")
+                    ->description(fn (Listing $record) => $record->duplicate_of_id && $record->bestScore() !== null ? 'z '.Portals::label($record->originalListing?->portal) : null)
                     ->placeholder('-')
                     ->sortable()
                     ->visibleFrom(ListingCard::BREAKPOINT),
@@ -87,6 +95,7 @@ class ListingsTable
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('analyses_max_monthly_cost')
                     ->label('Koszt / mies.')
+                    ->state(fn (Listing $record) => $record->analyses_max_monthly_cost ?? $record->originalListing?->analyses_max_monthly_cost)
                     ->formatStateUsing(fn ($state) => Format::pln($state))
                     ->placeholder('-')
                     ->toggleable()

@@ -3,7 +3,7 @@
     use App\Support\Portals;
 
     $listing = $getRecord();
-    $score = $listing->analyses_max_score;
+    $score = $listing->bestScore();
     $place = collect([$listing->district, $listing->street])->filter()->unique()->implode(' · ') ?: $listing->city;
     $facts = collect([
         Format::area($listing->area),

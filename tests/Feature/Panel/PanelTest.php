@@ -285,3 +285,20 @@ it('strona główna ma skróty z licznikami zamiast listy ofert', function () {
         ->removeTableFilter('above_threshold')
         ->assertCanSeeTableRecords([$listing]);
 });
+
+it('duplikat pokazuje ocenę, koszt i czynsz oryginału', function () {
+    $search = Search::factory()->create();
+    $original = Listing::factory()->create(['portal' => 'otodom', 'rent_extra' => 450]);
+    $copy = Listing::factory()->create(['portal' => 'stoprocent', 'title' => 'Kopia ze Stoprocent', 'duplicate_of_id' => $original->id, 'rent_extra' => null]);
+    $search->listings()->attach([$original->id, $copy->id], ['matched_at' => now()]);
+    ListingAnalysis::factory()->create(['listing_id' => $original->id, 'search_id' => $search->id, 'score' => 7, 'monthly_cost' => 2950]);
+
+    Livewire::test(ListListings::class)
+        ->removeTableFilter('above_threshold')
+        ->removeTableFilter('hide_duplicates')
+        ->assertCanSeeTableRecords([$copy])
+        ->assertTableColumnStateSet('analyses_max_score', 7, $copy)
+        ->assertTableColumnStateSet('analyses_max_monthly_cost', 2950, $copy);
+
+    expect($copy->fresh()->load('originalListing.analyses', 'originalListing.duplicates')->adminFee())->toBe([450, 'duplicate']);
+});

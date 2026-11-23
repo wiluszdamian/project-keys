@@ -43,6 +43,20 @@ class ListingInfolist
                             ->color(fn (string $state, Listing $record) => ListingFacts::badges($record)[$state] ?? 'gray')
                             ->columnSpanFull()
                             ->visible(fn (Listing $record) => ListingFacts::badges($record) !== []),
+                        // Duplikat: ocena, okolica i reszta są przy oryginale (pierwszy portal z tą ofertą).
+                        TextEntry::make('duplicate_of')
+                            ->hiddenLabel()
+                            ->state(function (Listing $record) {
+                                $original = $record->originalListing()->withMax('analyses', 'score')->first();
+
+                                return $original ? 'To ta sama oferta co na '.Portals::label($original->portal)
+                                    .($original->analyses_max_score ? ' (ocena AI '.$original->analyses_max_score.'/10)' : '').'. Ocena i szczegóły są przy tamtej ofercie.' : null;
+                            })
+                            ->url(fn (Listing $record) => $record->duplicate_of_id ? route('filament.admin.resources.listings.view', $record->duplicate_of_id) : null)
+                            ->color('primary')
+                            ->icon('heroicon-o-arrow-top-right-on-square')
+                            ->columnSpanFull()
+                            ->visible(fn (Listing $record) => $record->duplicate_of_id !== null),
                         TextEntry::make('best_score')
                             ->label('Ocena AI')
                             ->state(fn (Listing $record) => $record->analyses->max('score'))

@@ -7,6 +7,7 @@ use App\Enums\ListingStatus;
 use App\Services\ListingFeatures;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +54,24 @@ class Listing extends Model
     public function analyses(): HasMany
     {
         return $this->hasMany(ListingAnalysis::class);
+    }
+
+    /**
+     * Oryginał, gdy ta oferta jest duplikatem z innego portalu (ocenę AI ma tylko oryginał).
+     */
+    public function originalListing(): BelongsTo
+    {
+        return $this->belongsTo(Listing::class, 'duplicate_of_id');
+    }
+
+    /**
+     * Ocena AI: własna albo oryginału, gdy to duplikat. Wymaga withMax('analyses', 'score') (także na original).
+     */
+    public function bestScore(): ?int
+    {
+        $score = $this->getAttribute('analyses_max_score') ?? $this->originalListing?->getAttribute('analyses_max_score');
+
+        return $score !== null ? (int) $score : null;
     }
 
     /**
@@ -111,7 +130,18 @@ class Listing extends Model
 
         $fromDescription = $this->analyses->map(fn (ListingAnalysis $analysis) => $analysis->cost_breakdown['admin_fee'] ?? null)->filter()->first();
 
-        return $fromDescription !== null ? [(int) $fromDescription, 'description'] : [null, null];
+        if ($fromDescription !== null) {
+            return [(int) $fromDescription, 'description'];
+        }
+
+        // Duplikat: czynsz z oryginału (z portalu oryginału albo z jego oceny AI).
+        if ($this->duplicate_of_id !== null && $this->originalListing !== null) {
+            [$fee, $source] = $this->originalListing->adminFee();
+
+            return $fee !== null ? [$fee, $source === 'description' ? 'description' : 'duplicate'] : [null, null];
+        }
+
+        return [null, null];
     }
 
     public function hasCoordinates(): bool
