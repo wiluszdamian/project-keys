@@ -111,6 +111,7 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - ✅ Mapa ofert w panelu.
 - ✅ Wykrywanie oszustw: zwroty, cena poniżej rynku, to samo zdjęcie w innej ofercie.
 - ✅ Ceny transakcyjne z Rejestru Cen Nieruchomości przy ofertach sprzedaży (2026-11-20).
+- ✅ Filtry rynku w wyszukiwaniu: rynek wtórny lub pierwotny, tylko umeblowane, bez wizualizacji (2026-11-23).
 
 ## Na później (pomysły zatwierdzone przez właściciela 2026-11-18)
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Searches\Schemas;
 use App\Enums\DealType;
 use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
+use App\Models\RcnTransaction;
 use App\Notifications\NotifyGroups;
 use App\Support\Portals;
 use Closure;
@@ -71,6 +72,26 @@ class SearchForm
                         ...self::range('price', 'Cena', 'zł'),
                         ...self::range('area', 'Metraż', 'm²', max: 10000),
                         ...self::range('rooms', 'Pokoje', null, min: 1, max: 20),
+                        Select::make('market')
+                            ->label('Rynek')
+                            ->options([
+                                RcnTransaction::SECONDARY => 'Tylko wtórny',
+                                RcnTransaction::PRIMARY => 'Tylko pierwotny',
+                            ])
+                            ->placeholder('Oba rynki')
+                            ->helperText('Oferta bez informacji o rynku przechodzi dalej.')
+                            ->native(false)
+                            ->columnSpanFull(),
+                        Toggle::make('furnished_only')
+                            ->label('Tylko umeblowane')
+                            ->helperText('Odrzuca oferty bez mebli (także stan deweloperski). Gdy ogłoszenie nie mówi nic o meblach, ocenia AI.')
+                            ->default(false)
+                            ->columnSpanFull(),
+                        Toggle::make('exclude_visualizations')
+                            ->label('Pomijaj oferty z wizualizacjami')
+                            ->helperText('Ogłoszenia, w których tytuł albo opis mówi o wizualizacjach lub zdjęciach poglądowych.')
+                            ->default(false)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Portale i AI')

@@ -25,6 +25,9 @@ i PHP 8.5, działa w Docker Compose na jednym serwerze.
 
 1. **Wyszukiwanie.** Zapisujesz kryteria: miasto, wynajem albo sprzedaż, cena, metraż, liczba
    pokoi, opcjonalnie dzielnice i opis tego, czego szukasz (np. „najchętniej osiedle Projektant”).
+   Przy sprzedaży można też wybrać rynek (wtórny albo pierwotny), tylko mieszkania umeblowane i
+   pomijanie ofert z wizualizacjami. Te filtry odrzucają tylko oferty, o których wiadomo, że nie
+   pasują (z danych portalu albo z opisu). Gdy ogłoszenie nie mówi nic o meblach, decyduje ocena AI.
 2. **Pobieranie.** Scheduler co minutę sprawdza, które wyszukiwania czekają dłużej niż
    `SCRAPE_INTERVAL_MINUTES`, i pobiera z obu portali najnowsze oferty. Między zapytaniami robi
    przerwy, a gdy portal blokuje (403 albo 429), odpuszcza go na 2 godziny.

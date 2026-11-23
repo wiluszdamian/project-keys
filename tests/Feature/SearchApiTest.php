@@ -48,7 +48,18 @@ it('waliduje pola przy tworzeniu', function (array $payload, array $errors) {
     'metraż min większy od max' => [validSearchPayload(['area_min' => 80, 'area_max' => 40]), ['area_max']],
     'ocena poza zakresem' => [validSearchPayload(['min_score_to_notify' => 11]), ['min_score_to_notify']],
     'pusta lista portali' => [validSearchPayload(['portals' => []]), ['portals']],
+    'nieznany rynek' => [validSearchPayload(['market' => 'used']), ['market']],
 ]);
+
+it('zapisuje rynek, meble i wizualizacje', function () {
+    actingAsOwner();
+
+    $this->postJson('/api/searches', validSearchPayload(['market' => 'secondary', 'furnished_only' => true, 'exclude_visualizations' => true]))
+        ->assertCreated()
+        ->assertJsonPath('data.market', 'secondary')
+        ->assertJsonPath('data.furnished_only', true)
+        ->assertJsonPath('data.exclude_visualizations', true);
+});
 
 it('listuje wyszukiwania z liczbą ofert', function () {
     actingAsOwner();

@@ -155,3 +155,29 @@ it('ai:usage pokazuje sumę tokenów', function () {
 
     $this->artisan('ai:usage')->expectsOutputToContain('1 200')->assertSuccessful();
 });
+
+it('job odłącza ofertę, która po pobraniu opisu okazuje się bez mebli', function () {
+    ListingScoringAgent::fake([aiAnswer()]);
+    $this->search->update(['furnished_only' => true]);
+    $this->search->listings()->attach($this->listing, ['matched_at' => now()]);
+    $this->listing->update(['description' => 'Mieszkanie w stanie deweloperskim, bez mebli.']);
+
+    AnalyzeListingJob::dispatchSync($this->search, $this->listing->fresh());
+
+    ListingScoringAgent::assertNeverPrompted();
+    expect($this->search->listings()->count())->toBe(0)
+        ->and(ListingAnalysis::count())->toBe(0);
+});
+
+it('podaje modelowi rynek, meble i wymagania wyszukiwania', function () {
+    ListingScoringAgent::fake([aiAnswer()]);
+    $this->search->update(['market' => 'secondary', 'furnished_only' => true]);
+    $this->listing->update(['raw' => ['enriched_at' => now()->toIso8601String(), 'market' => 'secondary'], 'description' => 'Mieszkanie umeblowane.']);
+
+    app(ListingScorer::class)->score($this->search, $this->listing->fresh());
+
+    ListingScoringAgent::assertPrompted(fn (AgentPrompt $prompt) => $prompt->contains('- rynek: tylko wtórny')
+        && $prompt->contains('mieszkanie musi być umeblowane')
+        && $prompt->contains('- rynek: wtórny')
+        && $prompt->contains('umeblowane (z danych portalu i opisu): tak'));
+});

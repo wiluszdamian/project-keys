@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DealType;
 use App\Enums\ListingStatus;
+use App\Services\ListingFeatures;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -59,20 +60,7 @@ class Listing extends Model
      */
     public function market(): ?string
     {
-        $raw = $this->raw ?? [];
-        $value = $raw['market'] ?? collect($raw['params'] ?? [])->firstWhere('key', 'market')['value']['key'] ?? null;
-
-        $market = match (mb_strtolower((string) $value)) {
-            'primary', 'pierwotny' => RcnTransaction::PRIMARY,
-            'secondary', 'wtórny', 'wtorny' => RcnTransaction::SECONDARY,
-            default => null,
-        };
-
-        if ($market === null && $this->portal === 'domiporta' && str_starts_with((string) $this->external_id, 'nowe-')) {
-            return RcnTransaction::PRIMARY;
-        }
-
-        return $market;
+        return ListingFeatures::market($this->raw ?? [], $this->portal, (string) $this->external_id);
     }
 
     public function hasCoordinates(): bool

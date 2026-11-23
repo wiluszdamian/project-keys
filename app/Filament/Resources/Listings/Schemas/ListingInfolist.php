@@ -6,6 +6,7 @@ use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\RcnTransaction;
+use App\Services\ListingFeatures;
 use App\Services\Rcn\TransactionComparator;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -66,6 +67,18 @@ class ListingInfolist
                         TextEntry::make('rooms_floor')
                             ->label('Pokoje / piętro')
                             ->state(fn (Listing $record) => ($record->rooms ?? '?').' / '.($record->floor ?? '?')),
+                        TextEntry::make('market_furniture')
+                            ->label('Rynek / meble')
+                            ->state(function (Listing $record) {
+                                $features = ListingFeatures::of($record);
+
+                                return $features->marketLabel().' / '.match ($features->furnished) {
+                                    true => 'umeblowane',
+                                    false => 'bez mebli',
+                                    null => 'nie wiadomo',
+                                }.($features->visualizations ? ' / wizualizacje' : '');
+                            })
+                            ->visible(fn (Listing $record) => $record->deal_type->value === 'sale'),
                         TextEntry::make('is_private_owner')
                             ->label('Ogłoszeniodawca')
                             ->formatStateUsing(fn ($state) => $state ? 'osoba prywatna' : 'agencja / firma')

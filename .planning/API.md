@@ -18,6 +18,8 @@ Wszystkie odpowiedzi JSON. Prefiks `/api`.
 | GET | /listings/{id} | szczegóły oferty, historia cen, oceny |
 | GET | /scrape-runs | ostatnie przebiegi, filtry `portal`, `status`, `search_id` |
 
+Filtry rynku w wyszukiwaniu (od 2026-11-23): `market` (`primary`, `secondary` albo `null` = oba), `furnished_only` (bool), `exclude_visualizations` (bool). Odrzucają tylko oferty, o których wiadomo, że nie pasują. Oferty już przypisane sprawdza od nowa `php artisan search:refilter {id}` (`--dry-run` tylko liczy).
+
 Powiadomienia w wyszukiwaniu: `notify_enabled` (bool), `notify_mode` (`instant`, `every_hours`, `daily`), `notify_every_hours` (1 do 72, wymagane przy `every_hours`), `notify_daily_at` (`HH:MM`, wymagane przy `daily`), `min_score_to_notify`.
 
 Miejsca dojazdu (np. praca): `GET/POST /commute-places`, `GET/PATCH/DELETE /commute-places/{id}`. Pola: `name`, `address`, opcjonalnie `lat`, `lng` (bez nich szukamy adresu w OpenStreetMap), `max_minutes`, `is_active`. Oferta w `GET /listings/{id}` ma `commutes` (miejsce, `mode` car albo bike, `minutes`, `km`), `lat`, `lng`, `geo_precision` i `risk_flags`.
@@ -40,6 +42,7 @@ Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 - `search:list`
 - `search:run {id}`
 - `search:pause {id}`, `search:resume {id}`
+- `search:refilter {id...}` (odłącza przypisane oferty, które nie pasują do obecnych filtrów)
 - `api:token {nazwa}`, `scraper:probe {portal} {id}`, `notify:test`, `ai:usage`, `alerts:check`, `search:dispatch-due` (uruchamia scheduler)
 
 ## Ceny transakcyjne (od 2026-11-20)

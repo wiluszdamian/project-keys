@@ -7,6 +7,7 @@ use App\Ai\InvalidAiResponseException;
 use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\RcnTransaction;
 use App\Models\Search;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\Rcn\TransactionComparator;
@@ -62,6 +63,7 @@ class ListingScorer
         $rent = $search->deal_type === DealType::Rent;
         $baseCost = $listing->price !== null ? $listing->price + ($rent ? (int) $listing->rent_extra : 0) : null;
         $market = $this->market->forListing($listing);
+        $features = ListingFeatures::of($listing);
 
         $lines = [
             '## Preferencje osoby',
@@ -74,6 +76,9 @@ class ListingScorer
             '- cena: '.$this->range($search->price_min, $search->price_max, 'zł'),
             '- metraż: '.$this->range($search->area_min, $search->area_max, 'm2'),
             '- pokoje: '.$this->range($search->rooms_min, $search->rooms_max, ''),
+            $search->market ? '- rynek: '.($search->market === RcnTransaction::PRIMARY ? 'tylko pierwotny' : 'tylko wtórny') : null,
+            $search->furnished_only ? '- mieszkanie musi być umeblowane (brak informacji o meblach w ogłoszeniu to wyraźny minus)' : null,
+            $search->exclude_visualizations ? '- bez ofert ze zdjęciami-wizualizacjami' : null,
             '',
             '## Ogłoszenie',
             "- portal: {$listing->portal}",
@@ -93,6 +98,9 @@ class ListingScorer
                 false => 'agencja lub firma',
                 null => 'nie wiadomo',
             },
+            '- rynek: '.$features->marketLabel(),
+            '- umeblowane (z danych portalu i opisu): '.$features->furnishedLabel(),
+            $features->visualizations ? '- zdjęcia to wizualizacje, nie prawdziwe mieszkanie' : null,
             ...$this->details($listing),
             '- opis: '.($listing->description ? Str::limit(Str::squish($listing->description), config('scoring.description_limit')) : 'portal nie podał opisu'),
             '',
@@ -276,7 +284,6 @@ class ListingScorer
             'free_from' => ['dostępne od', ''],
             'building_type' => ['typ budynku', ''],
             'condition' => ['stan', ''],
-            'market' => ['rynek', ''],
         ];
 
         return collect($labels)

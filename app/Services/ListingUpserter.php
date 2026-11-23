@@ -88,4 +88,18 @@ class ListingUpserter
             'matched_at' => now(),
         ]) === 1;
     }
+
+    /**
+     * Odłącza ofertę, która po pobraniu pełnych danych nie pasuje do wyszukiwania (np. bez mebli),
+     * razem z jej oceną. Zwraca true, gdy była połączona.
+     */
+    public function detach(Search $search, Listing $listing): bool
+    {
+        $listing->analyses()->where('search_id', $search->id)->delete();
+
+        return DB::table('search_listing')
+            ->where('search_id', $search->id)
+            ->where('listing_id', $listing->id)
+            ->delete() > 0;
+    }
 }

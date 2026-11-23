@@ -56,6 +56,7 @@ class OtodomScraper implements EnrichesListings, PortalScraper
             'areaMin' => $search->area_min,
             'areaMax' => $search->area_max,
             'roomsNumber' => $this->roomsFilter($search->rooms_min, $search->rooms_max),
+            'market' => $search->market ? strtoupper($search->market) : null,
             'by' => 'LATEST',
             'direction' => 'DESC',
             'page' => $page > 1 ? $page : null,
@@ -156,6 +157,10 @@ class OtodomScraper implements EnrichesListings, PortalScraper
                 'heating' => $characteristics->get('heating'),
                 'building_floors' => $characteristics->get('building_floors_num'),
                 'free_from' => $characteristics->get('free_from'),
+                'market' => $characteristics->get('market') ?? Arr::get($ad, 'target.MarketType'),
+                'condition' => $characteristics->get('construction_status') ?? Arr::first((array) Arr::get($ad, 'target.Construction_status')),
+                // Lista wyposażenia z meblami: wiemy, że umeblowane. Bez mebli na liście nie wiemy (pole bywa puste).
+                'furnished' => in_array('furniture', (array) Arr::get($ad, 'target.Equipment_types', []), true) ? true : null,
             ], fn ($value) => $value !== null && $value !== ''),
         ];
     }

@@ -51,6 +51,11 @@ it('czyta czynsz, gdy portal go podaje', function () {
     expect(app(OtodomScraper::class)->parseOffer(offerFixture('offer_with_fee'))['rent_extra'])->toBe(720);
 });
 
+it('odczytuje stan i meble z wyposażenia', function () {
+    expect(app(OtodomScraper::class)->parseOffer(offerFixture('offer_with_fee'))['details'])
+        ->toMatchArray(['condition' => 'ready_to_use', 'furnished' => true]);
+});
+
 it('uzupełnia ofertę danymi ze strony', function () {
     Http::fake(['www.otodom.pl/pl/oferta/*' => Http::response(offerFixture('offer_no_fee'))]);
     $listing = app(ListingUpserter::class)->upsert(otodomListingData())->listing;

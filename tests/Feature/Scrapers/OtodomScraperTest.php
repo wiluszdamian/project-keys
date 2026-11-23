@@ -95,6 +95,11 @@ it('buduje adres wyszukiwania', function (array $attributes, int $page, string $
         1,
         'https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/malopolskie/krakow/krakow/krakow?priceMin=2000&priceMax=4000&areaMin=35&areaMax=60&roomsNumber=%5BTWO%2CTHREE%5D&by=LATEST&direction=DESC',
     ],
+    'sprzedaż z rynku wtórnego' => [
+        ['deal_type' => 'sale', 'city' => 'Warszawa', 'price_max' => 550000, 'market' => 'secondary'],
+        1,
+        'https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/mazowieckie/warszawa/warszawa/warszawa?priceMax=550000&market=SECONDARY&by=LATEST&direction=DESC',
+    ],
     'sprzedaż bez filtrów, strona 2' => [
         ['deal_type' => 'sale', 'city' => 'Warszawa'],
         2,

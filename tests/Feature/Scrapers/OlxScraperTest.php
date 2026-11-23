@@ -95,6 +95,11 @@ it('buduje adres endpointu', function (array $attributes, int $page, string $que
         2,
         'offset=40&limit=40&category_id=15&region_id=17&city_id=15241&sort_by=created_at%3Adesc&filter_float_price%3Afrom=1500&filter_float_price%3Ato=3500&filter_float_m%3Afrom=40&filter_float_m%3Ato=80&filter_enum_rooms%5B0%5D=three&filter_enum_rooms%5B1%5D=four',
     ],
+    'rynek wtórny' => [
+        ['market' => 'secondary'],
+        1,
+        'offset=0&limit=40&category_id=15&region_id=17&city_id=15241&sort_by=created_at%3Adesc&filter_enum_market%5B0%5D=secondary',
+    ],
     'dokładnie 2 pokoje' => [
         ['rooms_min' => 2, 'rooms_max' => 2],
         1,

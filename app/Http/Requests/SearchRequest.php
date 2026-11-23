@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\DealType;
 use App\Enums\NotifyMode;
 use App\Enums\PropertyType;
+use App\Models\RcnTransaction;
 use App\Models\Search;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -53,6 +54,9 @@ class SearchRequest extends FormRequest
             'area_max' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'rooms_min' => ['nullable', 'integer', 'min:1', 'max:20'],
             'rooms_max' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'market' => ['nullable', Rule::in([RcnTransaction::PRIMARY, RcnTransaction::SECONDARY])],
+            'furnished_only' => ['sometimes', 'boolean'],
+            'exclude_visualizations' => ['sometimes', 'boolean'],
             'portals' => [$required, 'array', 'min:1'],
             'portals.*' => ['distinct', Rule::in(config('scrapers.portals'))],
             'ai_preferences' => ['nullable', 'string', 'max:2000'],

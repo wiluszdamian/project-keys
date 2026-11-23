@@ -10,7 +10,10 @@ use App\Scrapers\Exceptions\PortalBlockedException;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\ScraperRegistry;
 use App\Services\ListingExtras;
+use App\Services\ListingFeatures;
+use App\Services\ListingMatcher;
 use App\Services\ListingScorer;
+use App\Services\ListingUpserter;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -46,13 +49,22 @@ class AnalyzeListingJob implements ShouldQueue
         return [new RateLimited('ai')];
     }
 
-    public function handle(ListingScorer $scorer, ScraperRegistry $registry, ListingExtras $extras): void
+    public function handle(ListingScorer $scorer, ScraperRegistry $registry, ListingExtras $extras, ListingMatcher $matcher, ListingUpserter $upserter): void
     {
         if (! ListingScorer::isEnabled()) {
             return;
         }
 
         $this->enrich($registry);
+
+        // Pełny opis i dane ze strony ogłoszenia mogą pokazać, że oferta nie pasuje (rynek pierwotny, bez mebli, wizualizacje).
+        if (! $matcher->featuresMatch($this->search, ListingFeatures::of($this->listing))) {
+            $upserter->detach($this->search, $this->listing);
+            Log::info("Oferta #{$this->listing->id} nie pasuje do wyszukiwania #{$this->search->id} po pobraniu strony ogłoszenia, odłączona.");
+
+            return;
+        }
+
         $extras->prepare($this->listing);
 
         $existing = $this->listing->analyses()->where('search_id', $this->search->id)->first();

@@ -12,6 +12,7 @@ use App\Scrapers\Exceptions\PortalBlockedException;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\HttpFetcher;
 use App\Scrapers\ScraperRegistry;
+use App\Services\ListingFeatures;
 use App\Services\ListingMatcher;
 use App\Services\ListingUpserter;
 use Illuminate\Bus\Batchable;
@@ -100,6 +101,13 @@ class ScrapePortalJob implements ShouldQueue
             }
 
             $saved = $upserter->upsert($data);
+
+            // Zapisana oferta może mieć więcej danych ze strony ogłoszenia (rynek, meble, pełny opis).
+            if (! $matcher->featuresMatch($this->search, ListingFeatures::of($saved->listing))) {
+                $upserter->detach($this->search, $saved->listing);
+
+                continue;
+            }
 
             if ($upserter->attach($this->search, $saved->listing)) {
                 $new++;

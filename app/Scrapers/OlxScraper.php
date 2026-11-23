@@ -51,6 +51,7 @@ class OlxScraper implements PortalScraper
             'filter_float_m:from' => $search->area_min,
             'filter_float_m:to' => $search->area_max,
             'filter_enum_rooms' => $this->roomsFilter($search->rooms_min, $search->rooms_max),
+            'filter_enum_market' => $search->market ? [$search->market] : null,
         ], fn ($value) => $value !== null);
 
         return config('scrapers.olx.base_url').'/api/v1/offers/?'.http_build_query($query, encoding_type: PHP_QUERY_RFC3986);
