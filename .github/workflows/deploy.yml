@@ -1,0 +1,53 @@
+name: Deploy
+
+# Wdrożenie na serwer po udanych testach na main (workflow Tests), albo ręcznie z zakładki Actions.
+# Robi to samo co scripts/deploy.sh z laptopa: rsync kodu, budowa obrazów, migracje, restart, sprawdzenie /up.
+on:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Jedno wdrożenie naraz, kolejne czeka (nie przerywa trwającego).
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Dokładnie ten commit, który przeszedł testy.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      # Klucz SSH tylko do wdrożeń (osobny od klucza z laptopa). Sekrety: DEPLOY_SSH_KEY, DEPLOY_HOST, DEPLOY_KNOWN_HOSTS.
+      - name: SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host project-keys
+            HostName ${DEPLOY_HOST}
+            User deploy
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      # Bez --tests: testy przeszły już w workflow Tests dla tego commita.
+      - name: Deploy
+        run: scripts/deploy.sh --host project-keys

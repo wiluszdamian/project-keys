@@ -109,6 +109,13 @@ repozytorium Dockera.
    docker compose exec app php artisan make:filament-user
    ```
 
+## Wdrożenie
+
+Push na `main`: GitHub Actions uruchamia testy (`tests.yml`), a gdy przejdą, `deploy.yml` wdraża ten commit
+na serwer przez `scripts/deploy.sh` (rsync, budowa obrazów, migracje, restart, sprawdzenie `/up`). Ręcznie:
+zakładka Actions, „Deploy”, „Run workflow”, albo `scripts/deploy.sh --tests` z laptopa. Sekrety repozytorium:
+`DEPLOY_SSH_KEY` (osobny klucz tylko do wdrożeń), `DEPLOY_HOST`, `DEPLOY_KNOWN_HOSTS`.
+
 ## Logowanie do panelu
 
 Najpierw hasło przeglądarki (Caddy), potem passkey: przycisk „Zaloguj passkey” (odcisk palca, Face ID
