@@ -7,6 +7,7 @@ use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\RcnTransaction;
+use App\Services\DealFinder;
 use App\Services\ListingFeatures;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
@@ -81,6 +82,14 @@ class ListingInfolist
                         TextEntry::make('rooms_floor')
                             ->label('Pokoje / piętro')
                             ->state(fn (Listing $record) => ($record->rooms ?? '?').' / '.($record->floor ?? '?')),
+                        TextEntry::make('deal_reasons')
+                            ->label('Okazja')
+                            ->state(fn (Listing $record) => DealFinder::summary($record->deal_reasons))
+                            ->color('success')
+                            ->weight('medium')
+                            ->icon('heroicon-o-fire')
+                            ->columnSpanFull()
+                            ->visible(fn (Listing $record) => filled($record->deal_reasons)),
                         TextEntry::make('market_furniture')
                             ->label('Rynek / stan')
                             ->state(function (Listing $record) {

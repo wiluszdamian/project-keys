@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\MarketReport;
 use App\Models\Search;
+use App\Services\DealFinder;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
 use App\Services\Rcn\TransactionComparator;
@@ -150,6 +151,53 @@ class DiscordMessages
             'description' => "~~{$this->money($oldPrice)}~~ → **{$this->money($newPrice)}** (−{$percent}%)",
             'color' => self::COLOR_GOOD,
             'footer' => ['text' => "Wyszukiwanie: {$search->name}"],
+            'timestamp' => now()->toIso8601String(),
+        ]]];
+    }
+
+    /**
+     * Oferta, która stała się okazją (tańsza niż rynek albo po dużej obniżce).
+     */
+    public function deal(Listing $listing, ?Search $search, ?ListingAnalysis $analysis = null): array
+    {
+        $embed = [
+            'author' => ['name' => '🔥 Okazja · '.$this->portalName($listing->portal)],
+            'title' => Str::limit(($analysis ? "{$analysis->score}/10 · " : '').$listing->title, 250),
+            'url' => $listing->url,
+            'description' => Str::limit(ucfirst((string) DealFinder::summary($listing->deal_reasons)), 1000),
+            'color' => self::COLOR_GOOD,
+            'fields' => $this->fields($listing, $analysis),
+            'footer' => $search ? ['text' => "Wyszukiwanie: {$search->name}"] : null,
+            'timestamp' => now()->toIso8601String(),
+        ];
+
+        if ($listing->image_url) {
+            $embed['thumbnail'] = ['url' => $listing->image_url];
+        }
+
+        return ['embeds' => [array_filter($embed, fn ($value) => $value !== null && $value !== '' && $value !== [])]];
+    }
+
+    /**
+     * Kilka okazji naraz: jedna wiadomość z listą.
+     *
+     * @param  Collection<int, Listing>  $listings
+     */
+    public function deals(DealType $dealType, Collection $listings): array
+    {
+        $lines = $listings->take(10)->map(fn (Listing $listing) => $this->digestLine($listing).'
+🔥 '.DealFinder::summary($listing->deal_reasons));
+        $more = $listings->count() > 10 ? '
+
+…i jeszcze '.($listings->count() - 10).' w panelu (Oferty → Okazje).' : '';
+
+        return ['embeds' => [[
+            'author' => ['name' => '🔥 Okazje · '.($dealType === DealType::Rent ? 'wynajem' : 'sprzedaż')],
+            'title' => $listings->count().' '.($listings->count() === 1 ? 'oferta tańsza niż rynek' : 'ofert tańszych niż rynek albo po obniżce'),
+            'description' => Str::limit($lines->implode('
+
+').$more, 4000),
+            'color' => self::COLOR_GOOD,
             'timestamp' => now()->toIso8601String(),
         ]]];
     }
@@ -381,6 +429,7 @@ class DiscordMessages
             $location !== '' ? ['name' => '📍 Lokalizacja', 'value' => Str::limit($location, 1000), 'inline' => true] : null,
             ['name' => '👤 Ogłoszeniodawca', 'value' => $owner, 'inline' => true],
             ['name' => '🔗 Portal', 'value' => $this->portalName($listing->portal), 'inline' => true],
+            $listing->deal_reasons ? ['name' => '🔥 Okazja', 'value' => Str::limit(DealFinder::summary($listing->deal_reasons), 1000), 'inline' => false] : null,
             ($transactions = $listing->deal_type === DealType::Sale ? TransactionComparator::describe($listing->transaction_comparison) : null) ? ['name' => '📑 Ceny transakcyjne', 'value' => Str::limit($transactions, 1000), 'inline' => false] : null,
             ($commutes = app(CommuteCalculator::class)->describe($listing)) ? ['name' => '🚗 Dojazd', 'value' => Str::limit(implode("\n", $commutes), 1000), 'inline' => false] : null,
             $listing->risk_flags ? ['name' => '⚠️ Uwaga', 'value' => Str::limit(collect($listing->risk_flags)->pluck('message')->implode("\n"), 1000), 'inline' => false] : null,

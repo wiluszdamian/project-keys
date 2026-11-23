@@ -8,6 +8,8 @@ return [
     'digest_threshold' => (int) env('NOTIFY_DIGEST_THRESHOLD', 5),
     'digest_size' => 10,
     'price_drops' => (bool) env('NOTIFY_PRICE_DROPS', true),
+    // Okazje (DealFinder): powiadomienie, gdy oferta pierwszy raz staje się okazją.
+    'deals' => (bool) env('NOTIFY_DEALS', true),
     // Ten sam alert systemowy najwyżej raz na tyle godzin.
     'alert_cooldown_hours' => 6,
     // Tygodniowy raport rynku w każdą sobotę o 20:00: Discord (kanał wynajmu i sprzedaży) i panel.

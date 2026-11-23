@@ -68,6 +68,23 @@ class Notifier
         return $this->discord->isConfigured($dealType);
     }
 
+    public function deal(Search $search, Listing $listing, ?ListingAnalysis $analysis = null): void
+    {
+        $this->toChannels($search, $this->messages->deal($listing, $search, $analysis));
+    }
+
+    /**
+     * Kilka okazji naraz na kanał wynajmu albo sprzedaży.
+     *
+     * @param  Collection<int, Listing>  $listings  z atrybutem score
+     */
+    public function deals(DealType $dealType, Collection $listings): void
+    {
+        if ($this->discord->isConfigured($dealType)) {
+            $this->discord->send($this->messages->deals($dealType, $listings), $dealType);
+        }
+    }
+
     public function priceDrop(Search $search, Listing $listing, int $oldPrice, int $newPrice): void
     {
         $this->toChannels($search, $this->messages->priceDrop($listing, $search, $oldPrice, $newPrice));

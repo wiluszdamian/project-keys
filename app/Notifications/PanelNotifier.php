@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\MarketReport;
 use App\Models\Search;
 use App\Models\User;
+use App\Services\DealFinder;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
@@ -63,6 +64,34 @@ class PanelNotifier
                 ->iconColor('success')
                 ->actions([
                     Action::make('open')->label('Zobacz ofertę')->url(route('filament.admin.resources.listings.view', $listing))->markAsRead(),
+                ]),
+        );
+    }
+
+    public function deal(Listing $listing): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Okazja: '.Str::limit($listing->title, 60))
+                ->body(Str::ucfirst((string) DealFinder::summary($listing->deal_reasons)))
+                ->icon('heroicon-o-fire')
+                ->iconColor('success')
+                ->actions([
+                    Action::make('open')->label('Zobacz ofertę')->url(route('filament.admin.resources.listings.view', $listing))->markAsRead(),
+                ]),
+        );
+    }
+
+    public function deals(int $count): void
+    {
+        $this->send(
+            Notification::make()
+                ->title("Okazje: {$count}")
+                ->body('Oferty tańsze niż transakcje albo rynek, albo po dużej obniżce.')
+                ->icon('heroicon-o-fire')
+                ->iconColor('success')
+                ->actions([
+                    Action::make('open')->label('Zobacz okazje')->url(route('filament.admin.resources.listings.index', ['tab' => 'deals']))->markAsRead(),
                 ]),
         );
     }

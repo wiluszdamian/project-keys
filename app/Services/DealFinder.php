@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\DealType;
+use App\Models\Listing;
+use App\Services\Rcn\TransactionComparator;
+use Illuminate\Support\Number;
+
+/**
+ * Okazje: oferta wyraźnie tańsza niż transakcje w okolicy, niż mediana ofert za m² albo po dużej obniżce.
+ * Progi w config/deals.php (i w Ustawieniach). Wynik zapisuje w listings.deal_reasons i deal_at.
+ */
+class DealFinder
+{
+    public const BELOW_TRANSACTIONS = 'below_transactions';
+
+    public const PRICE_DROP = 'price_drop';
+
+    public const BELOW_MARKET = 'below_market';
+
+    public function __construct(private MarketStats $market) {}
+
+    /**
+     * @return list<array{type: string, text: string}>
+     */
+    public function reasons(Listing $listing): array
+    {
+        if ($listing->price === null || $listing->duplicate_of_id !== null) {
+            return [];
+        }
+
+        return array_values(array_filter([
+            $this->belowTransactions($listing),
+            $this->priceDrop($listing),
+            $this->belowMarket($listing),
+        ]));
+    }
+
+    /**
+     * Zapisuje powody. Zwraca true, gdy oferta właśnie stała się okazją (wcześniej nią nie była).
+     */
+    public function refresh(Listing $listing): bool
+    {
+        $reasons = $this->reasons($listing);
+        $wasDeal = $listing->deal_at !== null;
+
+        $listing->forceFill([
+            'deal_reasons' => $reasons ?: null,
+            'deal_at' => $reasons ? ($listing->deal_at ?? now()) : null,
+        ])->save();
+
+        return $reasons !== [] && ! $wasDeal;
+    }
+
+    /**
+     * Krótko do listy i wiadomości: "14% taniej niż transakcje · cena −6%".
+     */
+    public static function summary(?array $reasons): ?string
+    {
+        return $reasons ? collect($reasons)->pluck('text')->implode(' · ') : null;
+    }
+
+    private function belowTransactions(Listing $listing): ?array
+    {
+        $comparison = $listing->transaction_comparison;
+        $threshold = (int) config('deals.below_transactions_percent');
+
+        if ($listing->deal_type !== DealType::Sale
+            || ($comparison['status'] ?? null) !== TransactionComparator::BELOW
+            || ! empty($comparison['approximate'])
+            || ($comparison['diff_percent'] ?? 0) > -$threshold) {
+            return null;
+        }
+
+        return [
+            'type' => self::BELOW_TRANSACTIONS,
+            'text' => $this->percent(-$comparison['diff_percent']).' taniej niż transakcje w okolicy',
+        ];
+    }
+
+    private function priceDrop(Listing $listing): ?array
+    {
+        $highest = (int) $listing->priceChanges()->max('old_price');
+
+        if ($highest <= 0 || $listing->price >= $highest) {
+            return null;
+        }
+
+        $drop = ($highest - $listing->price) / $highest * 100;
+
+        if ($drop < (int) config('deals.price_drop_percent')) {
+            return null;
+        }
+
+        return [
+            'type' => self::PRICE_DROP,
+            'text' => 'cena spadła o '.$this->percent($drop).' (z '.number_format($highest, 0, ',', ' ').' zł)',
+        ];
+    }
+
+    private function belowMarket(Listing $listing): ?array
+    {
+        $area = (float) $listing->area;
+
+        if ($area <= 0) {
+            return null;
+        }
+
+        $stats = $this->market->forListing($listing);
+        $rent = $listing->deal_type === DealType::Rent;
+
+        // Przy wynajmie porównujemy najem z czynszem, gdy czynsz jest znany.
+        [$value, $median] = $rent && $listing->rent_extra !== null && $stats['median_total_cost_per_m2']
+            ? [($listing->price + $listing->rent_extra) / $area, $stats['median_total_cost_per_m2']]
+            : [$listing->price / $area, $stats['median_price_per_m2']];
+
+        if (! $stats['enough_data'] || ! $median) {
+            return null;
+        }
+
+        $below = ($median - $value) / $median * 100;
+
+        // Bardzo duża różnica to raczej błąd albo oszustwo (RiskDetector), nie okazja.
+        if ($below < (int) config('deals.below_market_percent') || $below >= 40) {
+            return null;
+        }
+
+        return [
+            'type' => self::BELOW_MARKET,
+            'text' => $this->percent($below).' taniej za m² niż oferty ('.$stats['scope'].')',
+        ];
+    }
+
+    private function percent(float $value): string
+    {
+        return Number::format($value, maxPrecision: 0, locale: 'pl').'%';
+    }
+}

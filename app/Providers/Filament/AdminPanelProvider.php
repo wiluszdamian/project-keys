@@ -2,11 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\Listings\ListingResource;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -44,6 +46,14 @@ class AdminPanelProvider extends PanelProvider
             // Tabele z ofertami mają dużo kolumn, więc cała szerokość ekranu zamiast 80 rem.
             ->maxContentWidth(Width::Full)
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.styles'))
+            // Okazje to zakładka na liście ofert, w menu jako osobna pozycja.
+            ->navigationItems([
+                NavigationItem::make('Okazje')
+                    ->icon('heroicon-o-fire')
+                    ->url(fn () => ListingResource::getUrl('index', ['tab' => 'deals']))
+                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.listings.index') && request()->query('tab') === 'deals')
+                    ->sort(2),
+            ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')

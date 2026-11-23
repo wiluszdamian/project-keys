@@ -22,7 +22,7 @@ class ListingScorer
 {
     private const SUB_SCORES = ['cost', 'location', 'standard', 'fit'];
 
-    public function __construct(private MarketStats $market, private CommuteCalculator $commutes) {}
+    public function __construct(private MarketStats $market, private CommuteCalculator $commutes, private DecisionExamples $decisions) {}
 
     /**
      * Czy ocena AI jest włączona i ma klucz.
@@ -69,6 +69,7 @@ class ListingScorer
             '## Preferencje osoby',
             $search->ai_preferences ?: 'Brak dodatkowych preferencji.',
             '',
+            ...$this->decisions->lines($search, $listing),
             '## Filtry wyszukiwania',
             '- typ: '.($rent ? 'wynajem' : 'sprzedaż'),
             "- miasto: {$search->city}",

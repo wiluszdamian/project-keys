@@ -21,5 +21,8 @@ Schedule::command('rcn:import')->weeklyOn(0, '04:30')->withoutOverlapping()->run
 Schedule::command('queue:prune-batches --hours=48')->daily();
 Schedule::command('queue:prune-failed --hours=168')->daily();
 
+// Okazje: przeliczenie i powiadomienia o nowych, co godzinę.
+Schedule::command('deals:refresh')->hourlyAt(15)->withoutOverlapping()->runInBackground();
+
 // Alert, gdy od 3 godzin nie ma udanego przebiegu.
 Schedule::command('alerts:check')->hourly();

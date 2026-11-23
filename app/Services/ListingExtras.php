@@ -22,6 +22,7 @@ class ListingExtras
         private ImageHasher $hasher,
         private RiskDetector $risks,
         private TransactionComparator $transactions,
+        private DealFinder $deals,
     ) {}
 
     public function prepare(Listing $listing): void
@@ -43,6 +44,16 @@ class ListingExtras
                 'transactions_compared_at' => now(),
             ])->save());
         }
+
+        $this->refreshDeal($listing);
+    }
+
+    /**
+     * Po cenach transakcyjnych, bo od nich zależy okazja przy sprzedaży.
+     */
+    public function refreshDeal(Listing $listing): void
+    {
+        $this->attempt('deal', fn () => $this->deals->refresh($listing));
     }
 
     private function attempt(string $step, callable $callback): void

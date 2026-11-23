@@ -44,6 +44,9 @@
         @endif
 
         <div class="pk-card__meta">
+            @if ($listing->deal_at)
+                <x-filament::badge size="sm" color="success">Okazja</x-filament::badge>
+            @endif
             @if ($listing->status)
                 <x-filament::badge size="sm" :color="$listing->status->getColor()">{{ $listing->status->getLabel() }}</x-filament::badge>
             @endif

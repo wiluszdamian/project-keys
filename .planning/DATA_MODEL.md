@@ -28,6 +28,8 @@
 
 ## listings
 
+Okazje: `deal_reasons` (jsonb, lista `{type, text}`), `deal_at` (od kiedy jest okazją), `deal_notified_at` (kiedy poszło powiadomienie).
+
 | Kolumna | Typ | Uwagi |
 |---|---|---|
 | id | bigint pk | |

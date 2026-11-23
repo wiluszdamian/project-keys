@@ -33,6 +33,9 @@ class Listing extends Model
             'geocoded_at' => 'datetime',
             'transaction_comparison' => 'array',
             'transactions_compared_at' => 'datetime',
+            'deal_reasons' => 'array',
+            'deal_at' => 'datetime',
+            'deal_notified_at' => 'datetime',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];
@@ -61,6 +64,21 @@ class Listing extends Model
     public function market(): ?string
     {
         return ListingFeatures::market($this->raw ?? [], $this->portal, (string) $this->external_id);
+    }
+
+    /**
+     * Zmienia status. Powód (np. dlaczego odrzucona) dopisuje do notatki, z której korzysta ocena AI.
+     */
+    public function applyStatus(?ListingStatus $status, ?string $reason = null): void
+    {
+        $note = trim((string) $this->note);
+        $reason = trim((string) $reason);
+
+        if ($reason !== '') {
+            $note = trim($note."\n".($status?->getLabel() ?? 'Status').': '.$reason);
+        }
+
+        $this->update(['status' => $status, 'note' => $note !== '' ? $note : null]);
     }
 
     public function hasCoordinates(): bool

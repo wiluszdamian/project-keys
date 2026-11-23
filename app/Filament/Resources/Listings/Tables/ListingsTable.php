@@ -7,8 +7,10 @@ use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
 use App\Filament\Support\ListingCard;
 use App\Filament\Support\ListingFilters;
+use App\Filament\Support\StatusActions;
 use App\Models\CommutePlace;
 use App\Models\Listing;
+use App\Services\DealFinder;
 use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Filament\Actions\Action;
@@ -136,12 +138,20 @@ class ListingsTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(fn (Listing $record) => array_values(array_filter([
+                        $record->deal_at ? 'Okazja' : null,
                         $record->status?->getLabel(),
                         $record->risk_flags ? '⚠ '.count($record->risk_flags) : null,
                     ])))
                     ->badge()
-                    ->color(fn (string $state, Listing $record) => str_starts_with($state, '⚠') ? 'danger' : ($record->status?->getColor() ?? 'gray'))
-                    ->tooltip(fn (Listing $record) => $record->risk_flags ? collect($record->risk_flags)->pluck('message')->implode("\n") : null)
+                    ->color(fn (string $state, Listing $record) => match (true) {
+                        $state === 'Okazja' => 'success',
+                        str_starts_with($state, '⚠') => 'danger',
+                        default => $record->status?->getColor() ?? 'gray',
+                    })
+                    ->tooltip(fn (Listing $record) => collect([
+                        $record->deal_reasons ? 'Okazja: '.DealFinder::summary($record->deal_reasons) : null,
+                        ...collect($record->risk_flags ?? [])->pluck('message'),
+                    ])->filter()->implode("\n") ?: null)
                     ->placeholder('-')
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('first_seen_at')
@@ -227,13 +237,7 @@ class ListingsTable
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->url(fn (Listing $record) => $record->url, shouldOpenInNewTab: true),
                 ActionGroup::make([
-                    ...collect(ListingStatus::cases())->map(fn (ListingStatus $status) => Action::make("status_{$status->value}")
-                        ->label($status->getLabel())
-                        ->color($status->getColor())
-                        ->action(fn (Listing $record) => $record->update(['status' => $status]))),
-                    Action::make('status_clear')
-                        ->label('Bez statusu')
-                        ->action(fn (Listing $record) => $record->update(['status' => null])),
+                    ...StatusActions::make(fn (Listing $record, ?ListingStatus $status, ?string $reason) => $record->applyStatus($status, $reason)),
                     EditAction::make()->label('Notatka'),
                 ])->label('Status')->tooltip('Status i notatka')->iconButton()->icon(Heroicon::OutlinedTag),
             ])

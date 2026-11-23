@@ -120,6 +120,13 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   od oceny AI, ceny i metrażu, niżej jest ocena AI z plusami i minusami, ceny transakcyjne, dojazd,
   historia cen i opis. Status (ulubiona, kontakt, oglądanie, odrzucona) i notatkę zmieniasz przyciskami
   na górze strony oferty albo ikoną przy ofercie w tabeli. Odrzucone znikają z listy i nie dają powiadomień.
+- **Okazje:** zakładka na liście ofert (i pozycja w menu). Okazja to oferta o co najmniej 10% tańsza
+  za m² niż transakcje z RCN w okolicy, o 15% tańsza niż mediana ofert w dzielnicy albo mieście, albo po
+  obniżce ceny o co najmniej 5%. Co godzinę `deals:refresh` przelicza okazje i wysyła nowe na Discorda
+  i do dzwoneczka (kilka naraz jako jedno podsumowanie). Progi w Ustawieniach.
+- **Nauka na decyzjach:** oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona, razem
+  z notatkami, trafiają do oceny AI jako przykłady tego, czego szukasz. Przy odrzuceniu i dodaniu do
+  ulubionych możesz wpisać powód, który zapisuje się w notatce.
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
 - **Ceny transakcyjne:** każda oferta sprzedaży jest porównana z prawdziwymi cenami sprzedaży mieszkań
   z Rejestru Cen Nieruchomości (GUGiK): transakcje w promieniu 800 m do 3 km, podobny metraż, ostatnie

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Listings\Pages;
 use App\Enums\ListingStatus;
 use App\Filament\Pages\MortgagePage;
 use App\Filament\Resources\Listings\ListingResource;
+use App\Filament\Support\StatusActions;
 use App\Models\Listing;
 use App\Support\Portals;
 use Filament\Actions\Action;
@@ -40,16 +41,7 @@ class ViewListing extends ViewRecord
                 ->tooltip(fn (Listing $record) => 'Ogłoszenie na portalu '.Portals::label($record->portal))
                 ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                 ->url(fn (Listing $record) => $record->url, shouldOpenInNewTab: true),
-            ActionGroup::make([
-                ...collect(ListingStatus::cases())->map(fn (ListingStatus $status) => Action::make("status_{$status->value}")
-                    ->label($status->getLabel())
-                    ->color($status->getColor())
-                    ->icon(fn (Listing $record) => $record->status === $status ? Heroicon::OutlinedCheck : null)
-                    ->action(fn (Listing $record) => $this->setStatus($record, $status))),
-                Action::make('status_clear')
-                    ->label('Bez statusu')
-                    ->action(fn (Listing $record) => $this->setStatus($record, null)),
-            ])
+            ActionGroup::make(StatusActions::make(fn (Listing $record, ?ListingStatus $status, ?string $reason) => $this->setStatus($record, $status, $reason), markCurrent: true))
                 ->label(fn () => $this->getRecord()->status?->getLabel() ?? 'Ustaw status')
                 ->icon(Heroicon::OutlinedTag)
                 ->color('gray')
@@ -80,10 +72,10 @@ class ViewListing extends ViewRecord
         ];
     }
 
-    private function setStatus(Listing $listing, ?ListingStatus $status): void
+    private function setStatus(Listing $listing, ?ListingStatus $status, ?string $reason = null): void
     {
-        $listing->update(['status' => $status]);
-        $this->refreshFormData(['status']);
+        $listing->applyStatus($status, $reason);
+        $this->refreshFormData(['status', 'note']);
         Notification::make()->success()->title($status ? 'Status: '.$status->getLabel() : 'Status usunięty')->send();
     }
 }

@@ -117,11 +117,11 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 
 ## Na później (pomysły zatwierdzone przez właściciela 2026-11-18)
 
-- AI uczy się z decyzji: oferty ulubione i odrzucone jako przykłady w prompcie oceny.
+- ✅ AI uczy się z decyzji: oferty ulubione i odrzucone jako przykłady w prompcie oceny (2026-11-23).
 - Wiadomość do ogłoszeniodawcy: przycisk, AI pisze pytania o brakujące informacje (kaucja, media, zwierzęta, termin, parking).
 - Lista pytań na oglądanie dla statusu "Oglądanie" i termin w kalendarzu (iCal).
 - Oferty, które zniknęły z portalu: status nieaktualnej, czas schodzenia ofert, dokładniejsze statystyki.
-- Okazje: oferty wyraźnie tańsze niż mediana za m² w dzielnicy, obniżki cen w jednym miejscu.
+- ✅ Okazje: oferty wyraźnie tańsze niż transakcje lub mediana za m², duże obniżki, zakładka i powiadomienia (2026-11-23).
 - Asystent z działaniami: statusy, notatki, nowe wyszukiwania z czatu.
 - ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).
 - Nadal otwarte z wcześniej: backup bazy (faza 8), Telegram.

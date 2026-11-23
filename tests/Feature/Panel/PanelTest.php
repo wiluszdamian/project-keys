@@ -166,6 +166,15 @@ it('na stronie oferty zmienia status i notatkę bez przechodzenia do edycji', fu
     expect($listing->fresh())->status->toBe(ListingStatus::Favorite)->note->toBe('zadzwonić po 17');
 });
 
+it('przy odrzuceniu zapisuje powód w notatce', function () {
+    $listing = Listing::factory()->create(['note' => 'dzwoniłem']);
+
+    Livewire::test(ViewListing::class, ['record' => $listing->getRouteKey()])
+        ->callAction('status_rejected', data: ['reason' => 'parter i ciemna kuchnia']);
+
+    expect($listing->fresh())->status->toBe(ListingStatus::Rejected)->note->toBe("dzwoniłem\nOdrzucona: parter i ciemna kuchnia");
+});
+
 it('pokazuje ofertę jako kartę z oceną i ceną dla wąskiego ekranu', function () {
     $search = Search::factory()->create();
     $listing = Listing::factory()->create(['title' => 'Kawalerka na Baranówce', 'price' => 2100, 'rooms' => 1, 'district' => 'Baranówka']);

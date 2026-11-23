@@ -70,6 +70,13 @@ class AppSettings
         'mortgage_bridge_extra' => ['mortgage.bridge_extra', 'float'],
         'mortgage_bridge_months' => ['mortgage.bridge_months', 'int'],
 
+        'ai_learn_from_decisions' => ['scoring.learn_from_decisions', 'bool'],
+        'ai_decision_examples' => ['scoring.decision_examples', 'int'],
+        'notify_deals' => ['notify.deals', 'bool'],
+        'deals_below_transactions_percent' => ['deals.below_transactions_percent', 'int'],
+        'deals_price_drop_percent' => ['deals.price_drop_percent', 'int'],
+        'deals_below_market_percent' => ['deals.below_market_percent', 'int'],
+
         'ai_enabled' => ['scoring.enabled', 'bool'],
         'ai_max_per_minute' => ['scoring.max_per_minute', 'int'],
         'ai_reasoning_effort' => ['scoring.reasoning_effort', 'string'],

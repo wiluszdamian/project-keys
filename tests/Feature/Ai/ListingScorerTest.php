@@ -182,3 +182,29 @@ it('podaje modelowi rynek, meble i wymagania wyszukiwania', function () {
         && $prompt->contains('- rynek: wtórny')
         && $prompt->contains('umeblowane (z danych portalu i opisu): tak'));
 });
+
+it('podaje modelowi polubione i odrzucone oferty z notatkami', function () {
+    ListingScoringAgent::fake([aiAnswer()]);
+    Listing::factory()->create(['title' => 'Mieszkanie przy parku', 'status' => 'favorite', 'note' => 'Ulubiona: duży balkon']);
+    Listing::factory()->create(['title' => 'Parter przy torach', 'status' => 'rejected', 'note' => 'Odrzucona: parter i hałas', 'floor' => 'parter']);
+    Listing::factory()->create(['title' => 'Sprzedaż', 'deal_type' => 'sale', 'status' => 'rejected']);
+
+    app(ListingScorer::class)->score($this->search, $this->listing);
+
+    ListingScoringAgent::assertPrompted(fn (AgentPrompt $prompt) => $prompt->contains('## Decyzje osoby w panelu')
+        && $prompt->contains('- ulubiona: Mieszkanie przy parku')
+        && $prompt->contains('Notatka osoby: Ulubiona: duży balkon')
+        && $prompt->contains('- odrzucona: Parter przy torach')
+        && $prompt->contains('piętro parter')
+        && ! $prompt->contains('Sprzedaż ('));
+});
+
+it('bez nauki na decyzjach prompt nie ma przykładów', function () {
+    ListingScoringAgent::fake([aiAnswer()]);
+    config(['scoring.learn_from_decisions' => false]);
+    Listing::factory()->create(['status' => 'rejected']);
+
+    app(ListingScorer::class)->score($this->search, $this->listing);
+
+    ListingScoringAgent::assertPrompted(fn (AgentPrompt $prompt) => ! $prompt->contains('Decyzje osoby'));
+});

@@ -153,6 +153,13 @@ class Settings extends Page
                                         Toggle::make('notify_price_drops')
                                             ->label('Wysyłaj obniżki cen wysłanych ofert')
                                             ->inline(false),
+                                        Toggle::make('notify_deals')
+                                            ->label('Wysyłaj okazje')
+                                            ->helperText('Oferta tańsza niż transakcje lub rynek albo po dużej obniżce. Raz na ofertę.')
+                                            ->inline(false),
+                                        self::int('deals_below_transactions_percent', 'Okazja: taniej niż transakcje o', '%', 1, 50),
+                                        self::int('deals_below_market_percent', 'Okazja: taniej niż mediana ofert o', '%', 1, 50),
+                                        self::int('deals_price_drop_percent', 'Okazja: obniżka ceny o', '%', 1, 50),
                                         Toggle::make('notify_weekly_report')
                                             ->label('Tygodniowy raport rynku')
                                             ->helperText('W każdą sobotę o 20:00, na Discordzie i w panelu (Raport rynku).')
@@ -202,6 +209,11 @@ class Settings extends Page
                                             ->native(false),
                                         self::int('ai_max_per_minute', 'Limit zapytań do AI', 'na minutę', 1, 200),
                                         self::int('ai_description_limit', 'Opis ogłoszenia przycięty do', 'znaków', 500, 20000),
+                                        Toggle::make('ai_learn_from_decisions')
+                                            ->label('Ucz AI na moich decyzjach')
+                                            ->helperText('Oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona (z notatkami) trafiają do oceny jako przykłady.')
+                                            ->inline(false),
+                                        self::int('ai_decision_examples', 'Ile przykładów każdego rodzaju', null, 1, 20),
                                     ]),
                                 Section::make('Dostawca')
                                     ->description('Dostawca zgodny z API OpenAI (teraz OpenCode).')

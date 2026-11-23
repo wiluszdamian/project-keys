@@ -42,8 +42,11 @@ Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 - `search:list`
 - `search:run {id}`
 - `search:pause {id}`, `search:resume {id}`
+- `deals:refresh` (przelicza okazje i wysyła powiadomienia o nowych, `--silent` bez wysyłki)
 - `search:refilter {id...}` (odłącza przypisane oferty, które nie pasują do obecnych filtrów)
 - `api:token {nazwa}`, `scraper:probe {portal} {id}`, `notify:test`, `ai:usage`, `alerts:check`, `search:dispatch-due` (uruchamia scheduler)
+
+Okazje (od 2026-11-23): oferta w `GET /listings/{id}` i na listach ma `deal_reasons` (lista `{type, text}`, typy `below_transactions`, `price_drop`, `below_market`) i `deal_at`, gdy jest okazją.
 
 ## Ceny transakcyjne (od 2026-11-20)
 
