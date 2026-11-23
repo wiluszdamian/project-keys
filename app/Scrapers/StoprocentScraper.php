@@ -74,7 +74,8 @@ class StoprocentScraper implements EnrichesListings, PortalScraper
                 $listings[$listing->externalId] ??= $listing;
             }
 
-            if ($page >= ($parsed['total_pages'] ?? 1)) {
+            // Pełna strona (total_pages null): czytamy dalej. Niepełna: to ostatnia.
+            if ($parsed['total_pages'] !== null) {
                 break;
             }
         }

@@ -94,3 +94,15 @@ it('pomija działki i lokale bez pobierania strony ogłoszenia', function () {
     expect($this->scraper->fetchListings(Search::factory()->make(['deal_type' => 'sale', 'city' => 'Rzeszów']))->listings)->toBe([]);
     Http::assertSentCount(1);
 });
+
+it('czyta kolejne strony API, póki są pełne', function () {
+    config(['scrapers.stoprocent.per_page' => 2]);
+    $item = fn (int $id) => ['id' => $id, 'modified' => 'x', 'link' => "https://stoprocent-nieruchomosci.pl/nieruchomosci/{$id}", 'title' => ['rendered' => 'Działka']];
+    Http::fake(['stoprocent-nieruchomosci.pl/wp-json/*' => Http::sequence()
+        ->push(json_encode([$item(1), $item(2)]))
+        ->push(json_encode([$item(3), $item(4)]))
+        ->push(json_encode([$item(5)]))]);
+
+    expect($this->scraper->fetchListings(Search::factory()->make(['deal_type' => 'rent', 'city' => 'Rzeszów']))->pagesFetched)->toBe(3);
+    Http::assertSentCount(3);
+});
