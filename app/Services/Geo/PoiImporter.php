@@ -216,11 +216,11 @@ class PoiImporter
         $isced = (string) ($tags['isced:level'] ?? '');
         $categories = [];
 
-        if (preg_match('/szko[lł]\w*\s+podstawow|\bsp\b|\bsp\s*nr|podstawowa/u', $name) === 1 || preg_match('/(^|[;,\s])1([;,\s-]|$)/', $isced) === 1) {
+        if (preg_match('/szko[lł]\w*\s+podstawow|\bsp\b|\bsp\s*nr|podstawowa|zesp[oó][lł]\s+szkolno[\s-]+przedszkoln/u', $name) === 1 || preg_match('/(^|[;,\s])1([;,\s-]|$)/', $isced) === 1) {
             $categories[] = Poi::PRIMARY;
         }
 
-        if (preg_match('/liceum|technikum|zesp[oó][lł]\s+szk[oó][lł]|bran[zż]ow|\blo\b|szko[lł]a\s+[sś]redni|centrum\s+kszta[lł]cenia/u', $name) === 1 || preg_match('/(^|[;,\s-])3([;,\s]|$)/', $isced) === 1) {
+        if (preg_match('/liceum|technikum|zesp[oó][lł]\s+szk[oó][lł](?!\p{L})|bran[zż]ow|\blo\b|szko[lł]a\s+[sś]redni|centrum\s+kszta[lł]cenia/u', $name) === 1 || preg_match('/(^|[;,\s-])3([;,\s]|$)/', $isced) === 1) {
             $categories[] = Poi::SECONDARY;
         }
 

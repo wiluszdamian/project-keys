@@ -61,7 +61,8 @@ class Infrastructure
         $items = [];
 
         foreach ($nearest as $category => $pois) {
-            $items[$category] = $withRoutes->slice($offset, count($pois))->values()->all();
+            // Kolejność według odległości drogą, nie w linii prostej.
+            $items[$category] = $withRoutes->slice($offset, count($pois))->sortBy('km')->values()->all();
             $offset += count($pois);
         }
 

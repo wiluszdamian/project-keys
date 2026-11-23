@@ -23,6 +23,8 @@ it('dzieli punkty z OpenStreetMap na kategorie', function (array $tags, array $e
     'przedszkole' => [['amenity' => 'kindergarten', 'name' => 'Przedszkole Publiczne nr 5'], ['kindergarten']],
     'podstawówka' => [['amenity' => 'school', 'name' => 'Szkoła Podstawowa nr 12'], ['primary']],
     'liceum' => [['amenity' => 'school', 'name' => 'III Liceum Ogólnokształcące'], ['secondary']],
+    'zespół szkół' => [['amenity' => 'school', 'name' => 'Zespół Szkół Technicznych'], ['secondary']],
+    'zespół szkolno-przedszkolny' => [['amenity' => 'school', 'name' => 'Zespół Szkolno-Przedszkolny w Krasnem'], ['primary']],
     'po tagu isced' => [['amenity' => 'school', 'name' => 'Szkoła', 'isced:level' => '3'], ['secondary']],
     'szkoła muzyczna pomijana' => [['amenity' => 'school', 'name' => 'Szkoła Muzyczna I stopnia'], []],
     'szkoła jazdy pomijana' => [['amenity' => 'school', 'name' => 'Szkoła Nauki Jazdy'], []],
