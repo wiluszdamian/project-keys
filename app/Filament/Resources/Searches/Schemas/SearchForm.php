@@ -82,9 +82,9 @@ class SearchForm
                             ->helperText('Oferta bez informacji o rynku przechodzi dalej.')
                             ->native(false)
                             ->columnSpanFull(),
-                        Toggle::make('furnished_only')
-                            ->label('Tylko umeblowane')
-                            ->helperText('Odrzuca oferty bez mebli (także stan deweloperski). Gdy ogłoszenie nie mówi nic o meblach, ocenia AI.')
+                        Toggle::make('move_in_ready')
+                            ->label('Tylko gotowe do zamieszkania')
+                            ->helperText('Odrzuca stan deweloperski, do wykończenia i do remontu. Meble nie są wymagane. Gdy ogłoszenie nie mówi nic o stanie, ocenia AI.')
                             ->default(false)
                             ->columnSpanFull(),
                         Toggle::make('exclude_visualizations')

@@ -101,10 +101,6 @@ class RkmSimulator
         $loan = max(0.0, $price - $own);
         $limit = $this->priceLimit($input, $price);
 
-        if ($limit && ! $limit['ok']) {
-            $warnings[] = 'Cena za m² jest wyższa niż limit RKM ('.self::money($limit['limit']).' za m² dla: '.$limit['zone'].'). Bank nie udzieli RKM na to mieszkanie.';
-        }
-
         $variableRate = round((float) $input['index_rate'] + (float) $input['margin'], 2);
         $rates = $this->rates($fixed, (float) ($input['fixed_rate'] ?? 0), $variableRate, (bool) ($input['bridge'] ?? false), $months);
         $prepayments = $this->familyRepayments($input, $months);

@@ -21,7 +21,7 @@ class Search extends Model
     protected $fillable = [
         'name', 'deal_type', 'property_type', 'city', 'districts',
         'price_min', 'price_max', 'area_min', 'area_max', 'rooms_min', 'rooms_max',
-        'market', 'furnished_only', 'exclude_visualizations',
+        'market', 'move_in_ready', 'exclude_visualizations',
         'portals', 'ai_preferences', 'notify_channels', 'min_score_to_notify', 'is_active',
         'notify_enabled', 'notify_mode', 'notify_every_hours', 'notify_daily_at',
     ];
@@ -33,7 +33,7 @@ class Search extends Model
         'first_run_completed' => false,
         'notify_enabled' => true,
         'notify_mode' => 'instant',
-        'furnished_only' => false,
+        'move_in_ready' => false,
         'exclude_visualizations' => false,
     ];
 
@@ -46,7 +46,7 @@ class Search extends Model
             'portals' => 'array',
             'notify_channels' => 'array',
             'is_active' => 'boolean',
-            'furnished_only' => 'boolean',
+            'move_in_ready' => 'boolean',
             'exclude_visualizations' => 'boolean',
             'notify_enabled' => 'boolean',
             'notify_mode' => NotifyMode::class,

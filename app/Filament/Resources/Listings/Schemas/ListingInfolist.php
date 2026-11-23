@@ -82,15 +82,24 @@ class ListingInfolist
                             ->label('Pokoje / piętro')
                             ->state(fn (Listing $record) => ($record->rooms ?? '?').' / '.($record->floor ?? '?')),
                         TextEntry::make('market_furniture')
-                            ->label('Rynek / meble')
+                            ->label('Rynek / stan')
                             ->state(function (Listing $record) {
                                 $features = ListingFeatures::of($record);
 
-                                return $features->marketLabel().' / '.match ($features->furnished) {
-                                    true => 'umeblowane',
-                                    false => 'bez mebli',
-                                    null => 'nie wiadomo',
-                                }.($features->visualizations ? ' / wizualizacje' : '');
+                                return collect([
+                                    'rynek '.$features->marketLabel(),
+                                    match ($features->ready) {
+                                        true => 'gotowe do zamieszkania',
+                                        false => 'do wykończenia lub remontu',
+                                        null => 'stan nieznany',
+                                    },
+                                    match ($features->furnished) {
+                                        true => 'umeblowane',
+                                        false => 'bez mebli',
+                                        null => null,
+                                    },
+                                    $features->visualizations ? 'wizualizacje' : null,
+                                ])->filter()->implode(', ');
                             })
                             ->visible(fn (Listing $record) => $record->deal_type->value === 'sale'),
                         TextEntry::make('is_private_owner')
@@ -196,6 +205,28 @@ class ListingInfolist
                                     ->placeholder('-')
                                     ->columnSpan(['default' => 2, 'md' => 2]),
                             ]),
+                    ]),
+
+                Section::make('Kredyt (Rodzinny Kredyt Mieszkaniowy)')
+                    ->icon('heroicon-o-banknotes')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->description('Bez wkładu własnego, z gwarancją BGK. Cena, metraż i miejscowość z oferty, 30 lat.')
+                    ->visible(fn (Listing $record) => $record->deal_type->value === 'sale' && $record->price)
+                    ->schema([
+                        ViewEntry::make('mortgageSimulation')
+                            ->hiddenLabel()
+                            ->state(function (Listing $record) {
+                                $simulator = app(RkmSimulator::class);
+                                $input = RkmSimulator::defaults($record);
+
+                                return [
+                                    'fixed' => $simulator->simulate(['rate_type' => RkmSimulator::FIXED] + $input),
+                                    'variable' => $simulator->simulate(['rate_type' => RkmSimulator::VARIABLE] + $input),
+                                    'url' => MortgagePage::getUrl(['listing' => $record->id]),
+                                ];
+                            })
+                            ->view('filament.listings.mortgage'),
                     ]),
 
                 Section::make('Ceny transakcyjne w okolicy')

@@ -71,6 +71,7 @@ class ListingsMap extends Page
         $filters = $this->filters ?? [];
 
         $query = Listing::query()
+            ->whereHas('searches')
             ->whereNull('duplicate_of_id')
             ->whereNotNull('lat')
             ->where('last_seen_at', '>=', now()->subDays((int) ($filters['days'] ?? 30)))

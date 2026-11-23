@@ -51,16 +51,32 @@ it('sprawdza rynek, meble i wizualizacje', function (array $search, array $listi
     'Otodom w inwestycji dewelopera' => [['market' => 'secondary'], ['raw' => ['developmentId' => 123]], false],
     'Morizon ze strony ogłoszenia' => [['market' => 'secondary'], ['portal' => 'morizon', 'raw' => ['details' => ['market' => 'pierwotny']]], false],
     'bez filtra rynku' => [[], ['raw' => ['market' => 'primary']], true],
-    'OLX bez mebli' => [['furnished_only' => true], ['portal' => 'olx', 'raw' => ['params' => [['key' => 'furniture', 'value' => ['key' => 'no']]]]], false],
-    'OLX umeblowane' => [['furnished_only' => true], ['portal' => 'olx', 'raw' => ['params' => [['key' => 'furniture', 'value' => ['key' => 'yes']]]]], true],
-    'nieumeblowane w opisie' => [['furnished_only' => true], ['description' => 'Mieszkanie nieumeblowane, do wprowadzenia.'], false],
-    'stan deweloperski' => [['furnished_only' => true], ['description' => 'Lokal w stanie deweloperskim.'], false],
-    'umeblowane w opisie' => [['furnished_only' => true], ['description' => 'Sprzedaję mieszkanie umeblowane, meble zostają.'], true],
-    'brak informacji o meblach przechodzi' => [['furnished_only' => true], ['description' => 'Trzy pokoje, balkon.'], true],
-    'bez mebli, ale bez filtra' => [[], ['description' => 'Mieszkanie bez mebli.'], true],
+    'OLX bez mebli, ale wykończone' => [['move_in_ready' => true], ['portal' => 'olx', 'description' => 'Gotowe do zamieszkania.', 'raw' => ['params' => [['key' => 'furniture', 'value' => ['key' => 'no']]]]], true],
+    'nieumeblowane, do wprowadzenia' => [['move_in_ready' => true], ['description' => 'Mieszkanie nieumeblowane, do wprowadzenia.'], true],
+    'stan deweloperski' => [['move_in_ready' => true], ['description' => 'Lokal w stanie deweloperskim.'], false],
+    'do remontu' => [['move_in_ready' => true], ['description' => 'Mieszkanie do remontu, okazja.'], false],
+    'Otodom do wykończenia ze strony ogłoszenia' => [['move_in_ready' => true], ['raw' => ['details' => ['condition' => 'to_completion']]], false],
+    'Rzeszowiak do zamieszkania' => [['move_in_ready' => true], ['portal' => 'rzeszowiak', 'raw' => ['details' => ['condition' => 'do zamieszkania']]], true],
+    'brak informacji o stanie przechodzi' => [['move_in_ready' => true], ['description' => 'Trzy pokoje, balkon.'], true],
+    'do remontu, ale bez filtra' => [[], ['description' => 'Mieszkanie do remontu.'], true],
     'wizualizacja w opisie' => [['exclude_visualizations' => true], ['description' => 'Zdjęcia to wizualizacje wnętrz.'], false],
     'zdjęcia poglądowe' => [['exclude_visualizations' => true], ['description' => 'Zdjęcia poglądowe.'], false],
     'wizualizacja bez filtra' => [[], ['description' => 'Wizualizacja salonu.'], true],
+]);
+
+it('rozpoznaje, czy da się od razu zamieszkać', function (string $description, array $raw, ?bool $expected) {
+    expect(ListingFeatures::of(listingData(['description' => $description, 'raw' => $raw]))->ready)->toBe($expected);
+})->with([
+    ['Mieszkanie gotowe do zamieszkania.', [], true],
+    ['Mieszkanie po remoncie, bez mebli.', [], true],
+    ['Nie wymaga remontu.', [], true],
+    ['Umeblowane, z AGD.', [], true],
+    ['Łazienka do remontu.', [], false],
+    ['Mieszkanie wymaga generalnego remontu.', [], false],
+    ['Do wykończenia według własnego gustu.', [], false],
+    ['Opis bez stanu.', ['details' => ['condition' => 'ready_to_use']], true],
+    ['Gotowe do zamieszkania.', ['details' => ['condition' => 'to_renovation']], false],
+    ['Trzy pokoje, balkon.', [], null],
 ]);
 
 it('rozpoznaje meble w opisie', function (string $description, ?bool $expected) {

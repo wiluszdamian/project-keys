@@ -31,7 +31,9 @@ class ListingsTable
     public static function configure(Table $table): Table
     {
         return $table
+            // Tylko oferty, które pasują do jakiegoś wyszukiwania. Odłączone (np. po zmianie filtrów) znikają z listy.
             ->modifyQueryUsing(fn (Builder $query) => $query
+                ->whereHas('searches')
                 ->with('commutes.place')
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))

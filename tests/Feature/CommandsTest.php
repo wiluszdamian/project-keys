@@ -69,11 +69,11 @@ it('wstrzymuje i wznawia z komendy', function () {
 });
 
 it('search:refilter odłącza oferty, które nie pasują do nowych filtrów', function () {
-    $search = Search::factory()->create(['deal_type' => 'sale', 'price_min' => null, 'price_max' => 550000, 'area_min' => null, 'area_max' => null, 'rooms_min' => 3, 'rooms_max' => 4, 'market' => 'secondary', 'furnished_only' => true]);
+    $search = Search::factory()->create(['deal_type' => 'sale', 'price_min' => null, 'price_max' => 550000, 'area_min' => null, 'area_max' => null, 'rooms_min' => 3, 'rooms_max' => 4, 'market' => 'secondary', 'move_in_ready' => true]);
     $ok = Listing::factory()->create(['deal_type' => 'sale', 'price' => 500000, 'rooms' => 3, 'description' => 'Umeblowane.']);
     $tooExpensive = Listing::factory()->create(['deal_type' => 'sale', 'price' => 560000, 'rooms' => 3]);
     $primary = Listing::factory()->create(['deal_type' => 'sale', 'price' => 500000, 'rooms' => 3, 'raw' => ['market' => 'primary']]);
-    $unfurnished = Listing::factory()->create(['deal_type' => 'sale', 'price' => 500000, 'rooms' => 4, 'description' => 'Bez mebli.']);
+    $unfurnished = Listing::factory()->create(['deal_type' => 'sale', 'price' => 500000, 'rooms' => 4, 'description' => 'Do remontu.']);
     $search->listings()->attach([$ok->id, $tooExpensive->id, $primary->id, $unfurnished->id], ['matched_at' => now()]);
     ListingAnalysis::factory()->create(['search_id' => $search->id, 'listing_id' => $primary->id]);
 

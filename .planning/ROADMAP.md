@@ -112,7 +112,7 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - ✅ Wykrywanie oszustw: zwroty, cena poniżej rynku, to samo zdjęcie w innej ofercie.
 - ✅ Ceny transakcyjne z Rejestru Cen Nieruchomości przy ofertach sprzedaży (2026-11-20).
 - ✅ Symulacja Rodzinnego Kredytu Mieszkaniowego w panelu i rata przy ofercie sprzedaży (2026-11-23).
-- ✅ Filtry rynku w wyszukiwaniu: rynek wtórny lub pierwotny, tylko umeblowane, bez wizualizacji (2026-11-23).
+- ✅ Filtry rynku w wyszukiwaniu: rynek wtórny lub pierwotny, tylko gotowe do zamieszkania, bez wizualizacji (2026-11-23).
 
 ## Na później (pomysły zatwierdzone przez właściciela 2026-11-18)
 

@@ -23,7 +23,7 @@ class SearchResource extends JsonResource
             'rooms_min' => $this->rooms_min,
             'rooms_max' => $this->rooms_max,
             'market' => $this->market,
-            'furnished_only' => $this->furnished_only,
+            'move_in_ready' => $this->move_in_ready,
             'exclude_visualizations' => $this->exclude_visualizations,
             'portals' => $this->portals,
             'ai_preferences' => $this->ai_preferences,

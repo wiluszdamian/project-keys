@@ -135,6 +135,8 @@ it('edytuje wyszukiwanie i uruchamia je od razu', function () {
 it('ustawia status oferty i domyślnie ukrywa odrzucone oraz duplikaty', function () {
     [$keep, $reject] = Listing::factory()->count(2)->create();
     $duplicate = Listing::factory()->create(['duplicate_of_id' => $keep->id]);
+    $unmatched = Listing::factory()->create();
+    Search::factory()->create()->listings()->attach([$keep->id, $reject->id, $duplicate->id], ['matched_at' => now()]);
 
     Livewire::test(ListListings::class)->removeTableFilter('above_threshold')->callTableAction('status_rejected', $reject);
     expect($reject->fresh()->status)->toBe(ListingStatus::Rejected);
@@ -142,7 +144,7 @@ it('ustawia status oferty i domyślnie ukrywa odrzucone oraz duplikaty', functio
     Livewire::test(ListListings::class)
         ->removeTableFilter('above_threshold')
         ->assertCanSeeTableRecords([$keep])
-        ->assertCanNotSeeTableRecords([$reject, $duplicate]);
+        ->assertCanNotSeeTableRecords([$reject, $duplicate, $unmatched]);
 
     Livewire::test(EditListing::class, ['record' => $keep->getRouteKey()])
         ->fillForm(['status' => 'viewing', 'note' => 'sobota 12:00'])
@@ -168,6 +170,7 @@ it('pokazuje ofertę jako kartę z oceną i ceną dla wąskiego ekranu', functio
     $search = Search::factory()->create();
     $listing = Listing::factory()->create(['title' => 'Kawalerka na Baranówce', 'price' => 2100, 'rooms' => 1, 'district' => 'Baranówka']);
     ListingAnalysis::factory()->create(['listing_id' => $listing->id, 'search_id' => $search->id, 'score' => 9]);
+    $search->listings()->attach($listing, ['matched_at' => now()]);
 
     $this->get('/admin/listings')
         ->assertOk()
@@ -179,6 +182,7 @@ it('pokazuje ofertę jako kartę z oceną i ceną dla wąskiego ekranu', functio
 it('domyślnie pokazuje tylko oferty z oceną od progu wyszukiwania', function () {
     $search = Search::factory()->create(['min_score_to_notify' => 6]);
     [$good, $weak, $unscored] = Listing::factory()->count(3)->create();
+    $search->listings()->attach([$good->id, $weak->id, $unscored->id], ['matched_at' => now()]);
     ListingAnalysis::factory()->create(['listing_id' => $good->id, 'search_id' => $search->id, 'score' => 7]);
     ListingAnalysis::factory()->create(['listing_id' => $weak->id, 'search_id' => $search->id, 'score' => 4]);
 

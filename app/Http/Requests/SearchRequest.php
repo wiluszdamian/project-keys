@@ -55,7 +55,7 @@ class SearchRequest extends FormRequest
             'rooms_min' => ['nullable', 'integer', 'min:1', 'max:20'],
             'rooms_max' => ['nullable', 'integer', 'min:1', 'max:20'],
             'market' => ['nullable', Rule::in([RcnTransaction::PRIMARY, RcnTransaction::SECONDARY])],
-            'furnished_only' => ['sometimes', 'boolean'],
+            'move_in_ready' => ['sometimes', 'boolean'],
             'exclude_visualizations' => ['sometimes', 'boolean'],
             'portals' => [$required, 'array', 'min:1'],
             'portals.*' => ['distinct', Rule::in(config('scrapers.portals'))],

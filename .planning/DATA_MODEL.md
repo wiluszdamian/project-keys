@@ -14,7 +14,7 @@
 | area_min, area_max | integer nullable | m2 |
 | rooms_min, rooms_max | smallint nullable | |
 | market | string nullable | `primary` albo `secondary`, null = oba rynki |
-| furnished_only | boolean default false | odrzuca oferty bez mebli (z danych portalu albo opisu) |
+| move_in_ready | boolean default false | odrzuca oferty, w których nie da się od razu zamieszkać: stan deweloperski, do wykończenia, do remontu (z danych portalu albo opisu). Meble nie są wymagane |
 | exclude_visualizations | boolean default false | odrzuca oferty z wizualizacjami w tytule lub opisie |
 | portals | jsonb | np. ["otodom","olx"] |
 | ai_preferences | text nullable | wolny tekst dla AI |

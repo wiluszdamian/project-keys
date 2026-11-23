@@ -25,9 +25,11 @@ i PHP 8.5, działa w Docker Compose na jednym serwerze.
 
 1. **Wyszukiwanie.** Zapisujesz kryteria: miasto, wynajem albo sprzedaż, cena, metraż, liczba
    pokoi, opcjonalnie dzielnice i opis tego, czego szukasz (np. „najchętniej osiedle Projektant”).
-   Przy sprzedaży można też wybrać rynek (wtórny albo pierwotny), tylko mieszkania umeblowane i
-   pomijanie ofert z wizualizacjami. Te filtry odrzucają tylko oferty, o których wiadomo, że nie
-   pasują (z danych portalu albo z opisu). Gdy ogłoszenie nie mówi nic o meblach, decyduje ocena AI.
+   Przy sprzedaży można też wybrać rynek (wtórny albo pierwotny), tylko mieszkania gotowe do
+   zamieszkania (bez stanu deweloperskiego, wykończenia i remontu, meble niewymagane) i pomijanie
+   ofert z wizualizacjami. Te filtry odrzucają tylko oferty, o których wiadomo, że nie pasują (z danych
+   portalu albo z opisu). Gdy ogłoszenie nie mówi nic o stanie, decyduje ocena AI. Lista ofert i mapa
+   pokazują tylko oferty, które pasują do jakiegoś wyszukiwania.
 2. **Pobieranie.** Scheduler co minutę sprawdza, które wyszukiwania czekają dłużej niż
    `SCRAPE_INTERVAL_MINUTES`, i pobiera z obu portali najnowsze oferty. Między zapytaniami robi
    przerwy, a gdy portal blokuje (403 albo 429), odpuszcza go na 2 godziny.
@@ -134,7 +136,8 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   Liczy kwotę kredytu, gwarancję, potrzebny wkład (do 500 000 zł zero, powyżej różnica, bo gwarancja to
   najwyżej 100 000 zł), ratę przy stałym oprocentowaniu przez 5 lat albo zmiennym, ratę po wzroście stóp,
   limit ceny za m² z tabeli BGK i spłatę rodzinną przy drugim i trzecim dziecku. Przycisk „Policz kredyt”
-  na stronie oferty sprzedaży wypełnia dane z oferty, a sama oferta pokazuje szacunkową ratę. BGK i
+  na stronie oferty sprzedaży wypełnia dane z oferty. Sama strona oferty sprzedaży ma sekcję Kredyt:
+  rata przy stałym i zmiennym oprocentowaniu, kwota kredytu, wkład, odsetki i limit ceny za m². BGK i
   POLSTR/WIBOR nie mają darmowego API, więc stawki ustawiasz w Ustawieniach (zakładka Kredyt). Stopa
   referencyjna NBP pobiera się sama i gdy się zmieni, strona prosi o aktualizację stawek.
 - **Logi:** wpisy z logów aplikacji, workerów i schedulera z filtrem poziomu i wyszukiwaniem, pobranie

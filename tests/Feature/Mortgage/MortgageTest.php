@@ -68,7 +68,7 @@ it('sprawdza limit ceny za m²', function () {
     expect($simulator->simulate(rkmInput(['price' => 500_000, 'area' => 50, 'zone' => 'rzeszow']))['limit']['ok'])->toBeTrue()
         ->and($simulator->simulate(rkmInput(['price' => 550_000, 'area' => 50, 'zone' => 'neighbour'])))
         ->limit->ok->toBeFalse()
-        ->warnings->toContain('Cena za m² jest wyższa niż limit RKM (10 657 zł za m² dla: gmina sąsiadująca z Rzeszowem). Bank nie udzieli RKM na to mieszkanie.');
+        ->limit->limit->toBe(10_656.75);
 });
 
 it('spłata rodzinna obniża odsetki', function () {
@@ -93,6 +93,7 @@ it('czyta stopę referencyjną NBP', function () {
 });
 
 it('strona kredytu liczy dla oferty i ostrzega o zmianie stóp NBP', function () {
+    config(['mortgage.index_rate' => 3.49, 'mortgage.margin' => 2.3]);
     Http::fake(['static.nbp.pl/*' => Http::response('<stopy_procentowe><pozycja id="ref" oprocentowanie="3,50" obowiazuje_od="2026-12-03"/></stopy_procentowe>')]);
     $this->actingAs(User::factory()->create());
     Filament::setCurrentPanel('admin');
@@ -109,5 +110,8 @@ it('strona kredytu liczy dla oferty i ostrzega o zmianie stóp NBP', function ()
 
     Livewire::test(ViewListing::class, ['record' => $listing->getRouteKey()])
         ->assertSee('Rata kredytu (RKM)')
+        ->assertSee('Kredyt (Rodzinny Kredyt Mieszkaniowy)')
+        ->assertSee('Zmienne 5,79%')
+        ->assertSee('Mieszkanie się mieści.')
         ->assertActionVisible('mortgage');
 });

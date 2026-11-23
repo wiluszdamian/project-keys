@@ -38,6 +38,29 @@
     .pk-rows__link { color: var(--primary-600); font-weight: 500; }
     .dark .pk-rows__link { color: var(--primary-400); }
 
+    /* Kredyt: strona Kredyt i sekcja na stronie oferty. */
+    .pk-loan__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    @media (min-width: 1024px) { .pk-loan__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .pk-loan__label { font-size: .8125rem; color: var(--gray-500); }
+    .pk-loan__value { font-size: 1.375rem; font-weight: 600; color: var(--gray-950); margin-top: .25rem; font-variant-numeric: tabular-nums; }
+    .dark .pk-loan__value { color: white; }
+    .pk-loan__note { font-size: .8125rem; color: var(--gray-500); margin-top: .125rem; }
+    .pk-loan__box { border-radius: .75rem; padding: .75rem 1rem; font-size: .875rem; line-height: 1.5; }
+    .pk-loan__box--bad { background: var(--danger-50); color: var(--danger-700); }
+    .pk-loan__box--warn { background: var(--warning-50); color: var(--warning-800); }
+    .pk-loan__box--ok { background: var(--success-50); color: var(--success-700); }
+    .dark .pk-loan__box--bad { background: rgb(239 68 68 / .12); color: var(--danger-300); }
+    .dark .pk-loan__box--warn { background: rgb(245 158 11 / .12); color: var(--warning-300); }
+    .dark .pk-loan__box--ok { background: rgb(34 197 94 / .12); color: var(--success-300); }
+    .pk-loan__text { font-size: .875rem; line-height: 1.6; color: var(--gray-700); }
+    .dark .pk-loan__text { color: var(--gray-300); }
+    .pk-loan__text a { color: var(--primary-600); } .dark .pk-loan__text a { color: var(--primary-400); }
+    .pk-loan .pk-rows td.num, .pk-loan .pk-rows th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .pk-loan__stack > * + * { margin-top: 1.5rem; }
+    .pk-loan__text p + p { margin-top: .75rem; }
+    .pk-loan .pk-rows td.num, .pk-loan .pk-rows th.num { white-space: nowrap; }
+    .pk-loan__stack--tight > * + * { margin-top: 1rem; }
+
     @media (max-width: 767px) {
         /* Mniej pustego miejsca po bokach na telefonie. */
         .fi-main { padding-left: .75rem; padding-right: .75rem; }

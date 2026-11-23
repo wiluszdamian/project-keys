@@ -37,8 +37,8 @@ class ListingMatcher
     }
 
     /**
-     * Rynek, meble i wizualizacje. Odrzuca tylko oferty, o których wiemy, że nie pasują.
-     * Gdy ogłoszenie nic nie mówi (np. o meblach), decyduje ocena AI.
+     * Rynek, stan (gotowe do zamieszkania) i wizualizacje. Odrzuca tylko oferty, o których wiemy, że nie pasują.
+     * Gdy ogłoszenie nic nie mówi o stanie, decyduje ocena AI.
      */
     public function featuresMatch(Search $search, ListingFeatures $features): bool
     {
@@ -46,7 +46,7 @@ class ListingMatcher
             return false;
         }
 
-        if ($search->furnished_only && $features->furnished === false) {
+        if ($search->move_in_ready && $features->ready === false) {
             return false;
         }
 

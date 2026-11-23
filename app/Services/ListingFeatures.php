@@ -19,12 +19,18 @@ final readonly class ListingFeatures
 
     private const FURNISHED = '/umeblowan|z\s+meblami|meble\s+(w\s+cenie|zostają|pozostają|kuchenne\s+i\s+pokojowe)|pozostaj[ąe]\s+(w\s+nim\s+)?meble|w\s+pełni\s+wyposażon|kompletnie\s+wyposażon|pełne\s+wyposażenie|wyposażenie\s+w\s+cenie|wraz\s+z\s+(meblami|wyposażeniem)|meble\s+na\s+wymiar|zabudow[aą]\s+meblow/iu';
 
+    // Nie da się od razu zamieszkać: brak podłóg, kuchni albo łazienki, albo potrzebny remont.
+    private const NOT_READY = '/stan(ie)?\s+deweloperski|stan(ie)?\s+surowy|surowy\s+(zamknięty|otwarty)|do\s+wykończenia|do\s+(generalnego\s+|kapitalnego\s+|całkowitego\s+|gruntownego\s+)?remontu|(?<!(?<!\p{L})nie\s)wymaga\s+(generalnego\s+|kapitalnego\s+|gruntownego\s+|całkowitego\s+)?remontu|bez\s+(podłóg|kuchni)|do\s+aranżacji\s+według/iu';
+
+    private const READY = '/gotowe\s+do\s+(zamieszkania|wprowadzenia)|do\s+zamieszkania\s+od\s+zaraz|(można|możliwość)\s+(się\s+)?(od\s+razu\s+)?wprowadzi|do\s+wprowadzenia|nie\s+wymaga\s+(żadnego\s+)?(remontu|nakładów)|po\s+(generalnym\s+|kapitalnym\s+|całkowitym\s+)?remoncie|wykończone|urządzone/iu';
+
     private const VISUALIZATIONS = '/wizualizac|zdjęcia\s+(są\s+)?poglądowe|zdjęcia\s+przedstawiają\s+wizualizac|\brender/iu';
 
     public function __construct(
         public ?string $market,
         public ?bool $furnished,
         public bool $visualizations,
+        public ?bool $ready = null,
     ) {}
 
     public static function of(ListingData|Listing $listing): self
@@ -34,10 +40,13 @@ final readonly class ListingFeatures
         $portal = $listing->portal;
         $externalId = $listing instanceof Listing ? (string) $listing->external_id : $listing->externalId;
 
+        $furnished = self::furnished($raw, $text);
+
         return new self(
             market: self::market($raw, $portal, $externalId),
-            furnished: self::furnished($raw, $text),
+            furnished: $furnished,
             visualizations: preg_match(self::VISUALIZATIONS, $text) === 1,
+            ready: self::ready($raw, $text, $furnished),
         );
     }
 
@@ -98,6 +107,42 @@ final readonly class ListingFeatures
         }
 
         return preg_match(self::FURNISHED, $text) === 1 ? true : null;
+    }
+
+    /**
+     * Czy da się od razu zamieszkać (podłogi, kuchnia, łazienka). Meble nie są potrzebne.
+     * Stan deweloperski albo remont w danych portalu lub opisie wygrywa z resztą, bo opis bywa dokładniejszy.
+     */
+    private static function ready(array $raw, string $text, ?bool $furnished): ?bool
+    {
+        $condition = mb_strtolower(trim((string) Arr::get($raw, 'details.condition')));
+        $fromPortal = match (true) {
+            $condition === '' => null,
+            in_array($condition, ['to_completion', 'to_renovation'], true),
+            preg_match('/deweloper|developer|wykończeni|remont|surow/u', $condition) === 1 => false,
+            in_array($condition, ['ready_to_use'], true),
+            preg_match('/zamieszkani|bardzo dobry|dobry|idealny|po remoncie|wykończon/u', $condition) === 1 => true,
+            default => null,
+        };
+
+        if ($fromPortal === false || preg_match(self::NOT_READY, $text) === 1) {
+            return false;
+        }
+
+        if ($fromPortal === true || $furnished === true || preg_match(self::READY, $text) === 1) {
+            return true;
+        }
+
+        return null;
+    }
+
+    public function readyLabel(): string
+    {
+        return match ($this->ready) {
+            true => 'tak',
+            false => 'nie',
+            null => 'nie wiadomo',
+        };
     }
 
     public function marketLabel(): string

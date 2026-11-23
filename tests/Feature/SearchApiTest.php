@@ -54,10 +54,10 @@ it('waliduje pola przy tworzeniu', function (array $payload, array $errors) {
 it('zapisuje rynek, meble i wizualizacje', function () {
     actingAsOwner();
 
-    $this->postJson('/api/searches', validSearchPayload(['market' => 'secondary', 'furnished_only' => true, 'exclude_visualizations' => true]))
+    $this->postJson('/api/searches', validSearchPayload(['market' => 'secondary', 'move_in_ready' => true, 'exclude_visualizations' => true]))
         ->assertCreated()
         ->assertJsonPath('data.market', 'secondary')
-        ->assertJsonPath('data.furnished_only', true)
+        ->assertJsonPath('data.move_in_ready', true)
         ->assertJsonPath('data.exclude_visualizations', true);
 });
 
