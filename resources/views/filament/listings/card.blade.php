@@ -34,8 +34,8 @@
                 <span class="pk-card__score {{ $scoreClass }}">{{ $score }}/10</span>
             @endif
             <strong>{{ Format::pln($listing->price) ?? 'cena ?' }}</strong>
-            @if ($listing->rent_extra)
-                <span class="pk-card__muted">+ {{ Format::pln($listing->rent_extra) }}</span>
+            @if ($fee = Format::adminFee($listing))
+                <span class="pk-card__muted">{{ $fee }}</span>
             @endif
         </div>
 

@@ -25,7 +25,7 @@ class BestNewListings extends TableWidget
     {
         return $table
             ->query(fn () => Listing::query()
-                ->with('duplicates:id,duplicate_of_id,portal,url,price')
+                ->with(['duplicates:id,duplicate_of_id,portal,url,price,rent_extra', 'analyses:id,listing_id,cost_breakdown'])
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost')
                 ->whereNull('duplicate_of_id')
@@ -69,7 +69,7 @@ class BestNewListings extends TableWidget
                 TextColumn::make('price')
                     ->label('Cena')
                     ->formatStateUsing(fn ($state) => Format::pln($state))
-                    ->description(fn (Listing $record) => $record->rent_extra ? '+ '.Format::pln($record->rent_extra).' czynsz' : null)
+                    ->description(fn (Listing $record) => Format::adminFee($record))
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('analyses_max_monthly_cost')
                     ->label('Koszt / mies.')
@@ -81,6 +81,7 @@ class BestNewListings extends TableWidget
                     ->formatStateUsing(fn ($state) => Format::area($state))
                     ->description(fn (Listing $record) => $record->rooms ? $record->rooms.' pok.' : null)
                     ->visibleFrom(ListingCard::BREAKPOINT),
+                ListingCard::sourceColumn(),
                 TextColumn::make('first_seen_at')
                     ->label('Znaleziona')
                     ->since()

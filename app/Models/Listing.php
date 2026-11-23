@@ -89,6 +89,29 @@ class Listing extends Model
         $this->update(['status' => $status, 'note' => $note !== '' ? $note : null]);
     }
 
+    /**
+     * Czynsz administracyjny najmu i skąd go mamy: z portalu, z innego portalu tej samej oferty
+     * albo z opisu (ocena AI). [null, null], gdy nigdzie go nie ma.
+     *
+     * @return array{0: ?int, 1: 'portal'|'duplicate'|'description'|null}
+     */
+    public function adminFee(): array
+    {
+        if ($this->rent_extra !== null) {
+            return [$this->rent_extra, 'portal'];
+        }
+
+        $fromDuplicate = $this->duplicates->whereNotNull('rent_extra')->first()?->rent_extra;
+
+        if ($fromDuplicate !== null) {
+            return [$fromDuplicate, 'duplicate'];
+        }
+
+        $fromDescription = $this->analyses->map(fn (ListingAnalysis $analysis) => $analysis->cost_breakdown['admin_fee'] ?? null)->filter()->first();
+
+        return $fromDescription !== null ? [(int) $fromDescription, 'description'] : [null, null];
+    }
+
     public function hasCoordinates(): bool
     {
         return $this->lat !== null && $this->lng !== null;

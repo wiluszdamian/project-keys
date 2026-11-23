@@ -73,7 +73,15 @@ class ListingInfolist
                             ->visible(fn (Listing $record) => $record->deal_type->value === 'sale' && $record->price),
                         TextEntry::make('rent_extra')
                             ->label('Czynsz')
-                            ->formatStateUsing(fn ($state) => Format::pln($state))
+                            ->state(function (Listing $record) {
+                                [$fee, $source] = $record->adminFee();
+
+                                return $fee === null ? null : Format::pln($fee).match ($source) {
+                                    'description' => ' (z opisu, odczytane przez AI)',
+                                    'duplicate' => ' (z innego portalu)',
+                                    default => '',
+                                };
+                            })
                             ->placeholder('nie podano')
                             ->visible(fn (Listing $record) => $record->deal_type->value === 'rent'),
                         TextEntry::make('area')

@@ -36,7 +36,7 @@ class ListingsTable
             // Tylko oferty, które pasują do jakiegoś wyszukiwania. Odłączone (np. po zmianie filtrów) znikają z listy.
             ->modifyQueryUsing(fn (Builder $query) => $query
                 ->whereHas('searches')
-                ->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,url,price'])
+                ->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,url,price,rent_extra', 'analyses:id,listing_id,cost_breakdown'])
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))
             ->defaultSort('first_seen_at', 'desc')
@@ -82,9 +82,7 @@ class ListingsTable
                     // Najem: czynsz. Sprzedaż: krótko, jak cena wypada wobec transakcji w okolicy.
                     ->wrap()
                     ->extraAttributes(['class' => 'pk-col-price'])
-                    ->description(fn (Listing $record) => $record->rent_extra
-                        ? '+ '.Format::pln($record->rent_extra).' czynsz'
-                        : TransactionComparator::short($record->transaction_comparison))
+                    ->description(fn (Listing $record) => Format::adminFee($record) ?? TransactionComparator::short($record->transaction_comparison))
                     ->sortable()
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('analyses_max_monthly_cost')
@@ -132,18 +130,7 @@ class ListingsTable
                     ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visibleFrom('2xl'),
-                // Skąd jest oferta: portal i portale tej samej oferty (duplikaty), każdy jako etykieta.
-                TextColumn::make('portal')
-                    ->label('Źródło')
-                    ->state(fn (Listing $record) => Portals::sources($record))
-                    ->badge()
-                    ->formatStateUsing(fn (string $state) => Portals::short($state))
-                    ->color(fn (string $state) => Portals::color($state))
-                    ->tooltip(fn (Listing $record) => collect(Portals::sources($record))->map(Portals::label(...))->implode(', '))
-                    ->listWithLineBreaks()
-                    ->extraAttributes(['class' => 'pk-col-source'])
-                    ->toggleable()
-                    ->visibleFrom(ListingCard::BREAKPOINT),
+                ListingCard::sourceColumn(),
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(fn (Listing $record) => array_values(array_filter([

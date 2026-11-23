@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support;
 
+use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingCommute;
 use Illuminate\Support\Number;
@@ -48,5 +49,24 @@ class Format
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * Czynsz pod ceną najmu: "+ 510 zł czynsz", "+ 450 zł czynsz (z opisu)" albo "czynsz nieznany".
+     * Przy sprzedaży null. Wymaga wczytanych duplicates i analyses.
+     */
+    public static function adminFee(Listing $listing): ?string
+    {
+        if ($listing->deal_type !== DealType::Rent) {
+            return null;
+        }
+
+        [$fee, $source] = $listing->adminFee();
+
+        return match ($source) {
+            null => 'czynsz nieznany',
+            'description' => '+ '.self::pln($fee).' czynsz (z opisu)',
+            default => '+ '.self::pln($fee).' czynsz',
+        };
     }
 }

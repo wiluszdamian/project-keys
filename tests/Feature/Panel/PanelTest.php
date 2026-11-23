@@ -8,6 +8,8 @@ use App\Filament\Resources\Listings\Pages\ViewListing;
 use App\Filament\Resources\Searches\Pages\CreateSearch;
 use App\Filament\Resources\Searches\Pages\EditSearch;
 use App\Filament\Resources\Searches\Pages\ListSearches;
+use App\Filament\Support\Format;
+use App\Filament\Widgets\BestNewListings;
 use App\Jobs\RunSearchJob;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
@@ -240,11 +242,31 @@ it('pokazuje, na jakich portalach jest też ta oferta, i filtruje po portalu dup
         ->assertSee('https://stoprocent-nieruchomosci.pl/nieruchomosci/x', false);
 
     ListingAnalysis::factory()->create(['listing_id' => $original->id, 'search_id' => $search->id, 'score' => 8]);
+    // Zapisany w sesji stan dawnej, ukrytej kolumny "portal" nie może ukryć źródła.
+    session()->put('tables.'.md5(ListListings::class).'_toggled_columns', ['portal' => false]);
     $this->get('/admin/listings')->assertSee('Źródło')->assertSee('Stoprocent')->assertSee('Otodom');
+    Livewire::test(BestNewListings::class)->assertSee('Źródło');
 
     Livewire::test(ListListings::class)
         ->removeTableFilter('above_threshold')
         ->filterTable('portal', 'stoprocent')
         ->assertCanSeeTableRecords([$original])
         ->assertCanNotSeeTableRecords([$other, $copy]);
+});
+
+it('pokazuje czynsz z portalu, z innego portalu albo z opisu, a gdy go nie ma: czynsz nieznany', function () {
+    $search = Search::factory()->create();
+    $fromPortal = Listing::factory()->create(['rent_extra' => 510]);
+    $fromDuplicate = Listing::factory()->create(['rent_extra' => null]);
+    Listing::factory()->create(['rent_extra' => 640, 'duplicate_of_id' => $fromDuplicate->id]);
+    $fromDescription = Listing::factory()->create(['rent_extra' => null]);
+    $unknown = Listing::factory()->create(['rent_extra' => null]);
+    ListingAnalysis::factory()->create(['listing_id' => $fromDescription->id, 'search_id' => $search->id, 'cost_breakdown' => ['admin_fee' => 450, 'note' => 'x']]);
+    ListingAnalysis::factory()->create(['listing_id' => $unknown->id, 'search_id' => $search->id, 'cost_breakdown' => ['admin_fee' => null, 'note' => 'x']]);
+
+    expect(Format::adminFee($fromPortal->fresh()))->toBe('+ 510 zł czynsz')
+        ->and(Format::adminFee($fromDuplicate->fresh()))->toBe('+ 640 zł czynsz')
+        ->and(Format::adminFee($fromDescription->fresh()))->toBe('+ 450 zł czynsz (z opisu)')
+        ->and(Format::adminFee($unknown->fresh()))->toBe('czynsz nieznany')
+        ->and(Format::adminFee(Listing::factory()->create(['deal_type' => 'sale'])))->toBeNull();
 });

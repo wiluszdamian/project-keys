@@ -112,6 +112,7 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-23: Poprawka Stoprocent: scraper czytał tylko 50 najnowszych ofert z API (ok. 3 dni), więc starsze oferty najmu nie trafiały do bazy. Teraz całe API (strony po 100), a działki i lokale pomijane po tytule. Strona oferty pokazuje „Też na” (duplikaty z innych portali z linkami), a filtr portalu na liście obejmuje duplikaty, bo lista pokazuje każde mieszkanie raz.
 - 2026-11-23: Trzecie biuro: Pierwsze Piętro (1pietro.net), HTML jak Rzeszowskie Nieruchomości. Dodane do obu wyszukiwań.
 - 2026-11-23: Lista ofert ma kolumnę Źródło z etykietami portalu oferty i portali tej samej oferty (duplikatów), na telefonie etykiety na karcie, gdy to samo mieszkanie jest na innych portalach (oferty z biur prawie zawsze są duplikatami Otodom i innych). Nowa komenda `listings:score-missing` ocenia oferty bez oceny AI (było ich 193, głównie z 17.11, sprzed włączenia AI, i lista je ukrywała).
+- 2026-11-23: Czynsz pod ceną najmu: z portalu, a gdy go brak, z innego portalu tej samej oferty albo z opisu (AI, dopisek „z opisu”), inaczej „czynsz nieznany”. Z 311 aktywnych ofert najmu 162 ma czynsz z portalu, 12 z duplikatu, 50 z opisu, 97 nie podaje go wcale. Kolumna Źródło ma nazwę `source`, bo stan dawnej ukrytej kolumny `portal` zostawał w sesji i ją chował.
 
 ## Otwarte pytania
 
