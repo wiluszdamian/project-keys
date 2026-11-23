@@ -5,6 +5,7 @@ namespace App\Ai\Tools;
 use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
 use App\Models\Listing;
+use App\Services\DealFinder;
 use App\Support\Portals;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,7 +27,7 @@ class FindListingsTool implements Tool
     public function description(): Stringable|string
     {
         return 'Szuka ofert w bazie (bez duplikatów z innych portali). Wszystkie parametry opcjonalne. '
-            .'Zwraca do 20 ofert z ceną, czynszem, kosztem miesięcznym z oceny AI, metrażem, pokojami, lokalizacją, oceną AI, statusem i linkami.';
+            .'Zwraca do 20 ofert z ceną, czynszem (admin_fee_source: portal, duplicate albo description, czyli z opisu), kosztem miesięcznym z oceny AI, metrażem, pokojami, lokalizacją, oceną AI, źródłami (portale i biura), okazją, statusem i linkami.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -55,6 +56,8 @@ class FindListingsTool implements Tool
                 ->where('minutes', '<=', (int) $data['max_commute_minutes'])
                 ->when($data['commute_place_id'] ?? null, fn (Builder $q, $id) => $q->where('commute_place_id', $id))))
             ->when($data['days'] ?? null, fn (Builder $q, $v) => $q->where('first_seen_at', '>=', now()->subDays((int) $v)))
+            ->when($data['only_deals'] ?? false, fn (Builder $q) => $q->whereNotNull('deal_at'))
+            ->when($data['portal'] ?? null, fn (Builder $q, $portal) => $q->where(fn (Builder $q) => $q->where('portal', $portal)->orWhereHas('duplicates', fn (Builder $q) => $q->where('portal', $portal))))
             ->when($data['status'] ?? null, fn (Builder $q, $status) => $status === 'none' ? $q->whereNull('status') : $q->where('status', $status))
             ->when(($data['status'] ?? null) === null, fn (Builder $q) => $q->where(fn (Builder $q) => $q->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value)));
 
@@ -66,19 +69,21 @@ class FindListingsTool implements Tool
         };
 
         $total = (clone $query)->count();
-        $rows = $query->with('commutes.place')->limit($limit)->get()->map(fn (Listing $listing) => [
+        $rows = $query->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,rent_extra', 'analyses:id,listing_id,cost_breakdown'])->limit($limit)->get()->map(fn (Listing $listing) => [
             'id' => $listing->id,
             'title' => Str::limit($listing->title, 90),
             'deal_type' => $listing->deal_type->value,
             'price' => $listing->price,
-            'rent_extra' => $listing->rent_extra,
+            'admin_fee' => $listing->adminFee()[0],
+            'admin_fee_source' => $listing->adminFee()[1],
             'monthly_cost_ai' => $listing->analyses_max_monthly_cost,
             'area' => $listing->area !== null ? (float) $listing->area : null,
             'price_per_m2' => $listing->price_per_m2,
             'rooms' => $listing->rooms,
             'floor' => $listing->floor,
             'location' => collect([$listing->city, $listing->district, $listing->street])->filter()->unique()->implode(', '),
-            'portal' => Portals::label($listing->portal),
+            'sources' => collect(Portals::sources($listing))->map(Portals::label(...))->all(),
+            'deal' => DealFinder::summary($listing->deal_reasons),
             'private_owner' => $listing->is_private_owner,
             'score' => $listing->analyses_max_score,
             'commutes' => Format::commutes($listing),
@@ -111,6 +116,8 @@ class FindListingsTool implements Tool
             'max_commute_minutes' => $schema->integer()->description('Najdłuższy dojazd w minutach do miejsc dojazdu (np. praca).'),
             'commute_mode' => $schema->string()->enum(['car', 'bike'])->description('Dojazd autem (domyślnie) albo rowerem.'),
             'commute_place_id' => $schema->integer()->description('Konkretne miejsce dojazdu (id z list_searches -> commute_places). Puste = dowolne.'),
+            'only_deals' => $schema->boolean()->description('Tylko okazje: wyraźnie taniej niż transakcje lub mediana albo po dużej obniżce.'),
+            'portal' => $schema->string()->enum(config('scrapers.portals'))->description('Tylko oferty z tego portalu lub biura (także gdy to duplikat).'),
             'sort' => $schema->string()->enum(['score', 'newest', 'price', 'price_per_m2']),
             'limit' => $schema->integer()->description('Ile ofert, najwyżej 20.'),
         ];

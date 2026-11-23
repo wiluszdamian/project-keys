@@ -2,9 +2,12 @@
 
 namespace App\Ai\Tools;
 
+use App\Enums\DealType;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Services\DealFinder;
+use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -22,19 +25,20 @@ class GetListingTool implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, historia cen, porównanie z cenami transakcyjnymi z RCN (sprzedaż), status i notatka właściciela.';
+        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, czynsz i jego źródło, historia cen, porównanie z cenami transakcyjnymi z RCN (sprzedaż), okazja, inne portale z tą ofertą, rata kredytu RKM (sprzedaż), status i notatka właściciela.';
     }
 
     public function handle(Request $request): Stringable|string
     {
         $ids = array_slice(array_map('intval', (array) ($request['ids'] ?? [])), 0, 5);
 
-        $listings = Listing::with(['analyses.search', 'priceChanges', 'searches', 'commutes.place'])->whereKey($ids)->get()->map(fn (Listing $listing) => [
+        $listings = Listing::with(['analyses.search', 'priceChanges', 'searches', 'commutes.place', 'duplicates'])->whereKey($ids)->get()->map(fn (Listing $listing) => [
             'id' => $listing->id,
             'title' => $listing->title,
             'deal_type' => $listing->deal_type->value,
             'price' => $listing->price,
-            'rent_extra' => $listing->rent_extra,
+            'admin_fee' => $listing->adminFee()[0],
+            'admin_fee_source' => $listing->adminFee()[1],
             'area' => $listing->area !== null ? (float) $listing->area : null,
             'price_per_m2' => $listing->price_per_m2,
             'rooms' => $listing->rooms,
@@ -43,6 +47,9 @@ class GetListingTool implements Tool
             'district' => $listing->district,
             'street' => $listing->street,
             'portal' => Portals::label($listing->portal),
+            'also_on' => $listing->duplicates->map(fn (Listing $duplicate) => ['portal' => Portals::label($duplicate->portal), 'price' => $duplicate->price, 'url' => $duplicate->url])->all(),
+            'deal' => DealFinder::summary($listing->deal_reasons),
+            'mortgage_rkm' => $listing->deal_type === DealType::Sale && $listing->price ? $this->mortgage($listing) : null,
             'private_owner' => $listing->is_private_owner,
             'details' => $listing->raw['details'] ?? null,
             'description' => Str::limit((string) $listing->description, 2500),
@@ -78,6 +85,22 @@ class GetListingTool implements Tool
         ]);
 
         return $listings->isEmpty() ? 'Nie ma ofert o takich id.' : $listings->toJson(JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Krótko: rata RKM (stałe 5 lat, 30 lat) przy domyślnych stawkach.
+     */
+    private function mortgage(Listing $listing): array
+    {
+        $result = app(RkmSimulator::class)->simulate(RkmSimulator::defaults($listing));
+
+        return [
+            'loan' => (int) round($result['loan']),
+            'own_contribution' => (int) round($result['own']),
+            'installment_fixed_5y' => (int) round($result['installment']),
+            'installment_after_5y' => (int) round($result['installment_after_fixed'] ?? $result['installment']),
+            'price_limit_ok' => $result['limit']['ok'] ?? null,
+        ];
     }
 
     public function schema(JsonSchema $schema): array

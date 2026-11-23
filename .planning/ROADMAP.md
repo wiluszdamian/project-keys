@@ -122,7 +122,7 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - Lista pytań na oglądanie dla statusu "Oglądanie" i termin w kalendarzu (iCal).
 - Oferty, które zniknęły z portalu: status nieaktualnej, czas schodzenia ofert, dokładniejsze statystyki.
 - ✅ Okazje: oferty wyraźnie tańsze niż transakcje lub mediana za m², duże obniżki, zakładka i powiadomienia (2026-11-23).
-- Asystent z działaniami: statusy, notatki, nowe wyszukiwania z czatu.
+- ✅ Asystent z działaniami: statusy i notatki z czatu, kredyt, okazje, zarządzanie rozmowami (2026-11-23). Nowe wyszukiwania z czatu na razie nie.
 - ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).
 - Nadal otwarte z wcześniej: backup bazy (faza 8), Telegram.
 

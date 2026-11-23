@@ -1,14 +1,26 @@
 <x-filament-panels::page>
     <style>
         .pk-chat { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-        @media (min-width: 1024px) { .pk-chat { grid-template-columns: 15rem 1fr; } }
+        @media (min-width: 1024px) { .pk-chat { grid-template-columns: 19rem 1fr; } }
         .pk-chat__list { display: flex; flex-direction: column; gap: .25rem; }
-        .pk-chat__conv { text-align: left; padding: .5rem .75rem; border-radius: .5rem; font-size: .875rem; color: var(--gray-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .pk-chat__conv:hover { background: var(--gray-100); }
-        .pk-chat__conv--active { background: var(--primary-50); color: var(--primary-700); font-weight: 600; }
+        .pk-chat__convs { display: flex; flex-direction: column; gap: .125rem; max-height: 60vh; overflow-y: auto; }
+        @media (max-width: 1023px) { .pk-chat__convs { max-height: 14rem; } }
+        .pk-chat__row { display: flex; align-items: center; gap: .125rem; border-radius: .5rem; }
+        .pk-chat__row:hover { background: var(--gray-100); }
+        .dark .pk-chat__row:hover { background: rgb(255 255 255 / .05); }
+        .pk-chat__row--active { background: var(--primary-50); }
+        .dark .pk-chat__row--active { background: rgb(255 255 255 / .08); }
+        .pk-chat__conv { flex: 1; min-width: 0; text-align: left; padding: .45rem .6rem; font-size: .875rem; color: var(--gray-700); }
+        .pk-chat__conv span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pk-chat__conv small { display: block; font-size: .75rem; color: var(--gray-500); }
+        .pk-chat__row--active .pk-chat__conv { color: var(--primary-700); font-weight: 600; }
         .dark .pk-chat__conv { color: var(--gray-300); }
-        .dark .pk-chat__conv:hover { background: rgb(255 255 255 / .05); }
-        .dark .pk-chat__conv--active { background: rgb(255 255 255 / .08); color: var(--primary-400); }
+        .dark .pk-chat__row--active .pk-chat__conv { color: var(--primary-400); }
+        .pk-chat__tools { display: flex; opacity: .35; } .pk-chat__row:hover .pk-chat__tools, .pk-chat__row--active .pk-chat__tools { opacity: 1; }
+        @media (hover: none) { .pk-chat__tools { opacity: 1; } }
+        .pk-chat__title { font-weight: 600; font-size: .9375rem; color: var(--gray-950); margin-bottom: .75rem; } .dark .pk-chat__title { color: white; }
+        .pk-msg__time { display: block; margin-top: .25rem; font-size: .6875rem; opacity: .6; }
+        .pk-chat__actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
         .pk-chat__main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
         .pk-chat__messages { display: flex; flex-direction: column; gap: .75rem; }
         .pk-msg { max-width: 48rem; padding: .75rem 1rem; border-radius: .75rem; font-size: .9375rem; line-height: 1.55; overflow-wrap: anywhere; }
@@ -40,34 +52,52 @@
                     Nowa rozmowa
                 </x-filament::button>
 
-                @foreach ($this->conversations as $conversation)
-                    <button type="button"
-                        wire:click="openConversation('{{ $conversation->id }}')"
-                        title="{{ $conversation->title }}"
-                        @class(['pk-chat__conv', 'pk-chat__conv--active' => $conversation->id === $conversationId])>
-                        {{ $conversation->title }}
-                    </button>
-                @endforeach
+                <x-filament::input.wrapper prefix-icon="heroicon-o-magnifying-glass">
+                    <x-filament::input type="search" wire:model.live.debounce.400ms="filter" placeholder="Szukaj w rozmowach" />
+                </x-filament::input.wrapper>
+
+                <div class="pk-chat__convs">
+                    @forelse ($this->conversations as $conversation)
+                        <div wire:key="conv-{{ $conversation->id }}" @class(['pk-chat__row', 'pk-chat__row--active' => $conversation->id === $conversationId])>
+                            <button type="button" wire:click="openConversation('{{ $conversation->id }}')" title="{{ $conversation->title }}" class="pk-chat__conv">
+                                <span>{{ $conversation->title }}</span>
+                                <small>{{ $conversation->when }}</small>
+                            </button>
+                            <div class="pk-chat__tools">
+                                {{ ($this->renameConversationAction)(['id' => $conversation->id]) }}
+                                {{ ($this->deleteConversationAction)(['id' => $conversation->id]) }}
+                            </div>
+                        </div>
+                    @empty
+                        <div class="pk-chat__empty">{{ $filter !== '' ? 'Nic nie znaleziono.' : 'Brak rozmów.' }}</div>
+                    @endforelse
+                </div>
             </div>
         </x-filament::section>
 
         <div class="pk-chat__main">
             <x-filament::section>
+                @if ($this->conversationTitle)
+                    <div class="pk-chat__title">{{ $this->conversationTitle }}</div>
+                @endif
                 <div class="pk-chat__messages">
                     @forelse ($this->messages as $message)
                         <div @class(['pk-msg', 'pk-msg--user' => $message->role === 'user', 'pk-msg--assistant' => $message->role !== 'user'])>
                             {!! $message->html !!}
+                            <span class="pk-msg__time">{{ $message->time }}</span>
                         </div>
                     @empty
                         @unless ($waiting)
                             <div class="pk-chat__empty">
-                                Zapytaj o oferty z bazy. Asystent widzi twoje wyszukiwania, oferty, oceny AI, historię cen i ceny w okolicy.
+                                Zapytaj o oferty z bazy. Asystent widzi Twoje wyszukiwania, oferty ze wszystkich portali i biur, oceny AI, okazje, historię cen, ceny w okolicy i liczy kredyt RKM. Na Twoją prośbę ustawi status oferty albo dopisze notatkę.
                                 <div class="pk-chat__examples">
                                     @foreach ([
                                         'Pokaż 5 najlepszych ofert wynajmu z ostatniego tygodnia',
+                                        'Jakie są teraz okazje przy sprzedaży?',
+                                        'Ile wyniesie rata kredytu RKM za najlepszą ofertę sprzedaży?',
                                         'Które mieszkania na Projektancie mają najniższy koszt miesięczny?',
-                                        'Porównaj najlepsze oferty sprzedaży do 560 tys.',
-                                        'Czy ceny w Boguchwale są niższe niż w Rzeszowie?',
+                                        'Pokaż oferty z biur Stoprocent i Pierwsze Piętro',
+                                        'Odrzuć ofertę, o której rozmawiamy, bo jest za daleko od pracy',
                                     ] as $example)
                                         <button type="button" class="pk-chat__example" wire:click="$set('message', @js($example))">{{ $example }}</button>
                                     @endforeach
@@ -83,10 +113,18 @@
                         <div class="pk-msg pk-msg--assistant pk-msg--pending" wire:poll.2s="poll">
                             Szukam w bazie i myślę nad odpowiedzią…
                         </div>
+                        <div class="pk-chat__actions">
+                            <x-filament::button wire:click="cancel" size="xs" color="gray" icon="heroicon-o-stop">Przerwij czekanie</x-filament::button>
+                        </div>
                     @endif
 
                     @if ($error)
-                        <div class="pk-chat__error">{{ $error }}</div>
+                        <div class="pk-chat__actions">
+                            <div class="pk-chat__error">{{ $error }}</div>
+                            @if ($lastPrompt)
+                                <x-filament::button wire:click="retry" size="xs" color="gray" icon="heroicon-o-arrow-path">Spróbuj jeszcze raz</x-filament::button>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </x-filament::section>

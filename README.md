@@ -137,8 +137,11 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 - **Mapa:** oferty na mapie w kolorze oceny, twoje miejsca dojazdu, filtry.
 - **Miejsca dojazdu:** np. praca. Z każdej oferty liczę dojazd autem i rowerem (własny serwer tras OSRM).
   Czasy widać przy ofercie, można po nich filtrować, a AI bierze je pod uwagę w ocenie.
-- **Asystent:** czat z AI o ofertach z bazy. Widzi twoje wyszukiwania, oferty, oceny AI, historię cen
-  i ceny w okolicy (tylko odczyt). Odpowiada z linkami do ofert w panelu. Rozmowy są zapisywane.
+- **Asystent:** czat z AI o ofertach z bazy. Widzi Twoje wyszukiwania, oferty ze wszystkich portali i biur,
+  oceny AI, okazje, czynsz (także z opisu), historię cen i ceny w okolicy, liczy kredyt RKM. Na Twoją prośbę
+  ustawia status oferty i dopisuje notatkę, poza tym nic nie zmienia. Odpowiada z linkami do ofert w panelu.
+  Rozmowy można przeszukiwać, zmieniać im nazwę, pobrać jako Markdown i usuwać (pojedynczo albo wszystkie).
+  Długie czekanie można przerwać, a po błędzie ponowić pytanie.
 - **Raport rynku:** w każdą sobotę o 20:00 raport z ostatnich 7 dni, osobno dla wynajmu i sprzedaży:
   liczba ofert, nowe, mediany cen z porównaniem do poprzedniego tygodnia, dzielnice, pokoje, obniżki
   i najlepsze nowe oferty. Idzie na Discorda i do panelu. W panelu jest też podgląd na żywo.

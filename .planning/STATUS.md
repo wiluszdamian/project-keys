@@ -113,6 +113,7 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-23: Trzecie biuro: Pierwsze Piętro (1pietro.net), HTML jak Rzeszowskie Nieruchomości. Dodane do obu wyszukiwań.
 - 2026-11-23: Lista ofert ma kolumnę Źródło z etykietami portalu oferty i portali tej samej oferty (duplikatów), na telefonie etykiety na karcie, gdy to samo mieszkanie jest na innych portalach (oferty z biur prawie zawsze są duplikatami Otodom i innych). Nowa komenda `listings:score-missing` ocenia oferty bez oceny AI (było ich 193, głównie z 17.11, sprzed włączenia AI, i lista je ukrywała).
 - 2026-11-23: Czynsz pod ceną najmu: z portalu, a gdy go brak, z innego portalu tej samej oferty albo z opisu (AI, dopisek „z opisu”), inaczej „czynsz nieznany”. Z 311 aktywnych ofert najmu 162 ma czynsz z portalu, 12 z duplikatu, 50 z opisu, 97 nie podaje go wcale. Kolumna Źródło ma nazwę `source`, bo stan dawnej ukrytej kolumny `portal` zostawał w sesji i ją chował.
+- 2026-11-23: Asystent rozbudowany (prośba właściciela): usuwanie rozmów (pojedynczo i wszystkich), zmiana nazwy, wyszukiwarka po tytule i treści, pobranie rozmowy jako Markdown, przerwanie czekania, ponowienie pytania, godzina przy wiadomościach. Nowe narzędzia: `mortgage_simulation` (RKM) i `update_listing` (status i notatka, tylko na wyraźną prośbę). `find_listings` filtruje okazje i portal (z duplikatami) i podaje źródła, okazję oraz czynsz z jego źródłem, `get_listings` dodatkowo inne portale i ratę RKM.
 
 ## Otwarte pytania
 
