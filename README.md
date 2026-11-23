@@ -130,6 +130,13 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 - **Raport rynku:** w każdą sobotę o 20:00 raport z ostatnich 7 dni, osobno dla wynajmu i sprzedaży:
   liczba ofert, nowe, mediany cen z porównaniem do poprzedniego tygodnia, dzielnice, pokoje, obniżki
   i najlepsze nowe oferty. Idzie na Discorda i do panelu. W panelu jest też podgląd na żywo.
+- **Kredyt:** symulacja Rodzinnego Kredytu Mieszkaniowego (gwarancja BGK zamiast wkładu własnego).
+  Liczy kwotę kredytu, gwarancję, potrzebny wkład (do 500 000 zł zero, powyżej różnica, bo gwarancja to
+  najwyżej 100 000 zł), ratę przy stałym oprocentowaniu przez 5 lat albo zmiennym, ratę po wzroście stóp,
+  limit ceny za m² z tabeli BGK i spłatę rodzinną przy drugim i trzecim dziecku. Przycisk „Policz kredyt”
+  na stronie oferty sprzedaży wypełnia dane z oferty, a sama oferta pokazuje szacunkową ratę. BGK i
+  POLSTR/WIBOR nie mają darmowego API, więc stawki ustawiasz w Ustawieniach (zakładka Kredyt). Stopa
+  referencyjna NBP pobiera się sama i gdy się zmieni, strona prosi o aktualizację stawek.
 - **Logi:** wpisy z logów aplikacji, workerów i schedulera z filtrem poziomu i wyszukiwaniem, pobranie
   pliku i lista nieudanych zadań kolejki.
 - **Dzwoneczek:** nowe dobre oferty, obniżki cen, raport rynku i alerty pojawiają się w panelu od razu,

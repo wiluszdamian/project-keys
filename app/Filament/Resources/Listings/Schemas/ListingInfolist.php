@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Listings\Schemas;
 
+use App\Filament\Pages\MortgagePage;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\RcnTransaction;
 use App\Services\ListingFeatures;
+use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -55,6 +57,18 @@ class ListingInfolist
                             ->size('lg')
                             ->placeholder('-')
                             ->visible(fn (Listing $record) => $record->deal_type->value !== 'rent'),
+                        TextEntry::make('mortgage')
+                            ->label('Rata kredytu (RKM)')
+                            ->state(function (Listing $record) {
+                                $result = app(RkmSimulator::class)->simulate(RkmSimulator::defaults($record));
+
+                                return Format::pln((int) round($result['installment'])).' / mies.';
+                            })
+                            ->helperText(fn (Listing $record) => 'stałe '.str_replace('.', ',', (string) config('mortgage.fixed_rate')).'% przez 5 lat, 30 lat'
+                                .(RkmSimulator::requiredOwn((float) $record->price) > 0 ? ', wkład '.RkmSimulator::money(RkmSimulator::requiredOwn((float) $record->price)) : ', bez wkładu'))
+                            ->url(fn (Listing $record) => MortgagePage::getUrl(['listing' => $record->id]))
+                            ->color('primary')
+                            ->visible(fn (Listing $record) => $record->deal_type->value === 'sale' && $record->price),
                         TextEntry::make('rent_extra')
                             ->label('Czynsz')
                             ->formatStateUsing(fn ($state) => Format::pln($state))

@@ -86,6 +86,44 @@ class Settings extends Page
                                     ]),
                             ]),
 
+                        Tab::make('Kredyt')
+                            ->icon(Heroicon::OutlinedBanknotes)
+                            ->schema([
+                                Section::make('Stawki do symulacji kredytu')
+                                    ->description('BGK, POLSTR i WIBOR nie mają darmowego API, więc stawki wpisujesz tutaj. Sama pobiera się tylko stopa referencyjna NBP: gdy zmieni się od dnia stawek, strona Kredyt pokaże ostrzeżenie. Aktualne wartości: gpwbenchmark.pl (POLSTR, WIBOR), rankingi kredytów hipotecznych (marża, oprocentowanie stałe).')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('mortgage_rates_date')
+                                            ->label('Stawki z dnia')
+                                            ->placeholder('RRRR-MM-DD')
+                                            ->regex('/^\d{4}-\d{2}-\d{2}$/'),
+                                        TextInput::make('mortgage_nbp_rate_at_date')
+                                            ->label('Stopa referencyjna NBP w tym dniu')
+                                            ->numeric()
+                                            ->suffix('%'),
+                                        TextInput::make('mortgage_index_name')
+                                            ->label('Wskaźnik')
+                                            ->helperText('Nowe kredyty zmienne: POLSTR 1M (stopa składana). Starsze: WIBOR 3M.'),
+                                        TextInput::make('mortgage_index_rate')
+                                            ->label('Wartość wskaźnika')
+                                            ->numeric()
+                                            ->suffix('%'),
+                                        TextInput::make('mortgage_margin')
+                                            ->label('Marża banku')
+                                            ->numeric()
+                                            ->suffix('%'),
+                                        TextInput::make('mortgage_fixed_rate')
+                                            ->label('Oprocentowanie stałe przez 5 lat')
+                                            ->numeric()
+                                            ->suffix('%'),
+                                        TextInput::make('mortgage_bridge_extra')
+                                            ->label('Ubezpieczenie pomostowe: wyższa marża o')
+                                            ->numeric()
+                                            ->suffix('pp'),
+                                        self::int('mortgage_bridge_months', 'Ubezpieczenie pomostowe: przez', 'mies.', 0, 24),
+                                    ]),
+                            ]),
+
                         Tab::make('Ceny transakcyjne')
                             ->icon(Heroicon::OutlinedDocumentText)
                             ->schema([

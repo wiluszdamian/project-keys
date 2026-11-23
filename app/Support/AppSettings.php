@@ -25,7 +25,7 @@ class AppSettings
     private static array $defaults = [];
 
     /**
-     * Klucz ustawienia => [ścieżka w config, typ]. Typy: int, bool, string, secret, map.
+     * Klucz ustawienia => [ścieżka w config, typ]. Typy: int, float, bool, string, secret, map.
      */
     public const DEFINITIONS = [
         'scrape_interval_minutes' => ['scrapers.interval_minutes', 'int'],
@@ -60,6 +60,15 @@ class AppSettings
 
         'rcn_enabled' => ['rcn.enabled', 'bool'],
         'rcn_counties' => ['rcn.counties', 'string'],
+
+        'mortgage_rates_date' => ['mortgage.rates_date', 'string'],
+        'mortgage_index_name' => ['mortgage.index_name', 'string'],
+        'mortgage_index_rate' => ['mortgage.index_rate', 'float'],
+        'mortgage_nbp_rate_at_date' => ['mortgage.nbp_rate_at_date', 'float'],
+        'mortgage_margin' => ['mortgage.margin', 'float'],
+        'mortgage_fixed_rate' => ['mortgage.fixed_rate', 'float'],
+        'mortgage_bridge_extra' => ['mortgage.bridge_extra', 'float'],
+        'mortgage_bridge_months' => ['mortgage.bridge_months', 'int'],
 
         'ai_enabled' => ['scoring.enabled', 'bool'],
         'ai_max_per_minute' => ['scoring.max_per_minute', 'int'],
@@ -182,6 +191,7 @@ class AppSettings
     {
         return match ($type) {
             'int' => (int) $value,
+            'float' => (float) str_replace(',', '.', (string) $value),
             'bool' => (bool) $value,
             'map' => array_filter((array) $value, fn ($path, $city) => filled($city) && filled($path), ARRAY_FILTER_USE_BOTH),
             default => (string) $value,

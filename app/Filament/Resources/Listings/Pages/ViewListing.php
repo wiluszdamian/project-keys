@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Listings\Pages;
 
 use App\Enums\ListingStatus;
+use App\Filament\Pages\MortgagePage;
 use App\Filament\Resources\Listings\ListingResource;
 use App\Models\Listing;
 use App\Support\Portals;
@@ -70,6 +71,12 @@ class ViewListing extends ViewRecord
                     $record->update(['note' => $data['note']]);
                     Notification::make()->success()->title('Notatka zapisana')->send();
                 }),
+            Action::make('mortgage')
+                ->label('Policz kredyt')
+                ->icon(Heroicon::OutlinedBanknotes)
+                ->color('gray')
+                ->url(fn (Listing $record) => MortgagePage::getUrl(['listing' => $record->id]))
+                ->visible(fn (Listing $record) => $record->deal_type->value === 'sale' && $record->price),
         ];
     }
 
