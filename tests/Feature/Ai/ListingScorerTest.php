@@ -208,3 +208,11 @@ it('bez nauki na decyzjach prompt nie ma przykładów', function () {
 
     ListingScoringAgent::assertPrompted(fn (AgentPrompt $prompt) => ! $prompt->contains('Decyzje osoby'));
 });
+
+it('podaje modelowi dzisiejszą datę', function () {
+    ListingScoringAgent::fake([aiAnswer()]);
+
+    app(ListingScorer::class)->score($this->search, $this->listing);
+
+    ListingScoringAgent::assertPrompted(fn (AgentPrompt $prompt) => $prompt->contains('Dzisiaj jest '.now()->format('Y-m-d').'.'));
+});

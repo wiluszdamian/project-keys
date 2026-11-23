@@ -6,8 +6,11 @@ use App\Filament\Pages\MortgagePage;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
+use App\Models\Poi;
 use App\Models\RcnTransaction;
 use App\Services\DealFinder;
+use App\Services\Geo\Infrastructure;
+use App\Services\ListingFacts;
 use App\Services\ListingFeatures;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
@@ -32,6 +35,14 @@ class ListingInfolist
                     ->columnSpan(['default' => 1, 'lg' => 2])
                     ->columns(['default' => 2, 'sm' => 3])
                     ->schema([
+                        // Etykiety: garaż i komórka (w cenie / za dopłatą), ogrzewanie, rok budowy, winda, balkon.
+                        TextEntry::make('facts_badges')
+                            ->hiddenLabel()
+                            ->state(fn (Listing $record) => array_keys(ListingFacts::badges($record)))
+                            ->badge()
+                            ->color(fn (string $state, Listing $record) => ListingFacts::badges($record)[$state] ?? 'gray')
+                            ->columnSpanFull()
+                            ->visible(fn (Listing $record) => ListingFacts::badges($record) !== []),
                         TextEntry::make('best_score')
                             ->label('Ocena AI')
                             ->state(fn (Listing $record) => $record->analyses->max('score'))
@@ -175,6 +186,77 @@ class ListingInfolist
                             ->listWithLineBreaks()
                             ->bulleted()
                             ->color('danger'),
+                    ]),
+
+                Section::make('Mieszkanie i budynek')
+                    ->icon('heroicon-o-building-office-2')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->description('Z danych portalu, a gdy ich brak, z opisu ogłoszenia.')
+                    ->columns(['default' => 2, 'md' => 4])
+                    ->visible(fn (Listing $record) => ListingFacts::labels($record) !== [])
+                    ->schema([
+                        TextEntry::make('fact_0')
+                            ->label('Ogrzewanie')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Ogrzewanie'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Ogrzewanie'])),
+                        TextEntry::make('fact_1')
+                            ->label('Rok budowy')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Rok budowy'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Rok budowy'])),
+                        TextEntry::make('fact_2')
+                            ->label('Pięter w budynku')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Pięter w budynku'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Pięter w budynku'])),
+                        TextEntry::make('fact_3')
+                            ->label('Winda')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Winda'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Winda'])),
+                        TextEntry::make('fact_4')
+                            ->label('Balkon / taras')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Balkon / taras'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Balkon / taras'])),
+                        TextEntry::make('fact_5')
+                            ->label('Garaż / parking')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Garaż / parking'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Garaż / parking'])),
+                        TextEntry::make('fact_6')
+                            ->label('Komórka / piwnica')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Komórka / piwnica'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Komórka / piwnica'])),
+                        TextEntry::make('fact_7')
+                            ->label('Stan')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Stan'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Stan'])),
+                        TextEntry::make('fact_8')
+                            ->label('Kaucja')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Kaucja'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Kaucja'])),
+                        TextEntry::make('fact_9')
+                            ->label('Dostępne od')
+                            ->state(fn (Listing $record) => ListingFacts::labels($record)['Dostępne od'] ?? null)
+                            ->visible(fn (Listing $record) => isset(ListingFacts::labels($record)['Dostępne od'])),
+                    ]),
+
+                Section::make('Infrastruktura')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->description(fn (Listing $record) => 'Najbliższe sklepy, żłobek, przedszkole i szkoły (OpenStreetMap). Odległość drogą, czas pieszo i rowerem.'
+                        .(in_array($record->geo_precision, ['district', 'city'], true) ? ' Położenie oferty jest przybliżone, więc odległości też.' : ''))
+                    ->schema([
+                        ViewEntry::make('infrastructureRows')
+                            ->hiddenLabel()
+                            ->state(fn (Listing $record) => self::infrastructureRows($record))
+                            ->view('filament.listings.rows-table', ['columns' => [
+                                'category' => 'Co', 'name' => 'Najbliżej', 'address' => 'Adres', 'distance' => 'Odległość', 'walk' => 'Pieszo', 'bike' => 'Rowerem',
+                            ]])
+                            ->visible(fn (Listing $record) => filled($record->infrastructure)),
+                        TextEntry::make('infrastructureMissing')
+                            ->hiddenLabel()
+                            ->state('Policzy się, gdy oferta będzie miała ustalone położenie (zwykle w ciągu kilku minut).')
+                            ->color('gray')
+                            ->visible(fn (Listing $record) => blank($record->infrastructure)),
                     ]),
 
                 Section::make('Ocena AI')
@@ -351,5 +433,38 @@ class ListingInfolist
                             ->extraAttributes(['class' => 'whitespace-pre-line']),
                     ]),
             ]);
+    }
+
+    /**
+     * Wiersze tabeli Infrastruktura: każdy sklep osobno, potem żłobek, przedszkole, szkoły.
+     *
+     * @return list<array<string, string>>
+     */
+    private static function infrastructureRows(Listing $listing): array
+    {
+        $rows = [];
+
+        foreach (Poi::LABELS as $category => $label) {
+            $pois = $listing->infrastructure['items'][$category] ?? [];
+
+            if ($pois === []) {
+                $rows[] = ['category' => $label, 'name' => 'brak w promieniu '.config('infrastructure.search_km').' km', 'address' => '-', 'distance' => '-', 'walk' => '-', 'bike' => '-'];
+
+                continue;
+            }
+
+            foreach ($pois as $i => $poi) {
+                $rows[] = [
+                    'category' => $i === 0 ? $label : '',
+                    'name' => $poi['name'],
+                    'address' => $poi['address'] ?? '-',
+                    'distance' => Infrastructure::km((float) $poi['km']).($poi['by_road'] ? '' : ' (w linii prostej)'),
+                    'walk' => $poi['walk_min'].' min',
+                    'bike' => $poi['bike_min'] ? $poi['bike_min'].' min' : '-',
+                ];
+            }
+        }
+
+        return $rows;
     }
 }

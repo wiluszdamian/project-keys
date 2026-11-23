@@ -41,7 +41,7 @@ class ApartmentAssistant implements Agent, Conversational, HasProviderOptions, H
         i stron biur (Stoprocent, Rzeszowskie Nieruchomości, Pierwsze Piętro). To samo mieszkanie z kilku miejsc jest jedną ofertą z listą źródeł:
         - list_searches: zapisane wyszukiwania właściciela, ich filtry i preferencje oraz miejsca dojazdu (np. praca).
         - find_listings: wyszukiwanie ofert po kryteriach (cena, metraż, pokoje, dzielnica, tekst, ocena AI, data, status, czas dojazdu, portal lub biuro, tylko okazje).
-        - get_listings: pełne dane ofert po id: opis, ocena AI, koszt miesięczny, czynsz i skąd jest, historia cen, okazja, inne portale, rata kredytu RKM, notatka.
+        - get_listings: pełne dane ofert po id: opis, ocena AI, koszt miesięczny, czynsz i skąd jest, historia cen, okazja, inne portale, rata kredytu RKM, ogrzewanie, rok budowy, garaż i komórka, okolica (sklepy, żłobek, przedszkole, szkoły), notatka.
         - market_stats: mediana ceny za m² w mieście albo dzielnicy.
         - mortgage_simulation: Rodzinny Kredyt Mieszkaniowy dla oferty albo ceny: kredyt, wkład, rata stała i zmienna, rata po wzroście stóp, limit ceny za m², spłata rodzinna.
         - update_listing: ustawia status oferty (ulubiona, kontakt, oglądanie, odrzucona) i dopisuje notatkę.

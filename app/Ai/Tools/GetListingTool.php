@@ -7,6 +7,8 @@ use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Services\DealFinder;
+use App\Services\Geo\Infrastructure;
+use App\Services\ListingFacts;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
 use App\Support\Portals;
@@ -25,7 +27,7 @@ class GetListingTool implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, czynsz i jego źródło, historia cen, porównanie z cenami transakcyjnymi z RCN (sprzedaż), okazja, inne portale z tą ofertą, rata kredytu RKM (sprzedaż), status i notatka właściciela.';
+        return 'Pełne dane jednej albo kilku ofert (do 5) po id: opis, szczegóły budynku, oceny AI z plusami i minusami, koszt miesięczny, czynsz i jego źródło, historia cen, porównanie z cenami transakcyjnymi z RCN (sprzedaż), okazja, inne portale z tą ofertą, rata kredytu RKM (sprzedaż), fakty o mieszkaniu i budynku (ogrzewanie, rok budowy, winda, garaż i komórka w cenie albo za dopłatą), okolica (najbliższe sklepy, żłobek, przedszkole, szkoły), status i notatka właściciela.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -52,6 +54,8 @@ class GetListingTool implements Tool
             'mortgage_rkm' => $listing->deal_type === DealType::Sale && $listing->price ? $this->mortgage($listing) : null,
             'private_owner' => $listing->is_private_owner,
             'details' => $listing->raw['details'] ?? null,
+            'facts' => ListingFacts::labels($listing),
+            'surroundings' => Infrastructure::lines($listing),
             'description' => Str::limit((string) $listing->description, 2500),
             'found' => $listing->first_seen_at?->format('Y-m-d H:i'),
             'last_seen' => $listing->last_seen_at?->format('Y-m-d H:i'),

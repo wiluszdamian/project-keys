@@ -16,7 +16,7 @@ class Router
      *
      * @param  list<array{0: float, 1: float}>  $sources  [lat, lng]
      * @param  list<array{0: float, 1: float}>  $destinations  [lat, lng]
-     * @return list<list<array{minutes: int, km: float}|null>>|null null, gdy OSRM nie działa
+     * @return list<list<array{minutes: int, km: float, meters: int}|null>>|null null, gdy OSRM nie działa
      */
     public function table(string $mode, array $sources, array $destinations): ?array
     {
@@ -50,7 +50,7 @@ class Router
 
         return array_map(fn (int $i) => array_map(
             fn (int $j) => isset($durations[$i][$j], $distances[$i][$j])
-                ? ['minutes' => (int) max(1, round($durations[$i][$j] / 60)), 'km' => round($distances[$i][$j] / 1000, 1)]
+                ? ['minutes' => (int) max(1, round($durations[$i][$j] / 60)), 'km' => round($distances[$i][$j] / 1000, 1), 'meters' => (int) round($distances[$i][$j])]
                 : null,
             array_keys($destinations),
         ), array_keys($sources));

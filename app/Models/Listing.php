@@ -36,6 +36,8 @@ class Listing extends Model
             'deal_reasons' => 'array',
             'deal_at' => 'datetime',
             'deal_notified_at' => 'datetime',
+            'infrastructure' => 'array',
+            'infrastructure_at' => 'datetime',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];

@@ -139,6 +139,14 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 - **Nauka na decyzjach:** oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona, razem
   z notatkami, trafiają do oceny AI jako przykłady tego, czego szukasz. Przy odrzuceniu i dodaniu do
   ulubionych możesz wpisać powód, który zapisuje się w notatce.
+- **Strona oferty:** etykiety (garaż lub miejsce postojowe i komórka lub piwnica: w cenie albo za dopłatą,
+  ogrzewanie, rok budowy, winda, balkon), sekcja „Mieszkanie i budynek” (z danych portalu, a gdy ich brak,
+  z opisu) i „Infrastruktura”: najbliższe sklepy (po jednym z każdej sieci: Biedronka, Lidl, Kaufland,
+  Auchan…), żłobek, przedszkole, szkoła podstawowa i średnia, z odległością drogą i czasem pieszo i rowerem.
+  Punkty z OpenStreetMap pobiera `pois:import` raz w miesiącu, odległości liczy nasz OSRM. Okolica trafia
+  też do oceny AI i do asystenta.
+- **Strona główna:** liczby i skróty (nowe oferty, okazje, moje oferty, wyszukiwania, mapa, kredyt,
+  asystent, raport). Listę ofert ma zakładka Oferty (z zakładkami Okazje i Moje).
 - **Przebiegi:** każde pobranie portalu ze statusem i błędem.
 - **Ceny transakcyjne:** każda oferta sprzedaży jest porównana z prawdziwymi cenami sprzedaży mieszkań
   z Rejestru Cen Nieruchomości (GUGiK): transakcje w promieniu 800 m do 3 km, podobny metraż, ostatnie

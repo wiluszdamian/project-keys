@@ -26,6 +26,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use MarcelWeidum\Passkeys\PasskeysPlugin;
 
+use function Filament\Support\original_request;
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -59,11 +61,12 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.styles'))
             // Okazje to zakładka na liście ofert, w menu jako osobna pozycja.
             ->navigationItems([
+                // Podpozycja Ofert (to zakładka listy ofert), nie osobna sekcja.
                 NavigationItem::make('Okazje')
+                    ->parentItem('Oferty')
                     ->icon('heroicon-o-fire')
                     ->url(fn () => ListingResource::getUrl('index', ['tab' => 'deals']))
-                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.listings.index') && request()->query('tab') === 'deals')
-                    ->sort(2),
+                    ->activeWhen(fn () => original_request()->routeIs('filament.admin.resources.listings.index') && original_request()->query('tab') === 'deals'),
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')

@@ -10,6 +10,7 @@ use App\Models\ListingAnalysis;
 use App\Models\RcnTransaction;
 use App\Models\Search;
 use App\Services\Geo\CommuteCalculator;
+use App\Services\Geo\Infrastructure;
 use App\Services\Rcn\TransactionComparator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -66,6 +67,8 @@ class ListingScorer
         $features = ListingFeatures::of($listing);
 
         $lines = [
+            'Dzisiaj jest '.now()->format('Y-m-d').'.',
+            '',
             '## Preferencje osoby',
             $search->ai_preferences ?: 'Brak dodatkowych preferencji.',
             '',
@@ -104,11 +107,13 @@ class ListingScorer
             '- umeblowane (z danych portalu i opisu): '.$features->furnishedLabel(),
             $features->visualizations ? '- zdjęcia to wizualizacje, nie prawdziwe mieszkanie' : null,
             ...$this->details($listing),
+            ...collect(ListingFacts::labels($listing))->map(fn (string $value, string $label) => '- '.mb_strtolower($label).' (z portalu albo opisu): '.$value)->values()->all(),
             '- opis: '.($listing->description ? Str::limit(Str::squish($listing->description), config('scoring.description_limit')) : 'portal nie podał opisu'),
             '',
             '## Dojazd (trasa z naszego serwera, bez korków)',
             ...($this->commuteLines($listing)),
             '',
+            ...(($infrastructure = Infrastructure::lines($listing)) ? ['## Okolica (najbliższe punkty, odległość drogą)', ...array_map(fn (string $line) => "- {$line}", $infrastructure), ''] : []),
             '## Sygnały ryzyka wykryte automatycznie',
             ...($listing->risk_flags ? array_map(fn (array $flag) => "- {$flag['message']}", $listing->risk_flags) : ['- brak']),
             '',

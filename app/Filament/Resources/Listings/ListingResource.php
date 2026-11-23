@@ -10,10 +10,13 @@ use App\Filament\Resources\Listings\Schemas\ListingInfolist;
 use App\Filament\Resources\Listings\Tables\ListingsTable;
 use App\Models\Listing;
 use BackedEnum;
+use Filament\Navigation\NavigationItem;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+
+use function Filament\Support\original_request;
 
 class ListingResource extends Resource
 {
@@ -58,5 +61,19 @@ class ListingResource extends Resource
             'view' => ViewListing::route('/{record}'),
             'edit' => EditListing::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Oferty nie są podświetlone, gdy otwarta jest zakładka Okazje (ma własną pozycję w menu).
+     *
+     * @return array<NavigationItem>
+     */
+    public static function getNavigationItems(): array
+    {
+        return array_map(
+            fn (NavigationItem $item) => $item->activeWhen(fn (): bool => original_request()->routeIs(static::getNavigationItemActiveRoutePattern())
+                && original_request()->query('tab') !== 'deals'),
+            parent::getNavigationItems(),
+        );
     }
 }

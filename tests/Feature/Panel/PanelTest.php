@@ -9,7 +9,7 @@ use App\Filament\Resources\Searches\Pages\CreateSearch;
 use App\Filament\Resources\Searches\Pages\EditSearch;
 use App\Filament\Resources\Searches\Pages\ListSearches;
 use App\Filament\Support\Format;
-use App\Filament\Widgets\BestNewListings;
+use App\Filament\Widgets\QuickLinks;
 use App\Jobs\RunSearchJob;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
@@ -245,7 +245,6 @@ it('pokazuje, na jakich portalach jest też ta oferta, i filtruje po portalu dup
     // Zapisany w sesji stan dawnej, ukrytej kolumny "portal" nie może ukryć źródła.
     session()->put('tables.'.md5(ListListings::class).'_toggled_columns', ['portal' => false]);
     $this->get('/admin/listings')->assertSee('Źródło')->assertSee('Stoprocent')->assertSee('Otodom');
-    Livewire::test(BestNewListings::class)->assertSee('Źródło');
 
     Livewire::test(ListListings::class)
         ->removeTableFilter('above_threshold')
@@ -269,4 +268,20 @@ it('pokazuje czynsz z portalu, z innego portalu albo z opisu, a gdy go nie ma: c
         ->and(Format::adminFee($fromDescription->fresh()))->toBe('+ 450 zł czynsz (z opisu)')
         ->and(Format::adminFee($unknown->fresh()))->toBe('czynsz nieznany')
         ->and(Format::adminFee(Listing::factory()->create(['deal_type' => 'sale'])))->toBeNull();
+});
+
+it('strona główna ma skróty z licznikami zamiast listy ofert', function () {
+    $search = Search::factory()->create();
+    $listing = Listing::factory()->create(['deal_at' => now(), 'deal_reasons' => [['type' => 'x', 'text' => 'x']], 'status' => 'favorite']);
+    $search->listings()->attach($listing, ['matched_at' => now()]);
+
+    Livewire::test(QuickLinks::class)
+        ->assertSee('Okazje')
+        ->assertSee('Ulubione i oglądanie')
+        ->assertSee('/admin/listings?tab=deals', false)
+        ->assertSee('/admin/kredyt', false);
+
+    Livewire::withQueryParams(['tab' => 'mine'])->test(ListListings::class)
+        ->removeTableFilter('above_threshold')
+        ->assertCanSeeTableRecords([$listing]);
 });

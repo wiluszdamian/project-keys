@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\DealType;
 use App\Models\Listing;
 use App\Services\Geo\CommuteCalculator;
+use App\Services\Geo\Infrastructure;
 use App\Services\Geo\ListingLocator;
 use App\Services\Rcn\TransactionComparator;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,7 @@ class ListingExtras
         private RiskDetector $risks,
         private TransactionComparator $transactions,
         private DealFinder $deals,
+        private Infrastructure $infrastructure,
     ) {}
 
     public function prepare(Listing $listing): void
@@ -46,6 +48,11 @@ class ListingExtras
         }
 
         $this->refreshDeal($listing);
+
+        // Sklepy, żłobek, przedszkole i szkoły w okolicy (raz na ofertę, po ustaleniu położenia).
+        if ($listing->hasCoordinates() && $listing->infrastructure_at === null) {
+            $this->attempt('infrastructure', fn () => $this->infrastructure->refresh($listing));
+        }
     }
 
     /**

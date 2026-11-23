@@ -6,6 +6,7 @@ use App\Enums\DealType;
 use App\Models\CommutePlace;
 use App\Models\Listing;
 use App\Services\Geo\CommuteCalculator;
+use App\Services\Geo\Infrastructure;
 use App\Services\Geo\ListingLocator;
 use App\Services\ImageHasher;
 use App\Services\Rcn\TransactionComparator;
@@ -16,10 +17,10 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('listings:enrich-missing {--geocode=120 : Ile ofert geokodować (OpenStreetMap, 1 na sekundę)} {--images=150 : Ile zdjęć pobrać do porównania}')]
-#[Description('Uzupełnia aktualne oferty: współrzędne, czasy dojazdu, hash zdjęcia, sygnały ryzyka i ceny transakcyjne')]
+#[Description('Uzupełnia aktualne oferty: współrzędne, czasy dojazdu, hash zdjęcia, sygnały ryzyka, ceny transakcyjne i infrastrukturę')]
 class ListingsEnrichMissing extends Command
 {
-    public function handle(ListingLocator $locator, CommuteCalculator $commutes, ImageHasher $hasher, RiskDetector $risks, TransactionComparator $transactions): int
+    public function handle(ListingLocator $locator, CommuteCalculator $commutes, ImageHasher $hasher, RiskDetector $risks, TransactionComparator $transactions, Infrastructure $infrastructure): int
     {
         $located = 0;
 
@@ -59,7 +60,14 @@ class ListingsEnrichMissing extends Command
                 });
         }
 
-        $this->info("Współrzędne: {$located}, czasy dojazdu: {$routed}, zdjęcia: {$hashed}, ceny transakcyjne: {$compared}.");
+        // Sklepy, żłobek, przedszkole i szkoły dla ofert, które dostały współrzędne później.
+        $surroundings = 0;
+
+        foreach ($this->current()->whereNotNull('lat')->whereNull('infrastructure_at')->orderByDesc('first_seen_at')->limit(100)->get() as $listing) {
+            $surroundings += (int) $infrastructure->refresh($listing);
+        }
+
+        $this->info("Współrzędne: {$located}, czasy dojazdu: {$routed}, zdjęcia: {$hashed}, ceny transakcyjne: {$compared}, infrastruktura: {$surroundings}.");
 
         return self::SUCCESS;
     }
