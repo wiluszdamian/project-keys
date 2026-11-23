@@ -60,7 +60,7 @@ it('okazja: taniej za m² niż mediana ofert, ale nie podejrzanie tanio', functi
     $cheap = dealListing(['price' => 400_000, 'price_per_m2' => 8000]);
     $suspicious = dealListing(['price' => 250_000, 'price_per_m2' => 5000]);
 
-    expect(app(DealFinder::class)->reasons($cheap)[0]['text'])->toBe('20% taniej za m² niż oferty (miasto Rzeszów)')
+    expect(app(DealFinder::class)->reasons($cheap)[0]['text'])->toBe('20% taniej za m² niż podobne oferty (miasto Rzeszów, podobny metraż)')
         ->and(app(DealFinder::class)->reasons($suspicious))->toBe([]);
 });
 

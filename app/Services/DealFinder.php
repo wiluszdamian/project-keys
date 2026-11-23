@@ -19,8 +19,6 @@ class DealFinder
 
     public const BELOW_MARKET = 'below_market';
 
-    public function __construct(private MarketStats $market) {}
-
     /**
      * @return list<array{type: string, text: string}>
      */
@@ -107,17 +105,16 @@ class DealFinder
             return null;
         }
 
-        $stats = $this->market->forListing($listing);
-        $rent = $listing->deal_type === DealType::Rent;
+        // Przy wynajmie najem z czynszem, gdy czynsz jest znany.
+        $withFee = $listing->deal_type === DealType::Rent && $listing->rent_extra !== null;
+        $value = ($listing->price + ($withFee ? $listing->rent_extra : 0)) / $area;
+        $stats = $this->similarMedian($listing, $withFee);
 
-        // Przy wynajmie porównujemy najem z czynszem, gdy czynsz jest znany.
-        [$value, $median] = $rent && $listing->rent_extra !== null && $stats['median_total_cost_per_m2']
-            ? [($listing->price + $listing->rent_extra) / $area, $stats['median_total_cost_per_m2']]
-            : [$listing->price / $area, $stats['median_price_per_m2']];
-
-        if (! $stats['enough_data'] || ! $median) {
+        if ($stats === null) {
             return null;
         }
+
+        [$median, $scope] = $stats;
 
         $below = ($median - $value) / $median * 100;
 
@@ -128,8 +125,42 @@ class DealFinder
 
         return [
             'type' => self::BELOW_MARKET,
-            'text' => $this->percent($below).' taniej za m² niż oferty ('.$stats['scope'].')',
+            'text' => $this->percent($below).' taniej za m² niż podobne oferty ('.$scope.')',
         ];
+    }
+
+    /**
+     * Mediana za m² ofert o podobnym metrażu (±20%) z ostatnich 30 dni: dzielnica, a przy małej próbie miasto.
+     * Duże mieszkania są tańsze za m² niż kawalerki, więc porównanie z całym rynkiem zawyżało okazje.
+     *
+     * @return array{0: float, 1: string}|null
+     */
+    private function similarMedian(Listing $listing, bool $withFee): ?array
+    {
+        $area = (float) $listing->area;
+        $base = Listing::query()
+            ->where('city', $listing->city)
+            ->where('deal_type', $listing->deal_type)
+            ->whereNull('duplicate_of_id')
+            ->whereKeyNot($listing->id)
+            ->where('last_seen_at', '>=', now()->subDays(MarketStats::DAYS))
+            ->whereNotNull('price')
+            ->whereBetween('area', [$area * 0.8, $area * 1.2])
+            ->when($withFee, fn ($query) => $query->whereNotNull('rent_extra'));
+        $expression = $withFee ? '(price + rent_extra) / area' : 'price / area';
+        $median = fn ($query) => $query->selectRaw("count(*) as n, percentile_cont(0.5) within group (order by {$expression}) as median")->first();
+
+        foreach (array_filter([$listing->district ? 'district' : null, 'city']) as $level) {
+            $row = $median($level === 'district' ? (clone $base)->where('district', $listing->district) : clone $base);
+
+            if ((int) $row->n >= MarketStats::MIN_SAMPLE && $row->median > 0) {
+                $scope = $level === 'district' ? "dzielnica {$listing->district}" : "miasto {$listing->city}";
+
+                return [(float) $row->median, $scope.', podobny metraż'];
+            }
+        }
+
+        return null;
     }
 
     private function percent(float $value): string
