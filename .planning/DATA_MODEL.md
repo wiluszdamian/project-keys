@@ -13,6 +13,7 @@
 | price_min, price_max | integer nullable | PLN |
 | area_min, area_max | integer nullable | m2 |
 | rooms_min, rooms_max | smallint nullable | |
+| radius_km | smallint nullable | promień wokół miasta w km, null = tylko to miasto |
 | market | string nullable | `primary` albo `secondary`, null = oba rynki |
 | move_in_ready | boolean default false | odrzuca oferty, w których nie da się od razu zamieszkać: stan deweloperski, do wykończenia, do remontu (z danych portalu albo opisu). Meble nie są wymagane |
 | exclude_visualizations | boolean default false | odrzuca oferty z wizualizacjami w tytule lub opisie |

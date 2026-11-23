@@ -48,6 +48,7 @@ class SearchRequest extends FormRequest
             'city' => [$required, 'string', 'max:100'],
             'districts' => ['nullable', 'array'],
             'districts.*' => ['string', 'max:100'],
+            'radius_km' => ['nullable', 'integer', 'min:1', 'max:50'],
             'price_min' => ['nullable', 'integer', 'min:0'],
             'price_max' => ['nullable', 'integer', 'min:0'],
             'area_min' => ['nullable', 'integer', 'min:0', 'max:10000'],

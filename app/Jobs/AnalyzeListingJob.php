@@ -67,6 +67,14 @@ class AnalyzeListingJob implements ShouldQueue
 
         $extras->prepare($this->listing);
 
+        // Po geokodowaniu wiadomo, gdzie jest oferta: poza promieniem wyszukiwania odpada.
+        if (! $matcher->inArea($this->search, $this->listing)) {
+            $upserter->detach($this->search, $this->listing);
+            Log::info("Oferta #{$this->listing->id} jest poza promieniem wyszukiwania #{$this->search->id}, odłączona.");
+
+            return;
+        }
+
         $existing = $this->listing->analyses()->where('search_id', $this->search->id)->first();
 
         if ($existing && $existing->listing_content_hash === $this->listing->content_hash) {

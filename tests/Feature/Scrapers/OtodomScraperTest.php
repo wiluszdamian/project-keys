@@ -100,6 +100,11 @@ it('buduje adres wyszukiwania', function (array $attributes, int $page, string $
         1,
         'https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/mazowieckie/warszawa/warszawa/warszawa?priceMax=550000&market=SECONDARY&by=LATEST&direction=DESC',
     ],
+    'z promieniem 10 km' => [
+        ['radius_km' => 10],
+        1,
+        'https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/malopolskie/krakow/krakow/krakow?distanceRadius=10&by=LATEST&direction=DESC',
+    ],
     'sprzedaż bez filtrów, strona 2' => [
         ['deal_type' => 'sale', 'city' => 'Warszawa'],
         2,

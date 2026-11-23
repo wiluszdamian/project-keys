@@ -13,6 +13,7 @@ use App\Scrapers\Data\ListingData;
 use App\Scrapers\Data\ScrapeResult;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\Support\TextParser;
+use App\Services\Geo\SearchArea;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -57,6 +58,7 @@ class OtodomScraper implements EnrichesListings, PortalScraper
             'areaMax' => $search->area_max,
             'roomsNumber' => $this->roomsFilter($search->rooms_min, $search->rooms_max),
             'market' => $search->market ? strtoupper($search->market) : null,
+            'distanceRadius' => SearchArea::portalRadius($search->radius_km, [5, 10, 15, 25, 50, 75]),
             'by' => 'LATEST',
             'direction' => 'DESC',
             'page' => $page > 1 ? $page : null,

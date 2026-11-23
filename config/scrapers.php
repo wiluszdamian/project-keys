@@ -8,10 +8,12 @@ use App\Scrapers\NieruchomosciOnlineScraper;
 use App\Scrapers\OlxScraper;
 use App\Scrapers\OtodomScraper;
 use App\Scrapers\RzeszowiakScraper;
+use App\Scrapers\RzeszowskieNieruchomosciScraper;
+use App\Scrapers\StoprocentScraper;
 
 return [
     // Portale, które można wybrać w wyszukiwaniu.
-    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo'],
+    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo', 'stoprocent', 'rzeszowskie'],
 
     // Klasa scrapera dla każdego portalu.
     'classes' => [
@@ -23,6 +25,8 @@ return [
         'nieruchomosci_online' => NieruchomosciOnlineScraper::class,
         'domiporta' => DomiportaScraper::class,
         'adresowo' => AdresowoScraper::class,
+        'stoprocent' => StoprocentScraper::class,
+        'rzeszowskie' => RzeszowskieNieruchomosciScraper::class,
     ],
 
     'interval_minutes' => (int) env('SCRAPE_INTERVAL_MINUTES', 20),
@@ -67,12 +71,28 @@ return [
         // Portal rzeszowski: ogłoszenie bez nazwy miejscowości liczymy jako Rzeszów,
         // chyba że wspomina jedną z tych miejscowości.
         'home_city' => 'rzeszow',
+        'home_city_name' => 'Rzeszów',
         'other_places' => [
             'Przemyśl', 'Krosno', 'Jasło', 'Dębica', 'Łańcut', 'Tyczyn', 'Boguchwała', 'Głogów Małopolski',
             'Trzebownisko', 'Krasne', 'Świlcza', 'Strzyżów', 'Ropczyce', 'Sokołów Małopolski', 'Kolbuszowa',
             'Leżajsk', 'Mielec', 'Sanok', 'Stalowa Wola', 'Tarnobrzeg', 'Jarosław', 'Tajęcina', 'Rudna Mała',
             'Zaczernie', 'Jasionka', 'Malawa', 'Racławówka', 'Lubenia', 'Błędowa', 'Kraków', 'Warszawa', 'Lublin',
         ],
+    ],
+
+    // Biuro Stoprocent Nieruchomości (Rzeszów). Lista z API WordPressa, dane ze strony ogłoszenia.
+    'stoprocent' => [
+        'base_url' => 'https://stoprocent-nieruchomosci.pl',
+        'per_page' => 50,
+        // Ile stron API (po 50 najnowszych ofert wszystkich rodzajów) czytać w jednym przebiegu.
+        'api_pages' => 1,
+        // Najwięcej nowych stron ogłoszeń na jeden przebieg. Reszta w kolejnych przebiegach.
+        'max_new_offers' => 15,
+    ],
+
+    // Biuro Rzeszowskie Nieruchomości (Rzeszów). Zwykły HTML, 12 ofert na stronę.
+    'rzeszowskie' => [
+        'base_url' => 'https://rzeszowskie-nieruchomosci.pl',
     ],
 
     'domiporta' => [

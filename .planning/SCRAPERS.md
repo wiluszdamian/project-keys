@@ -89,6 +89,27 @@ Sprawdzone 2026-11-18. Głównie oferty bez pośredników.
 - Tylko wyniki z `#offer-list-results` do pierwszego `</section>`, dalej są oferty z okolicy.
 - Strona oferty: pełny opis i piętro z ld+json `Place`, typ ogłoszeniodawcy. Czynsz tylko w opisie.
 
+## Stoprocent Nieruchomości
+
+- Biuro z Rzeszowa, WordPress (motyw Bricks) z ofertami z Asari. robots.txt blokuje tylko `/wp-admin/`.
+- Lista: publiczne API WordPressa `/wp-json/wp/v2/nieruchomosci?per_page=50&orderby=date&order=desc&_fields=id,date,modified,link,title`. Podaje tylko tytuł i adres, wszystkie rodzaje ofert razem (mieszkania, domy, działki, lokale, wynajem i sprzedaż).
+- Typ, transakcja, rynek, cena, metraż, pokoje i piętro są w tabeli „Przegląd” na stronie ogłoszenia (`.property_info_element`), miejscowość i pinezka w `data-map-markers` mapy (np. `/Podkarpackie/Rzeszowski/Krasne`), opis po nagłówku „OPIS”.
+- Stronę ogłoszenia pobieramy raz na ofertę (klucz cache z `id` i `modified`, 30 dni), najwyżej `scrapers.stoprocent.max_new_offers` (15) nowych stron na przebieg. Pierwsze przebiegi zbierają więc oferty stopniowo.
+
+## Rzeszowskie Nieruchomości
+
+- Biuro z Rzeszowa, system Esti, zwykły HTML. robots.txt pozwala na wszystko.
+- Kategorie: `/mieszkania/rynek-wtorny/`, `/mieszkania/nowe-rynek-pierwotny/`, `/mieszkania/wynajem/` (domy: `/domy/...`), strony `strona,N/`, 12 ofert na stronę, od najnowszych.
+- Lista: miejscowość, ulica, cena, metraż, pokoje. Tytuł z adresu oferty. Rynek z kategorii.
+- Strona ogłoszenia: opis (`section.text .text-box p`), „Szczegóły” i „Pomieszczenia” (`ul.text__ul`), pinezka z `L.marker([lat, lng])`.
+
+## Promień wokół miasta
+
+- Wyszukiwanie może mieć `radius_km`. Otodom (`distanceRadius`), OLX (`distance`), Domiporta (`Distance`) i Nieruchomości-online (pole odległości) dostają promień w adresie, zaokrąglony w górę do wartości portalu.
+- Rzeszowiak, Stoprocent i Rzeszowskie Nieruchomości nie filtrują miejsca, więc sprawdzamy odległość miejscowości oferty od środka miasta (Nominatim, cache).
+- Morizon i Adresowo nie mają promienia w adresie (Morizon: filtry zabronione w robots.txt), szukają tylko w mieście.
+- Po geokodowaniu oferty (przed oceną AI) oferta dalej niż promień (z zapasem 0,5 km na pinezkę i ulicę, 1,5 km na dzielnicę i miasto) jest odłączana.
+
 ## Mapowanie filtrów
 
 Każdy scraper zamienia obiekt `Search` na URL portalu. Jeśli portal nie obsługuje jakiegoś filtra w URL (np. lista dzielnic), filtruj po pobraniu w `ListingMatcher`.

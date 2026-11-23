@@ -14,6 +14,7 @@ use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\Support\TextParser;
+use App\Services\Geo\SearchArea;
 use Dom\HTMLDocument;
 use Illuminate\Support\Arr;
 
@@ -44,6 +45,7 @@ class DomiportaScraper implements EnrichesListings, PortalScraper
             'Surface.To' => $search->area_max,
             'Rooms.From' => $search->rooms_min,
             'Rooms.To' => $search->rooms_max,
+            'Distance' => SearchArea::portalRadius($search->radius_km, [5, 10, 15, 20, 25, 50]),
             'SortingOrderDirection' => 'SortDateDescending',
             'PageNumber' => $page > 1 ? $page : null,
         ], fn ($value) => $value !== null);

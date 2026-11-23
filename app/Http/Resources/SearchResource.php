@@ -16,6 +16,7 @@ class SearchResource extends JsonResource
             'property_type' => $this->property_type,
             'city' => $this->city,
             'districts' => $this->districts,
+            'radius_km' => $this->radius_km,
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,
             'area_min' => $this->area_min,

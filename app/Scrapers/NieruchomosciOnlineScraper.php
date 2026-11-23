@@ -13,6 +13,7 @@ use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\Support\TextParser;
+use App\Services\Geo\SearchArea;
 use Dom\Element;
 use Dom\HTMLDocument;
 
@@ -42,7 +43,8 @@ class NieruchomosciOnlineScraper implements EnrichesListings, PortalScraper
             $search->deal_type === DealType::Rent ? 'wynajem' : 'sprzedaz',
             '',
             rawurlencode($search->city),
-            '', '', '',
+            '', '',
+            (string) SearchArea::portalRadius($search->radius_km, [5, 10, 15, 20, 25, 50]),
             $this->range($search->price_min, $search->price_max),
             $this->range($search->area_min, $search->area_max),
             '', '', '', '', '',

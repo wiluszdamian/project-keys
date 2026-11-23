@@ -58,6 +58,14 @@ class SearchForm
                                     $fail($missing->map(Portals::label(...))->implode(', ').' nie zna tej miejscowości. Dodaj ją w Ustawienia → Lokalizacje albo odznacz te portale.');
                                 }
                             }),
+                        TextInput::make('radius_km')
+                            ->label('Promień')
+                            ->integer()
+                            ->minValue(1)
+                            ->maxValue(50)
+                            ->suffix('km')
+                            ->placeholder('tylko ta miejscowość')
+                            ->helperText('Np. 10 = miejscowość i wszystko do 10 km od jej środka. Morizon i Adresowo szukają tylko w tej miejscowości.'),
                         TagsInput::make('districts')
                             ->label('Dzielnice')
                             ->placeholder('Puste = całe miasto')

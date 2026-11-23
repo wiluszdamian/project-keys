@@ -9,6 +9,7 @@ use App\Scrapers\Contracts\PortalScraper;
 use App\Scrapers\Data\ListingData;
 use App\Scrapers\Data\ScrapeResult;
 use App\Scrapers\Exceptions\ScraperException;
+use App\Services\Geo\SearchArea;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -52,6 +53,7 @@ class OlxScraper implements PortalScraper
             'filter_float_m:to' => $search->area_max,
             'filter_enum_rooms' => $this->roomsFilter($search->rooms_min, $search->rooms_max),
             'filter_enum_market' => $search->market ? [$search->market] : null,
+            'distance' => SearchArea::portalRadius($search->radius_km, [2, 5, 10, 15, 30, 50, 75, 100]),
         ], fn ($value) => $value !== null);
 
         return config('scrapers.olx.base_url').'/api/v1/offers/?'.http_build_query($query, encoding_type: PHP_QUERY_RFC3986);

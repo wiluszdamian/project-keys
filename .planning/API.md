@@ -18,7 +18,7 @@ Wszystkie odpowiedzi JSON. Prefiks `/api`.
 | GET | /listings/{id} | szczegóły oferty, historia cen, oceny |
 | GET | /scrape-runs | ostatnie przebiegi, filtry `portal`, `status`, `search_id` |
 
-Filtry rynku w wyszukiwaniu (od 2026-11-23): `market` (`primary`, `secondary` albo `null` = oba), `move_in_ready` (bool, tylko gotowe do zamieszkania), `exclude_visualizations` (bool). Odrzucają tylko oferty, o których wiadomo, że nie pasują. Oferty już przypisane sprawdza od nowa `php artisan search:refilter {id}` (`--dry-run` tylko liczy).
+Promień wokół miasta: `radius_km` (1 do 50, null = tylko miasto). Filtry rynku w wyszukiwaniu (od 2026-11-23): `market` (`primary`, `secondary` albo `null` = oba), `move_in_ready` (bool, tylko gotowe do zamieszkania), `exclude_visualizations` (bool). Odrzucają tylko oferty, o których wiadomo, że nie pasują. Oferty już przypisane sprawdza od nowa `php artisan search:refilter {id}` (`--dry-run` tylko liczy).
 
 Powiadomienia w wyszukiwaniu: `notify_enabled` (bool), `notify_mode` (`instant`, `every_hours`, `daily`), `notify_every_hours` (1 do 72, wymagane przy `every_hours`), `notify_daily_at` (`HH:MM`, wymagane przy `daily`), `min_score_to_notify`.
 

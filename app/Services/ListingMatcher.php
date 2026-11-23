@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Listing;
 use App\Models\Search;
 use App\Scrapers\Data\ListingData;
+use App\Services\Geo\SearchArea;
 use Illuminate\Support\Str;
 
 /**
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
  */
 class ListingMatcher
 {
+    public function __construct(private SearchArea $area) {}
+
     public function matches(Search $search, ListingData $listing): bool
     {
         return $listing->dealType === $search->deal_type
@@ -33,7 +36,17 @@ class ListingMatcher
             && $this->inRange($listing->area !== null ? (float) $listing->area : null, $search->area_min, $search->area_max)
             && $this->inRange($listing->rooms, $search->rooms_min, $search->rooms_max)
             && $this->districtMatches($search, $listing->district)
-            && $this->featuresMatch($search, ListingFeatures::of($listing));
+            && $this->featuresMatch($search, ListingFeatures::of($listing))
+            && $this->inArea($search, $listing);
+    }
+
+    /**
+     * Przy wyszukiwaniu z promieniem: oferta z ustalonym położeniem nie może być dalej niż promień.
+     * Oferta bez współrzędnych przechodzi (położenie sprawdza portal albo scraper).
+     */
+    public function inArea(Search $search, Listing $listing): bool
+    {
+        return $this->area->containsListing($search, $listing) !== false;
     }
 
     /**

@@ -17,14 +17,16 @@ Prywatny serwis, który szuka mieszkań za ciebie.
 </div>
 
 project-keys co 20 minut przegląda portale z ogłoszeniami (Otodom, OLX, Rzeszowiak, Morizon, Gratka,
-Nieruchomości-online, Domiporta, Adresowo) według zapisanych wyszukiwań. Nowe oferty ocenia
+Nieruchomości-online, Domiporta, Adresowo) i strony biur Stoprocent Nieruchomości i Rzeszowskie
+Nieruchomości według zapisanych wyszukiwań. Nowe oferty ocenia
 AI według twoich preferencji, a te z dobrą oceną przychodzą na Discorda. Zbudowany na Laravel 13
 i PHP 8.5, działa w Docker Compose na jednym serwerze.
 
 ## Jak to działa
 
 1. **Wyszukiwanie.** Zapisujesz kryteria: miasto, wynajem albo sprzedaż, cena, metraż, liczba
-   pokoi, opcjonalnie dzielnice i opis tego, czego szukasz (np. „najchętniej osiedle Projektant”).
+   pokoi, opcjonalnie promień wokół miasta (np. Rzeszów + 10 km), dzielnice i opis tego, czego
+   szukasz (np. „najchętniej osiedle Projektant”).
    Przy sprzedaży można też wybrać rynek (wtórny albo pierwotny), tylko mieszkania gotowe do
    zamieszkania (bez stanu deweloperskiego, wykończenia i remontu, meble niewymagane) i pomijanie
    ofert z wizualizacjami. Te filtry odrzucają tylko oferty, o których wiadomo, że nie pasują (z danych

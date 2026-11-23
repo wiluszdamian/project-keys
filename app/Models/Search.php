@@ -19,7 +19,7 @@ class Search extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'deal_type', 'property_type', 'city', 'districts',
+        'name', 'deal_type', 'property_type', 'city', 'districts', 'radius_km',
         'price_min', 'price_max', 'area_min', 'area_max', 'rooms_min', 'rooms_max',
         'market', 'move_in_ready', 'exclude_visualizations',
         'portals', 'ai_preferences', 'notify_channels', 'min_score_to_notify', 'is_active',
@@ -43,6 +43,7 @@ class Search extends Model
             'deal_type' => DealType::class,
             'property_type' => PropertyType::class,
             'districts' => 'array',
+            'radius_km' => 'integer',
             'portals' => 'array',
             'notify_channels' => 'array',
             'is_active' => 'boolean',

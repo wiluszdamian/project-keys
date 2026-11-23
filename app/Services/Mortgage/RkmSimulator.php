@@ -23,7 +23,7 @@ class RkmSimulator
      */
     public static function defaults(?Listing $listing = null): array
     {
-        $price = $listing?->price ?? 550_000;
+        $price = $listing?->price ?? 500_000;
 
         return [
             'price' => $price,

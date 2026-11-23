@@ -18,6 +18,8 @@ class Portals
         'nieruchomosci_online' => 'Nieruchomości-online',
         'domiporta' => 'Domiporta',
         'adresowo' => 'Adresowo',
+        'stoprocent' => 'Stoprocent',
+        'rzeszowskie' => 'Rzeszowskie Nieruchomości',
     ];
 
     // Kolory Filamenta w panelu.
@@ -30,6 +32,8 @@ class Portals
         'nieruchomosci_online' => 'success',
         'domiporta' => 'info',
         'adresowo' => 'warning',
+        'stoprocent' => 'danger',
+        'rzeszowskie' => 'primary',
     ];
 
     /**

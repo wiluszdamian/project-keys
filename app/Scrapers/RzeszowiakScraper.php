@@ -12,6 +12,7 @@ use App\Scrapers\Data\ListingData;
 use App\Scrapers\Data\ScrapeResult;
 use App\Scrapers\Exceptions\ScraperException;
 use App\Scrapers\Support\TextParser;
+use App\Services\Geo\SearchArea;
 use Dom\Element;
 use Dom\HTMLDocument;
 use Illuminate\Support\Carbon;
@@ -41,7 +42,7 @@ class RzeszowiakScraper implements EnrichesListings, PortalScraper
     // Ogłoszenia, które nie są całym mieszkaniem ani domem (agencje wrzucają je do tej samej kategorii).
     private const NOT_A_FLAT = '/\b(lokal\w* (uzytkow|uslugow|handlow|biurow)|pokoj\w* (do wynajecia|dla|w mieszkaniu)|wynajme pokoj|stancj|biur(o|a) |garaz|magazyn|hala |dzialk|miejsce parkingowe|miejsce postojowe)/';
 
-    public function __construct(private HttpFetcher $fetcher) {}
+    public function __construct(private HttpFetcher $fetcher, private SearchArea $area) {}
 
     public function name(): string
     {
@@ -197,7 +198,9 @@ class RzeszowiakScraper implements EnrichesListings, PortalScraper
         $description = $this->clean(TextParser::htmlToText($box->querySelector("div.{$prefix}-body-right")?->innerHTML ?? ''));
         $text = $title.' '.$description;
 
-        if (preg_match(self::NOT_A_FLAT, TextParser::normalize($title)) || ! $this->inPlace($text, $search->city)) {
+        $place = preg_match(self::NOT_A_FLAT, TextParser::normalize($title)) ? null : $this->place($text, $search);
+
+        if ($place === null) {
             return null;
         }
 
@@ -216,7 +219,7 @@ class RzeszowiakScraper implements EnrichesListings, PortalScraper
             price: $price,
             area: $area,
             rooms: TextParser::rooms($title) ?? TextParser::rooms($description),
-            city: $search->city,
+            city: $place,
             description: $description ?: null,
             imageUrl: $image ? config('scrapers.rzeszowiak.base_url').$image : null,
             raw: array_filter(['id' => $id[1], 'added' => $this->addedAt($added), 'price_per_m2' => $perM2]),
@@ -224,16 +227,27 @@ class RzeszowiakScraper implements EnrichesListings, PortalScraper
     }
 
     /**
-     * Miejscowość z wyszukiwania w tytule lub opisie. Ogłoszenie bez żadnej nazwy uznajemy za rzeszowskie.
+     * Miejscowość oferty, gdy jest w obszarze wyszukiwania, inaczej null.
+     * Najpierw miejscowość z wyszukiwania w tytule lub opisie. Ogłoszenie bez żadnej znanej nazwy uznajemy za rzeszowskie.
+     * Przy wyszukiwaniu z promieniem pasują też znane miejscowości w promieniu.
      */
-    private function inPlace(string $text, string $city): bool
+    private function place(string $text, Search $search): ?string
     {
-        if (TextParser::mentionsPlace($text, $city)) {
-            return true;
+        if (TextParser::mentionsPlace($text, $search->city)) {
+            return $search->city;
         }
 
-        return TextParser::normalize($city) === config('scrapers.rzeszowiak.home_city')
-            && ! collect(config('scrapers.rzeszowiak.other_places'))->contains(fn (string $place) => TextParser::mentionsPlace($text, $place));
+        $mentioned = collect(config('scrapers.rzeszowiak.other_places'))
+            ->filter(fn (string $place) => TextParser::mentionsPlace($text, $place))
+            ->values();
+
+        if ($mentioned->isEmpty()) {
+            return TextParser::normalize($search->city) === config('scrapers.rzeszowiak.home_city')
+                ? $search->city
+                : ($search->radius_km && $this->area->containsPlace($search, config('scrapers.rzeszowiak.home_city_name')) ? config('scrapers.rzeszowiak.home_city_name') : null);
+        }
+
+        return $search->radius_km ? $mentioned->first(fn (string $place) => $this->area->containsPlace($search, $place)) : null;
     }
 
     /**

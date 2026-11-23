@@ -11,7 +11,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
-#[Signature('scraper:probe {portal : otodom, olx, rzeszowiak, morizon, gratka, nieruchomosci_online, domiporta albo adresowo} {search : ID wyszukiwania} {--pages=1 : Ile stron pobrać}')]
+#[Signature('scraper:probe {portal : otodom, olx, rzeszowiak, morizon, gratka, nieruchomosci_online, domiporta, adresowo, stoprocent albo rzeszowskie} {search : ID wyszukiwania} {--pages=1 : Ile stron pobrać}')]
 #[Description('Pobiera oferty z portalu na żywo i wypisuje je. Nic nie zapisuje.')]
 class ScraperProbe extends Command
 {
