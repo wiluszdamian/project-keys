@@ -4,8 +4,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Kod z katalogu, ale pakiety (vendor) z obrazu: pusty wolumen startuje z zawartością obrazu.
+# Bez tego testy brały stary vendor z katalogu na serwerze (rsync go pomija).
 docker run --rm \
     --network project-keys_default \
     -v "$PWD":/var/www/html \
+    -v /var/www/html/vendor \
     -u "$(id -u):$(id -g)" \
     project-keys-app php artisan test "$@"

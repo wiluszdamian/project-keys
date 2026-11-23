@@ -15,6 +15,7 @@ it('strona logowania ma passkey i login zamiast e-maila', function () {
         ->assertOk()
         ->assertSee('Zaloguj passkey')
         ->assertSee('Login')
+        ->assertSee('images/logo-light.svg')
         ->assertDontSee('Email address');
 });
 

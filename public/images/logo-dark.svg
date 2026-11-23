@@ -1,0 +1,7 @@
+<svg role="img" aria-label="project-keys" viewBox="0 0 232 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#E0A526" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="20" cy="24" r="12"/>
+    <path d="M32 24h29M51 24v9M59 24v6"/>
+  </g>
+  <text x="76" y="33" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" font-weight="700" fill="#FAFAF9">project-keys</text>
+</svg>
