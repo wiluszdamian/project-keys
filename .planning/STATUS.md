@@ -121,6 +121,7 @@ Aktualizuje Claude Code po każdej fazie.
 - 2026-11-23: Ocena AI dostaje dzisiejszą datę (minął termin dostępności = dostępne od zaraz, bez minusa). Strona główna bez tabeli ofert: skróty z licznikami, zakładka „Moje” na liście ofert. Okazje jako podpozycja Ofert w menu.
 - 2026-11-23: Pipeline (prośba właściciela): `.github/workflows/deploy.yml` po udanym workflow Tests na `main` (push) albo ręcznie uruchamia `scripts/deploy.sh` z osobnym kluczem SSH (sekrety `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_KNOWN_HOSTS`). Jedno wdrożenie naraz.
 - 2026-11-23: Infrastruktura uzupełniona (prośba właściciela): Szpital Miejski im. Jana Pawła II (ul. Rycerska 4, stałe miejsce z `infrastructure.places`, położenie z Nominatim) z czasem autem, przychodnia z pediatrą (tag `healthcare:speciality=paediatrics` albo pediatria w nazwie) i najbliższa przychodnia POZ (OSM nie potwierdza pediatry). Czas autem z OSRM dla wszystkich punktów.
+- 2026-11-23: Overpass API był przy pierwszym imporcie przeciążony (główny 429, zapasowe błąd i limit czasu). Import umie też czytać lokalną mapę: `scripts/pois-extract.sh` wyciąga punkty z `region.osm.pbf` (ten sam plik co OSRM) narzędziem osmium i przekazuje do `pois:import --file=-`. Overpass ma zapasowe serwery (`infrastructure.overpass_urls`).
 
 ## Otwarte pytania
 

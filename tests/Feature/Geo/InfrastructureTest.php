@@ -97,3 +97,23 @@ it('strona oferty pokazuje infrastrukturę i szczegóły z etykietami', function
         ->assertSee('Budynek z 2006')
         ->assertSee('Mieszkanie i budynek');
 });
+
+it('importuje punkty z lokalnej mapy (osmium geojsonseq), ze środkiem budynku i tylko w obszarze', function () {
+    Sleep::fake();
+    Search::factory()->create(['city' => 'Rzeszów', 'radius_km' => 10]);
+    Http::fake(['nominatim.openstreetmap.org/*' => Http::response([['lat' => '50.0375', 'lon' => '22.0049', 'display_name' => 'Rzeszów, województwo podkarpackie, Polska']])]);
+    $lines = implode("\n", array_map(fn (array $feature) => "\x1e".json_encode($feature), [
+        ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [22.01, 50.04]], 'properties' => ['@type' => 'node', '@id' => 1, 'shop' => 'supermarket', 'brand' => 'Kaufland']],
+        ['type' => 'Feature', 'geometry' => ['type' => 'Polygon', 'coordinates' => [[[22.0, 50.0], [22.02, 50.0], [22.02, 50.02], [22.0, 50.02], [22.0, 50.0]]]], 'properties' => ['@type' => 'way', '@id' => 2, 'amenity' => 'school', 'name' => 'Szkoła Podstawowa nr 5']],
+        ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [19.94, 50.06]], 'properties' => ['@type' => 'node', '@id' => 3, 'shop' => 'supermarket', 'brand' => 'Lidl']],
+    ]));
+    $stream = fopen('php://memory', 'r+');
+    fwrite($stream, $lines);
+    rewind($stream);
+
+    $result = app(PoiImporter::class)->importGeoJsonSeq($stream);
+
+    expect($result['total'])->toBe(2)
+        ->and(Poi::where('category', 'primary')->sole())->lat->toEqualWithDelta(50.008, 0.001)->osm_id->toBe('way/2')
+        ->and(Poi::where('brand', 'Lidl')->exists())->toBeFalse();
+});

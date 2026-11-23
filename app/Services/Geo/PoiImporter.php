@@ -4,6 +4,7 @@ namespace App\Services\Geo;
 
 use App\Models\Poi;
 use App\Models\Search;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -19,6 +20,8 @@ class PoiImporter
     public function __construct(private SearchArea $area) {}
 
     /**
+     * Z Overpass API: najpierw główny serwer, potem zapasowe (infrastructure.overpass_urls), każdy raz.
+     *
      * @return array{total: int, by_category: array<string, int>, bbox: array{0: float, 1: float, 2: float, 3: float}}
      */
     public function import(): array
@@ -29,16 +32,87 @@ class PoiImporter
             implode(',', array_map(fn (float $value) => number_format($value, 4, '.', ''), $bbox)),
         );
 
-        $response = Http::timeout(200)
-            ->withHeaders(['User-Agent' => config('geo.nominatim.user_agent')])
-            ->asForm()
-            ->post(config('infrastructure.overpass_url'), ['data' => $query]);
+        $errors = [];
 
-        if (! $response->successful() || ! is_array($response->json('elements'))) {
-            throw new RuntimeException('Overpass: błąd '.$response->status().' '.mb_substr($response->body(), 0, 200));
+        foreach (array_unique([config('infrastructure.overpass_url'), ...config('infrastructure.overpass_urls', [])]) as $url) {
+            try {
+                $response = Http::timeout(200)
+                    ->withHeaders(['User-Agent' => config('geo.nominatim.user_agent')])
+                    ->asForm()
+                    ->post($url, ['data' => $query]);
+
+                if ($response->successful() && is_array($response->json('elements'))) {
+                    return $this->store(collect($response->json('elements')), $bbox);
+                }
+
+                $errors[] = parse_url($url, PHP_URL_HOST).': '.$response->status();
+            } catch (\Throwable $exception) {
+                $errors[] = parse_url($url, PHP_URL_HOST).': '.mb_substr($exception->getMessage(), 0, 80);
+            }
         }
 
-        $rows = collect($response->json('elements'))->flatMap(fn (array $element) => $this->rows($element))->unique(fn (array $row) => $row['osm_id'].'|'.$row['category'])->values();
+        throw new RuntimeException('Overpass niedostępny ('.implode('; ', $errors).'). Użyj scripts/pois-extract.sh (lokalna mapa).');
+    }
+
+    /**
+     * Z lokalnej mapy (osmium export -f geojsonseq), tylko punkty w obszarze wokół wyszukiwań.
+     *
+     * @param  resource  $stream
+     * @return array{total: int, by_category: array<string, int>, bbox: array{0: float, 1: float, 2: float, 3: float}}
+     */
+    public function importGeoJsonSeq($stream): array
+    {
+        $bbox = $this->bbox();
+        $elements = collect();
+
+        while (($line = fgets($stream)) !== false) {
+            $feature = json_decode(trim($line, "\x1e \n\r\t"), true);
+            $element = is_array($feature) ? self::elementFromFeature($feature) : null;
+
+            if ($element !== null
+                && $element['lat'] >= $bbox[0] && $element['lat'] <= $bbox[2]
+                && $element['lon'] >= $bbox[1] && $element['lon'] <= $bbox[3]) {
+                $elements->push($element);
+            }
+        }
+
+        return $this->store($elements, $bbox);
+    }
+
+    /**
+     * Obiekt GeoJSON z osmium (properties = tagi, @type i @id) na element jak z Overpass, ze środkiem geometrii.
+     */
+    public static function elementFromFeature(array $feature): ?array
+    {
+        $coordinates = [];
+        array_walk_recursive($feature['geometry']['coordinates'], function ($value) use (&$coordinates) {
+            $coordinates[] = (float) $value;
+        });
+
+        if (count($coordinates) < 2) {
+            return null;
+        }
+
+        $lng = array_sum(array_filter($coordinates, fn ($key) => $key % 2 === 0, ARRAY_FILTER_USE_KEY)) / (count($coordinates) / 2);
+        $lat = array_sum(array_filter($coordinates, fn ($key) => $key % 2 === 1, ARRAY_FILTER_USE_KEY)) / (count($coordinates) / 2);
+        $properties = $feature['properties'] ?? [];
+
+        return [
+            'type' => $properties['@type'] ?? 'x',
+            'id' => $properties['@id'] ?? md5(json_encode($feature['geometry'])),
+            'lat' => $lat,
+            'lon' => $lng,
+            'tags' => array_filter($properties, fn ($key) => ! str_starts_with((string) $key, '@'), ARRAY_FILTER_USE_KEY),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array>  $elements
+     * @return array{total: int, by_category: array<string, int>, bbox: array{0: float, 1: float, 2: float, 3: float}}
+     */
+    private function store($elements, array $bbox): array
+    {
+        $rows = $elements->flatMap(fn (array $element) => $this->rows($element))->unique(fn (array $row) => $row['osm_id'].'|'.$row['category'])->values();
 
         DB::transaction(function () use ($rows) {
             Poi::query()->delete();

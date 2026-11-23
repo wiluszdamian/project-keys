@@ -7,6 +7,8 @@
  */
 return [
     'overpass_url' => env('OVERPASS_URL', 'https://overpass-api.de/api/interpreter'),
+    // Zapasowe serwery, gdy główny jest przeciążony. Gdy wszystkie zawiodą: scripts/pois-extract.sh (lokalna mapa).
+    'overpass_urls' => ['https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'],
     // Obszar: środki aktywnych wyszukiwań plus tyle km.
     'margin_km' => 25,
     // Szukamy najbliższych punktów w tym promieniu (km, w linii prostej).

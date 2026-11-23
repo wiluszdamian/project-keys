@@ -11,14 +11,19 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
-#[Signature('pois:import {--skip-listings : Bez przeliczania infrastruktury ofert}')]
+#[Signature('pois:import {--file= : Plik GeoJSON z osmium (geojsonseq), "-" to wejście standardowe. Bez tego Overpass API} {--skip-listings : Bez przeliczania infrastruktury ofert}')]
 #[Description('Pobiera z OpenStreetMap sklepy, żłobki, przedszkola i szkoły wokół wyszukiwań i przelicza infrastrukturę ofert.')]
 class PoisImport extends Command
 {
     public function handle(PoiImporter $importer, Infrastructure $infrastructure): int
     {
         try {
-            $result = $importer->import();
+            $file = $this->option('file');
+            $result = match (true) {
+                $file === '-' => $importer->importGeoJsonSeq(STDIN),
+                filled($file) => $importer->importGeoJsonSeq(fopen($file, 'r')),
+                default => $importer->import(),
+            };
         } catch (Throwable $exception) {
             $this->error('Import punktów nie wyszedł: '.$exception->getMessage());
 
