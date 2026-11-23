@@ -227,3 +227,21 @@ it('otwiera mapę i miejsca dojazdu', function () {
     $this->get('/admin/commute-places')->assertOk()->assertSee('Dodaj miejsce');
     $this->get("/admin/listings/{$listing->id}")->assertOk();
 });
+
+it('pokazuje, na jakich portalach jest też ta oferta, i filtruje po portalu duplikatu', function () {
+    $search = Search::factory()->create();
+    $original = Listing::factory()->create(['portal' => 'otodom', 'title' => 'Mieszkanie przy Krajobrazowej']);
+    $copy = Listing::factory()->create(['portal' => 'stoprocent', 'duplicate_of_id' => $original->id, 'url' => 'https://stoprocent-nieruchomosci.pl/nieruchomosci/x']);
+    $other = Listing::factory()->create(['portal' => 'olx']);
+    $search->listings()->attach([$original->id, $copy->id, $other->id], ['matched_at' => now()]);
+
+    Livewire::test(ViewListing::class, ['record' => $original->getRouteKey()])
+        ->assertSee('Też na')
+        ->assertSee('https://stoprocent-nieruchomosci.pl/nieruchomosci/x', false);
+
+    Livewire::test(ListListings::class)
+        ->removeTableFilter('above_threshold')
+        ->filterTable('portal', 'stoprocent')
+        ->assertCanSeeTableRecords([$original])
+        ->assertCanNotSeeTableRecords([$other, $copy]);
+});

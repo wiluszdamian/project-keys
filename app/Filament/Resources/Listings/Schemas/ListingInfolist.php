@@ -11,6 +11,7 @@ use App\Services\DealFinder;
 use App\Services\ListingFeatures;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
+use App\Support\Portals;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -111,6 +112,12 @@ class ListingInfolist
                                 ])->filter()->implode(', ');
                             })
                             ->visible(fn (Listing $record) => $record->deal_type->value === 'sale'),
+                        TextEntry::make('also_on')
+                            ->label('Też na')
+                            ->state(fn (Listing $record) => $record->duplicates->map(fn (Listing $duplicate) => '<a href="'.e($duplicate->url).'" target="_blank" rel="noopener" class="pk-rows__link">'.e(Portals::label($duplicate->portal)).'</a>'
+                                .($duplicate->price !== $record->price && $duplicate->price ? ' ('.e(Format::pln($duplicate->price)).')' : ''))->implode(', '))
+                            ->html()
+                            ->visible(fn (Listing $record) => $record->duplicates->isNotEmpty()),
                         TextEntry::make('is_private_owner')
                             ->label('Ogłoszeniodawca')
                             ->formatStateUsing(fn ($state) => $state ? 'osoba prywatna' : 'agencja / firma')

@@ -36,7 +36,7 @@ class ListingsTable
             // Tylko oferty, które pasują do jakiegoś wyszukiwania. Odłączone (np. po zmianie filtrów) znikają z listy.
             ->modifyQueryUsing(fn (Builder $query) => $query
                 ->whereHas('searches')
-                ->with('commutes.place')
+                ->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,url,price'])
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))
             ->defaultSort('first_seen_at', 'desc')
@@ -133,6 +133,7 @@ class ListingsTable
                     ->badge()
                     ->formatStateUsing(fn (string $state) => Portals::label($state))
                     ->color(fn (string $state) => Portals::color($state))
+                    ->description(fn (Listing $record) => $record->duplicates->isNotEmpty() ? 'też: '.$record->duplicates->map(fn (Listing $duplicate) => Portals::label($duplicate->portal))->unique()->implode(', ') : null)
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visibleFrom('2xl'),
                 TextColumn::make('status')
@@ -215,9 +216,13 @@ class ListingsTable
                     ->label('Tylko z sygnałami ryzyka')
                     ->toggle()
                     ->query(fn (Builder $query) => $query->whereNotNull('risk_flags')),
+                // Także oferty, których duplikat jest na tym portalu (lista pokazuje każde mieszkanie raz).
                 SelectFilter::make('portal')
                     ->label('Portal')
-                    ->options(Portals::allOptions()),
+                    ->options(Portals::allOptions())
+                    ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn (Builder $query, string $portal) => $query->where(fn (Builder $query) => $query
+                        ->where('portal', $portal)
+                        ->orWhereHas('duplicates', fn (Builder $query) => $query->where('portal', $portal))))),
                 Filter::make('hide_rejected')
                     ->label('Ukryj odrzucone')
                     ->default()

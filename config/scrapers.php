@@ -86,11 +86,12 @@ return [
     // Biuro Stoprocent Nieruchomości (Rzeszów). Lista z API WordPressa, dane ze strony ogłoszenia.
     'stoprocent' => [
         'base_url' => 'https://stoprocent-nieruchomosci.pl',
-        'per_page' => 50,
-        // Ile stron API (po 50 najnowszych ofert wszystkich rodzajów) czytać w jednym przebiegu.
-        'api_pages' => 1,
+        'per_page' => 100,
+        // Ile stron API (po 100 ofert wszystkich rodzajów, od najnowszych) najwyżej czytać. Biuro ma ok. 600 ofert,
+        // a dodaje kilkanaście dziennie, więc czytamy wszystkie (zapytania do API są lekkie).
+        'api_pages' => 10,
         // Najwięcej nowych stron ogłoszeń na jeden przebieg. Reszta w kolejnych przebiegach.
-        'max_new_offers' => 15,
+        'max_new_offers' => 40,
     ],
 
     // Biuro Rzeszowskie Nieruchomości (Rzeszów). Zwykły HTML, 12 ofert na stronę.

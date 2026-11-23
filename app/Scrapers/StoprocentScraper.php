@@ -24,6 +24,8 @@ use Illuminate\Support\Str;
  * Nowe oferty bierzemy z publicznego API WordPressa (/wp-json/wp/v2/nieruchomosci, od najnowszych),
  * ale API podaje tylko tytuł i adres. Typ, transakcję, cenę, metraż i miejscowość ma dopiero strona
  * ogłoszenia, więc pobieramy ją raz dla każdej oferty (i ponownie po jej zmianie) i pamiętamy 30 dni.
+ * Czytamy całe API (wszystkie oferty biura), bo oferta najmu może wisieć tygodniami, a biuro dodaje
+ * kilkanaście ofert dziennie wszystkich rodzajów. Działki, lokale i biura pomijamy po tytule.
  * Żeby jeden przebieg nie trwał długo, nowych stron pobieramy najwyżej scrapers.stoprocent.max_new_offers.
  */
 class StoprocentScraper implements EnrichesListings, PortalScraper
@@ -34,6 +36,9 @@ class StoprocentScraper implements EnrichesListings, PortalScraper
         'Mieszkania' => PropertyType::Flat,
         'Domy' => PropertyType::House,
     ];
+
+    // Tytuły ofert, które na pewno nie są mieszkaniem ani domem: bez pobierania strony ogłoszenia.
+    private const NOT_A_HOME = '/^(dzialk|lokal|magazyn|hala|biur|grunt|teren|budynek uslug|kamienic)|\b(dzialka|dzialki|lokal uslug|lokal uzytk|lokal handl|powierzchnia biurow)/';
 
     private int $fetchBudget = 0;
 
@@ -94,6 +99,10 @@ class StoprocentScraper implements EnrichesListings, PortalScraper
 
         foreach ($items as $item) {
             if (! isset($item['id'], $item['link'])) {
+                continue;
+            }
+
+            if (preg_match(self::NOT_A_HOME, TextParser::normalize(html_entity_decode($item['title']['rendered'] ?? '', ENT_QUOTES | ENT_HTML5)))) {
                 continue;
             }
 

@@ -38,6 +38,9 @@ it('czyta tabelę oferty, opis i miejsce z mapy', function () {
 
 it('bierze nowe oferty z API, pobiera stronę raz i filtruje transakcję oraz miejscowość', function () {
     $items = json_decode(stoprocentFixture('api.json'), true);
+    // Pierwsza oferta w fixture to lokal, który scraper pomija po tytule: tu udają mieszkania.
+    $items[0]['title']['rendered'] = '3 pokojowe mieszkanie z dwoma balkonami';
+    $items[1]['title']['rendered'] = '3 pokoje na wynajem';
     $first = $items[0]['link'];
     Http::fake([
         'stoprocent-nieruchomosci.pl/wp-json/*' => Http::response(json_encode([$items[0], $items[1]])),
@@ -78,4 +81,16 @@ it('enrich ustawia pinezkę z danych oferty bez pobierania strony', function () 
 
     expect($listing->fresh())->lat->toBe(50.05)->lng->toBe(22.1)->geo_precision->toBe('portal');
     Http::assertNothingSent();
+});
+
+it('pomija działki i lokale bez pobierania strony ogłoszenia', function () {
+    Http::fake([
+        'stoprocent-nieruchomosci.pl/wp-json/*' => Http::response(json_encode([
+            ['id' => 1, 'modified' => 'x', 'link' => 'https://stoprocent-nieruchomosci.pl/nieruchomosci/dzialka', 'title' => ['rendered' => 'Działka 16 arów | Świlcza']],
+            ['id' => 2, 'modified' => 'x', 'link' => 'https://stoprocent-nieruchomosci.pl/nieruchomosci/lokal', 'title' => ['rendered' => 'LOKAL 273 M2 &#8211; CENTRUM']],
+        ])),
+    ]);
+
+    expect($this->scraper->fetchListings(Search::factory()->make(['deal_type' => 'sale', 'city' => 'Rzeszów']))->listings)->toBe([]);
+    Http::assertSentCount(1);
 });

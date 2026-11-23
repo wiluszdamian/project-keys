@@ -92,9 +92,9 @@ Sprawdzone 2026-11-18. Głównie oferty bez pośredników.
 ## Stoprocent Nieruchomości
 
 - Biuro z Rzeszowa, WordPress (motyw Bricks) z ofertami z Asari. robots.txt blokuje tylko `/wp-admin/`.
-- Lista: publiczne API WordPressa `/wp-json/wp/v2/nieruchomosci?per_page=50&orderby=date&order=desc&_fields=id,date,modified,link,title`. Podaje tylko tytuł i adres, wszystkie rodzaje ofert razem (mieszkania, domy, działki, lokale, wynajem i sprzedaż).
+- Lista: publiczne API WordPressa `/wp-json/wp/v2/nieruchomosci?per_page=100&orderby=date&order=desc&_fields=id,date,modified,link,title`, wszystkie strony (ok. 600 ofert, biuro dodaje kilkanaście dziennie wszystkich rodzajów, a oferta najmu wisi tygodniami). Podaje tylko tytuł i adres, wszystkie rodzaje ofert razem. Działki, lokale i biura pomijamy po tytule, bez pobierania strony.
 - Typ, transakcja, rynek, cena, metraż, pokoje i piętro są w tabeli „Przegląd” na stronie ogłoszenia (`.property_info_element`), miejscowość i pinezka w `data-map-markers` mapy (np. `/Podkarpackie/Rzeszowski/Krasne`), opis po nagłówku „OPIS”.
-- Stronę ogłoszenia pobieramy raz na ofertę (klucz cache z `id` i `modified`, 30 dni), najwyżej `scrapers.stoprocent.max_new_offers` (15) nowych stron na przebieg. Pierwsze przebiegi zbierają więc oferty stopniowo.
+- Stronę ogłoszenia pobieramy raz na ofertę (klucz cache z `id` i `modified`, 30 dni), najwyżej `scrapers.stoprocent.max_new_offers` (40) nowych stron na przebieg.
 
 ## Rzeszowskie Nieruchomości
 

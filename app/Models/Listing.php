@@ -53,6 +53,14 @@ class Listing extends Model
         return $this->hasMany(ListingAnalysis::class);
     }
 
+    /**
+     * Ta sama oferta z innych portali (duplikaty wskazują na tę ofertę).
+     */
+    public function duplicates(): HasMany
+    {
+        return $this->hasMany(Listing::class, 'duplicate_of_id');
+    }
+
     public function commutes(): HasMany
     {
         return $this->hasMany(ListingCommute::class);
