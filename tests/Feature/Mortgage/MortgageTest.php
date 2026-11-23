@@ -86,13 +86,14 @@ it('rozpoznaje strefę po miejscowości', function () {
 });
 
 it('czyta stopę referencyjną NBP', function () {
-    Http::fake(['static.nbp.pl/*' => Http::response('<stopy_procentowe><tabela><pozycja id="ref" oprocentowanie="3,75" obowiazuje_od="2026-03-05"/></tabela></stopy_procentowe>')]);
+    // Jak prawdziwy plik: BOM, atrybuty w osobnych liniach.
+    Http::fake(['static.nbp.pl/*' => Http::response("\xEF\xBB\xBF<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<stopy_procentowe data_publikacji=\"2026-03-05\">\n<tabela id=\"stoproc\">\n<pozycja\n id=\"ref\"\n nazwa=\"Stopa referencyjna\"\n odnosnik=\"1\"\n oprocentowanie=\"3,75\"\n obowiazuje_od=\"2026-03-05\"/>\n<pozycja id=\"lom\" oprocentowanie=\"4,25\" obowiazuje_od=\"2026-03-05\"/>\n</tabela></stopy_procentowe>")]);
 
     expect(app(NbpRates::class)->reference())->toBe(['rate' => 3.75, 'since' => '2026-03-05']);
 });
 
 it('strona kredytu liczy dla oferty i ostrzega o zmianie stóp NBP', function () {
-    Http::fake(['static.nbp.pl/*' => Http::response('<pozycja id="ref" oprocentowanie="3,50" obowiazuje_od="2026-12-03"/>')]);
+    Http::fake(['static.nbp.pl/*' => Http::response('<stopy_procentowe><pozycja id="ref" oprocentowanie="3,50" obowiazuje_od="2026-12-03"/></stopy_procentowe>')]);
     $this->actingAs(User::factory()->create());
     Filament::setCurrentPanel('admin');
     $listing = Listing::factory()->create(['deal_type' => 'sale', 'price' => 450_000, 'area' => 60, 'city' => 'Boguchwała', 'title' => 'Mieszkanie w Boguchwale']);

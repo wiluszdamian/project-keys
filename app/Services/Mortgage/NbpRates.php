@@ -44,10 +44,14 @@ class NbpRates
      */
     public static function parse(string $xml): ?array
     {
-        if (! preg_match('/<pozycja\s+id="ref"\s+oprocentowanie="([\d,.]+)"\s+obowiazuje_od="([\d-]+)"/', $xml, $match)) {
+        // Plik zaczyna się od BOM.
+        $document = simplexml_load_string(preg_replace('/^\xEF\xBB\xBF/', '', trim($xml)), options: LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+        $node = $document ? ($document->xpath('//pozycja[@id="ref"]')[0] ?? null) : null;
+
+        if ($node === null || ! is_numeric(str_replace(',', '.', (string) $node['oprocentowanie']))) {
             return null;
         }
 
-        return ['rate' => (float) str_replace(',', '.', $match[1]), 'since' => $match[2]];
+        return ['rate' => (float) str_replace(',', '.', (string) $node['oprocentowanie']), 'since' => (string) $node['obowiazuje_od']];
     }
 }
