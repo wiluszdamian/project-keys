@@ -58,7 +58,7 @@ it('konto bez passkey po zalogowaniu trafia do profilu, żeby go dodać', functi
     $this->actingAs(User::factory()->withoutPasskey()->create());
 
     $this->get('/admin/listings')->assertRedirect('/admin/profile');
-    $this->get('/admin/profile')->assertOk()->assertSee('Passkeys');
+    $this->get('/admin/profile')->assertOk()->assertSee(__('filament-passkeys::passkeys.passkeys'));
 });
 
 it('konto z passkey ma dostęp do panelu, konto nie-administratora nie', function () {
