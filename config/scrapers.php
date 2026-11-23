@@ -7,13 +7,14 @@ use App\Scrapers\MorizonScraper;
 use App\Scrapers\NieruchomosciOnlineScraper;
 use App\Scrapers\OlxScraper;
 use App\Scrapers\OtodomScraper;
+use App\Scrapers\PierwszePietroScraper;
 use App\Scrapers\RzeszowiakScraper;
 use App\Scrapers\RzeszowskieNieruchomosciScraper;
 use App\Scrapers\StoprocentScraper;
 
 return [
     // Portale, które można wybrać w wyszukiwaniu.
-    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo', 'stoprocent', 'rzeszowskie'],
+    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo', 'stoprocent', 'rzeszowskie', 'pierwsze_pietro'],
 
     // Klasa scrapera dla każdego portalu.
     'classes' => [
@@ -27,6 +28,7 @@ return [
         'adresowo' => AdresowoScraper::class,
         'stoprocent' => StoprocentScraper::class,
         'rzeszowskie' => RzeszowskieNieruchomosciScraper::class,
+        'pierwsze_pietro' => PierwszePietroScraper::class,
     ],
 
     // Niższa cena przy sprzedaży to ogłoszenie najmu w złej kategorii.
@@ -97,6 +99,11 @@ return [
     // Biuro Rzeszowskie Nieruchomości (Rzeszów). Zwykły HTML, 12 ofert na stronę.
     'rzeszowskie' => [
         'base_url' => 'https://rzeszowskie-nieruchomosci.pl',
+    ],
+
+    // Biuro Pierwsze Piętro (Rzeszów, 1pietro.net). Zwykły HTML, 18 ofert na stronę.
+    'pierwsze_pietro' => [
+        'base_url' => 'https://1pietro.net',
     ],
 
     'domiporta' => [

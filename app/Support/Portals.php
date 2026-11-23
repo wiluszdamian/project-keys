@@ -20,6 +20,7 @@ class Portals
         'adresowo' => 'Adresowo',
         'stoprocent' => 'Stoprocent',
         'rzeszowskie' => 'Rzeszowskie Nieruchomości',
+        'pierwsze_pietro' => 'Pierwsze Piętro',
     ];
 
     // Kolory Filamenta w panelu.
@@ -34,6 +35,7 @@ class Portals
         'adresowo' => 'warning',
         'stoprocent' => 'danger',
         'rzeszowskie' => 'primary',
+        'pierwsze_pietro' => 'info',
     ];
 
     /**

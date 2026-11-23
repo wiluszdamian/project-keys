@@ -103,6 +103,13 @@ Sprawdzone 2026-11-18. Głównie oferty bez pośredników.
 - Lista: miejscowość, ulica, cena, metraż, pokoje. Tytuł z adresu oferty. Rynek z kategorii.
 - Strona ogłoszenia: opis (`section.text .text-box p`), „Szczegóły” i „Pomieszczenia” (`ul.text__ul`), pinezka z `L.marker([lat, lng])`.
 
+## Pierwsze Piętro (1pietro.net)
+
+- Biuro z Rzeszowa, system Esti jak Rzeszowskie Nieruchomości, inny szablon. robots.txt nie ma (adres przekierowuje na stronę główną).
+- Kategorie: `/mieszkania/sprzedaz/`, `/mieszkania/wynajem/` (domy: `/domy/...`), strony `strona,N/`, 18 ofert na stronę, od najnowszych. Rynek tylko w formularzu (POST), więc czytamy go z opisu („rynek wtórny”).
+- Lista (`article.single-offer`): tytuł w `alt` zdjęcia, miejscowość, ulica, cena, metraż, pokoje.
+- Strona ogłoszenia: opis (`.lang-description .lang-text`), numer oferty, pinezka z `L.marker([lat, lng])`, piętro z opisu.
+
 ## Promień wokół miasta
 
 - Wyszukiwanie może mieć `radius_km`. Otodom (`distanceRadius`), OLX (`distance`), Domiporta (`Distance`) i Nieruchomości-online (pole odległości) dostają promień w adresie, zaokrąglony w górę do wartości portalu.

@@ -31,6 +31,7 @@ class DiscordMessages
         'adresowo' => 0xF39C12,
         'stoprocent' => 0xC0392B,
         'rzeszowskie' => 0x2C3E50,
+        'pierwsze_pietro' => 0x16A085,
     ];
 
     private const COLOR_GOOD = 0x2ECC71;
