@@ -28,6 +28,13 @@ class DealFinder
             return [];
         }
 
+        // Tania, ale słabo dopasowana oferta to nie okazja. Bez oceny (AI wyłączone albo jeszcze nie oceniona) liczymy.
+        $score = $listing->analyses()->max('score');
+
+        if ($score !== null && $score < (int) config('deals.min_score')) {
+            return [];
+        }
+
         return array_values(array_filter([
             $this->belowTransactions($listing),
             $this->priceDrop($listing),
@@ -119,7 +126,9 @@ class DealFinder
         $below = ($median - $value) / $median * 100;
 
         // Bardzo duża różnica to raczej błąd albo oszustwo (RiskDetector), nie okazja.
-        if ($below < (int) config('deals.below_market_percent') || $below >= 40) {
+        $threshold = (int) config($listing->deal_type === DealType::Rent ? 'deals.below_market_percent_rent' : 'deals.below_market_percent');
+
+        if ($below < $threshold || $below >= 40) {
             return null;
         }
 

@@ -158,8 +158,10 @@ class Settings extends Page
                                             ->helperText('Oferta tańsza niż transakcje lub rynek albo po dużej obniżce. Raz na ofertę.')
                                             ->inline(false),
                                         self::int('deals_below_transactions_percent', 'Okazja: taniej niż transakcje o', '%', 1, 50),
-                                        self::int('deals_below_market_percent', 'Okazja: taniej niż mediana ofert o', '%', 1, 50),
+                                        self::int('deals_below_market_percent', 'Okazja przy sprzedaży: taniej niż mediana ofert o', '%', 1, 50),
+                                        self::int('deals_below_market_percent_rent', 'Okazja przy wynajmie: taniej niż mediana o', '%', 1, 50),
                                         self::int('deals_price_drop_percent', 'Okazja: obniżka ceny o', '%', 1, 50),
+                                        self::int('deals_min_score', 'Okazja tylko z oceną AI od', '/ 10', 1, 10),
                                         Toggle::make('notify_weekly_report')
                                             ->label('Tygodniowy raport rynku')
                                             ->helperText('W każdą sobotę o 20:00, na Discordzie i w panelu (Raport rynku).')

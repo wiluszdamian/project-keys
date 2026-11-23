@@ -121,8 +121,8 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   historia cen i opis. Status (ulubiona, kontakt, oglądanie, odrzucona) i notatkę zmieniasz przyciskami
   na górze strony oferty albo ikoną przy ofercie w tabeli. Odrzucone znikają z listy i nie dają powiadomień.
 - **Okazje:** zakładka na liście ofert (i pozycja w menu). Okazja to oferta o co najmniej 10% tańsza
-  za m² niż transakcje z RCN w okolicy, o 15% tańsza za m² niż mediana ofert o podobnym metrażu w dzielnicy albo mieście, albo po
-  obniżce ceny o co najmniej 5%. Co godzinę `deals:refresh` przelicza okazje i wysyła nowe na Discorda
+  za m² niż transakcje z RCN w okolicy, o 15% tańsza za m² niż mediana ofert o podobnym metrażu w dzielnicy albo mieście (przy wynajmie
+  25%), albo po obniżce ceny o co najmniej 5%. Tylko oferty z oceną AI od 6/10. Co godzinę `deals:refresh` przelicza okazje i wysyła nowe na Discorda
   i do dzwoneczka (kilka naraz jako jedno podsumowanie). Progi w Ustawieniach.
 - **Nauka na decyzjach:** oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona, razem
   z notatkami, trafiają do oceny AI jako przykłady tego, czego szukasz. Przy odrzuceniu i dodaniu do

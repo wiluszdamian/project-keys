@@ -75,6 +75,8 @@ class AppSettings
         'notify_deals' => ['notify.deals', 'bool'],
         'deals_below_transactions_percent' => ['deals.below_transactions_percent', 'int'],
         'deals_price_drop_percent' => ['deals.price_drop_percent', 'int'],
+        'deals_below_market_percent_rent' => ['deals.below_market_percent_rent', 'int'],
+        'deals_min_score' => ['deals.min_score', 'int'],
         'deals_below_market_percent' => ['deals.below_market_percent', 'int'],
 
         'ai_enabled' => ['scoring.enabled', 'bool'],

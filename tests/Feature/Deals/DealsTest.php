@@ -3,6 +3,7 @@
 use App\Enums\ListingStatus;
 use App\Filament\Resources\Listings\Pages\ListListings;
 use App\Models\Listing;
+use App\Models\ListingAnalysis;
 use App\Models\ListingPriceChange;
 use App\Models\Search;
 use App\Models\User;
@@ -62,6 +63,18 @@ it('okazja: taniej za m² niż mediana ofert, ale nie podejrzanie tanio', functi
 
     expect(app(DealFinder::class)->reasons($cheap)[0]['text'])->toBe('20% taniej za m² niż podobne oferty (miasto Rzeszów, podobny metraż)')
         ->and(app(DealFinder::class)->reasons($suspicious))->toBe([]);
+});
+
+it('słabo oceniona oferta nie jest okazją, a przy wynajmie próg jest wyższy', function () {
+    $weak = dealListing(['transaction_comparison' => rcnBelow(-20)]);
+    ListingAnalysis::factory()->create(['listing_id' => $weak->id, 'search_id' => $this->search->id, 'score' => 4]);
+    Listing::factory()->count(12)->create(['deal_type' => 'rent', 'city' => 'Rzeszów', 'district' => null, 'price' => 3000, 'area' => 60, 'rent_extra' => null, 'last_seen_at' => now()]);
+    $rent20 = Listing::factory()->create(['deal_type' => 'rent', 'city' => 'Rzeszów', 'district' => null, 'price' => 2400, 'area' => 60, 'rent_extra' => null]);
+    $rent30 = Listing::factory()->create(['deal_type' => 'rent', 'city' => 'Rzeszów', 'district' => null, 'price' => 2100, 'area' => 60, 'rent_extra' => null]);
+
+    expect(app(DealFinder::class)->reasons($weak))->toBe([])
+        ->and(app(DealFinder::class)->reasons($rent20))->toBe([])
+        ->and(app(DealFinder::class)->reasons($rent30)[0]['type'])->toBe(DealFinder::BELOW_MARKET);
 });
 
 it('deals:refresh wysyła okazję raz, a kilka naraz jako jedno podsumowanie', function () {
