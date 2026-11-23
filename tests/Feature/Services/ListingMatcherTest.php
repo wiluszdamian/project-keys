@@ -46,6 +46,7 @@ it('sprawdza rynek, meble i wizualizacje', function (array $search, array $listi
     expect(app(ListingMatcher::class)->matches($search, listingData(array_merge(['dealType' => DealType::Sale, 'price' => 500000], $listing))))->toBe($expected);
 })->with([
     'rynek nieznany przechodzi' => [['market' => 'secondary'], [], true],
+    'najem w kategorii sprzedaży' => [[], ['price' => 2800], false],
     'rynek pierwotny odrzucony' => [['market' => 'secondary'], ['raw' => ['market' => 'primary']], false],
     'rynek wtórny z OLX' => [['market' => 'secondary'], ['portal' => 'olx', 'raw' => ['params' => [['key' => 'market', 'value' => ['key' => 'secondary']]]]], true],
     'Otodom w inwestycji dewelopera' => [['market' => 'secondary'], ['raw' => ['developmentId' => 123]], false],

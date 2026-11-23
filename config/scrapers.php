@@ -29,6 +29,9 @@ return [
         'rzeszowskie' => RzeszowskieNieruchomosciScraper::class,
     ],
 
+    // Niższa cena przy sprzedaży to ogłoszenie najmu w złej kategorii.
+    'min_sale_price' => 50_000,
+
     'interval_minutes' => (int) env('SCRAPE_INTERVAL_MINUTES', 20),
     'delay_ms' => (int) env('SCRAPER_DELAY_MS', 4000),
     // Losowy dodatek do przerwy między zapytaniami.

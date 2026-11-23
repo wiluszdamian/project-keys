@@ -19,6 +19,7 @@ class ListingMatcher
     public function matches(Search $search, ListingData $listing): bool
     {
         return $listing->dealType === $search->deal_type
+            && $this->plausiblePrice($search, $listing->price)
             && $this->inRange($listing->price, $search->price_min, $search->price_max)
             && $this->inRange($listing->area, $search->area_min, $search->area_max)
             && $this->inRange($listing->rooms, $search->rooms_min, $search->rooms_max)
@@ -32,6 +33,7 @@ class ListingMatcher
     public function matchesListing(Search $search, Listing $listing): bool
     {
         return $listing->deal_type === $search->deal_type
+            && $this->plausiblePrice($search, $listing->price)
             && $this->inRange($listing->price, $search->price_min, $search->price_max)
             && $this->inRange($listing->area !== null ? (float) $listing->area : null, $search->area_min, $search->area_max)
             && $this->inRange($listing->rooms, $search->rooms_min, $search->rooms_max)
@@ -64,6 +66,14 @@ class ListingMatcher
         }
 
         return ! ($search->exclude_visualizations && $features->visualizations);
+    }
+
+    /**
+     * Sprzedaż za kilka tysięcy złotych to najem albo pokój wrzucony do złej kategorii (zdarza się na Rzeszowiaku).
+     */
+    private function plausiblePrice(Search $search, ?int $price): bool
+    {
+        return $price === null || $search->deal_type->value !== 'sale' || $price >= config('scrapers.min_sale_price');
     }
 
     private function inRange(int|float|null $value, ?int $min, ?int $max): bool
