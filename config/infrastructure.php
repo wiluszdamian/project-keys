@@ -15,6 +15,10 @@ return [
     'shops' => 5,
     // Duże sieci: przy ofercie najbliższy sklep każdej z nich, potem inne supermarkety.
     'brands' => ['Biedronka', 'Lidl', 'Kaufland', 'Auchan', 'Carrefour', 'Dino', 'Netto', 'Stokrotka', 'Aldi', 'Intermarché', 'Polomarket', 'Spar'],
+    // Stałe miejsca przy każdej ofercie (adres szukany w OpenStreetMap), z czasem dojazdu autem.
+    'places' => [
+        'hospital' => ['name' => 'Szpital Miejski im. Jana Pawła II', 'address' => 'Rycerska 4, Rzeszów'],
+    ],
     // Średnia prędkość pieszo (km/h) do czasu dojścia z długości trasy.
     'walk_kmh' => 4.8,
 ];

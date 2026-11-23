@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
  */
 class Infrastructure
 {
-    public function __construct(private Router $router) {}
+    public function __construct(private Router $router, private Geocoder $geocoder) {}
 
     /**
      * Liczy i zapisuje. False, gdy oferta nie ma współrzędnych albo nie ma punktów w bazie.
@@ -31,13 +31,18 @@ class Infrastructure
             Poi::KINDERGARTEN => $this->nearest($listing, Poi::KINDERGARTEN, 1),
             Poi::PRIMARY => $this->nearest($listing, Poi::PRIMARY, 1),
             Poi::SECONDARY => $this->nearest($listing, Poi::SECONDARY, 1),
+            Poi::PEDIATRIC => $this->nearest($listing, Poi::PEDIATRIC, 1),
+            Poi::CLINIC => $this->nearest($listing, Poi::CLINIC, 1),
+            Poi::HOSPITAL => $this->places($listing),
         ];
 
         $all = collect($nearest)->flatten(1)->values();
-        $routes = $all->isEmpty() ? [] : ($this->router->table('bike', [[$listing->lat, $listing->lng]], $all->map(fn (array $poi) => [$poi['lat'], $poi['lng']])->all())[0] ?? []);
+        $points = $all->map(fn (array $poi) => [$poi['lat'], $poi['lng']])->all();
+        $routes = $all->isEmpty() ? [] : ($this->router->table('bike', [[$listing->lat, $listing->lng]], $points)[0] ?? []);
+        $carRoutes = $all->isEmpty() ? [] : ($this->router->table('car', [[$listing->lat, $listing->lng]], $points)[0] ?? []);
         $walkKmh = (float) config('infrastructure.walk_kmh');
 
-        $withRoutes = $all->map(function (array $poi, int $i) use ($routes, $walkKmh) {
+        $withRoutes = $all->map(function (array $poi, int $i) use ($routes, $carRoutes, $walkKmh) {
             $route = $routes[$i] ?? null;
             $km = isset($route['meters']) ? round($route['meters'] / 1000, 3) : round($poi['line_km'] * 1.3, 3);
 
@@ -48,6 +53,7 @@ class Infrastructure
                 'by_road' => $route !== null,
                 'walk_min' => (int) max(1, round($km / $walkKmh * 60)),
                 'bike_min' => $route['minutes'] ?? null,
+                'car_min' => $carRoutes[$i]['minutes'] ?? null,
             ];
         });
 
@@ -85,7 +91,7 @@ class Infrastructure
         foreach (Poi::LABELS as $category => $label) {
             $pois = $items[$category] ?? [];
             $lines[] = $label.': '.($pois === [] ? 'brak w promieniu '.config('infrastructure.search_km').' km' : collect($pois)
-                ->map(fn (array $poi) => $poi['name'].' '.self::km($poi['km']).' (pieszo '.$poi['walk_min'].' min)')
+                ->map(fn (array $poi) => $poi['name'].' '.self::km($poi['km']).($category === Poi::HOSPITAL && $poi['car_min'] ? ' (autem '.$poi['car_min'].' min)' : ' (pieszo '.$poi['walk_min'].' min)'))
                 ->implode(', '));
         }
 
@@ -95,6 +101,32 @@ class Infrastructure
     public static function km(float $km): string
     {
         return $km < 1 ? ((int) round($km * 1000, -1)).' m' : str_replace('.', ',', (string) round($km, 1)).' km';
+    }
+
+    /**
+     * Stałe miejsca z config (np. szpital przy Rycerskiej), położenie z OpenStreetMap (cache).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function places(Listing $listing): array
+    {
+        $places = [];
+
+        foreach (config('infrastructure.places', []) as $place) {
+            $point = $this->geocoder->geocode($place['address']);
+
+            if ($point !== null) {
+                $places[] = [
+                    'name' => $place['name'],
+                    'address' => $place['address'],
+                    'lat' => $point['lat'],
+                    'lng' => $point['lng'],
+                    'line_km' => SearchArea::distanceKm($listing->lat, $listing->lng, $point['lat'], $point['lng']),
+                ];
+            }
+        }
+
+        return $places;
     }
 
     /**

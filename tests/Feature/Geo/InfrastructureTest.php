@@ -26,6 +26,10 @@ it('dzieli punkty z OpenStreetMap na kategorie', function (array $tags, array $e
     'po tagu isced' => [['amenity' => 'school', 'name' => 'Szkoła', 'isced:level' => '3'], ['secondary']],
     'szkoła muzyczna pomijana' => [['amenity' => 'school', 'name' => 'Szkoła Muzyczna I stopnia'], []],
     'szkoła jazdy pomijana' => [['amenity' => 'school', 'name' => 'Szkoła Nauki Jazdy'], []],
+    'przychodnia z pediatrą po tagu' => [['amenity' => 'clinic', 'name' => 'Przychodnia Zdrowie', 'healthcare:speciality' => 'general;paediatrics'], ['pediatric', 'clinic']],
+    'poradnia dziecięca' => [['amenity' => 'doctors', 'name' => 'Poradnia Pediatryczna'], ['pediatric', 'clinic']],
+    'przychodnia POZ' => [['amenity' => 'clinic', 'name' => 'NZOZ Przychodnia Rodzinna'], ['clinic']],
+    'dentysta pomijany' => [['amenity' => 'clinic', 'name' => 'Gabinet Stomatologiczny'], []],
 ]);
 
 it('importuje punkty z Overpass dla obszaru wokół wyszukiwań', function () {
@@ -57,7 +61,12 @@ it('liczy najbliższe sklepy (po jednym z sieci), przedszkole i szkoły z trasą
     $poi('primary', 'Szkoła Podstawowa nr 1', 50.0430);
     $poi('secondary', 'Liceum', 50.2000); // poza promieniem 8 km
 
-    Http::fake(['osrm-bike:5000/*' => Http::response(['code' => 'Ok', 'durations' => [[60, 300, 120, 180]], 'distances' => [[150, 1300, 300, 400]]])]);
+    Sleep::fake();
+    Http::fake([
+        'osrm-bike:5000/*' => Http::response(['code' => 'Ok', 'durations' => [[60, 300, 120, 180, 900]], 'distances' => [[150, 1300, 300, 400, 4200]]]),
+        'osrm-car:5000/*' => Http::response(['code' => 'Ok', 'durations' => [[60, 120, 60, 60, 540]], 'distances' => [[300, 1500, 400, 500, 4500]]]),
+        'nominatim.openstreetmap.org/*' => Http::response([['lat' => '50.0300', 'lon' => '22.0300', 'display_name' => 'Rycerska 4, Rzeszów']]),
+    ]);
 
     expect(app(Infrastructure::class)->refresh($listing))->toBeTrue();
 
@@ -67,7 +76,9 @@ it('liczy najbliższe sklepy (po jednym z sieci), przedszkole i szkoły z trasą
         ->and($items['kindergarten'][0]['name'])->toBe('Przedszkole nr 5')
         ->and($items['secondary'])->toBe([])
         ->and($items['nursery'])->toBe([])
-        ->and(Infrastructure::lines($listing->fresh()))->toContain('Sklepy: Biedronka 150 m (pieszo 2 min), Lidl 1,3 km (pieszo 16 min)');
+        ->and($items['hospital'][0])->name->toBe('Szpital Miejski im. Jana Pawła II')->car_min->toBe(9)->km->toBe(4.2)
+        ->and(Infrastructure::lines($listing->fresh()))->toContain('Sklepy: Biedronka 150 m (pieszo 2 min), Lidl 1,3 km (pieszo 16 min)')
+        ->and(Infrastructure::lines($listing->fresh()))->toContain('Szpital: Szpital Miejski im. Jana Pawła II 4,2 km (autem 9 min)');
 });
 
 it('strona oferty pokazuje infrastrukturę i szczegóły z etykietami', function () {

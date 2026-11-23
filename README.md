@@ -149,7 +149,8 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
 - **Strona oferty:** etykiety (garaż lub miejsce postojowe i komórka lub piwnica: w cenie albo za dopłatą,
   ogrzewanie, rok budowy, winda, balkon), sekcja „Mieszkanie i budynek” (z danych portalu, a gdy ich brak,
   z opisu) i „Infrastruktura”: najbliższe sklepy (po jednym z każdej sieci: Biedronka, Lidl, Kaufland,
-  Auchan…), żłobek, przedszkole, szkoła podstawowa i średnia, z odległością drogą i czasem pieszo i rowerem.
+  Auchan…), żłobek, przedszkole, szkoła podstawowa i średnia, przychodnia z pediatrą, przychodnia POZ i
+  Szpital Miejski przy Rycerskiej, z odległością drogą i czasem pieszo, rowerem i autem.
   Punkty z OpenStreetMap pobiera `pois:import` raz w miesiącu, odległości liczy nasz OSRM. Okolica trafia
   też do oceny AI i do asystenta.
 - **Strona główna:** liczby i skróty (nowe oferty, okazje, moje oferty, wyszukiwania, mapa, kredyt,

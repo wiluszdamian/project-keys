@@ -25,7 +25,7 @@ class PoiImporter
     {
         $bbox = $this->bbox();
         $query = sprintf(
-            '[out:json][timeout:180];(nwr["shop"~"^(supermarket|hypermarket)$"](%1$s);nwr["amenity"~"^(kindergarten|childcare|school)$"](%1$s););out center tags;',
+            '[out:json][timeout:180];(nwr["shop"~"^(supermarket|hypermarket)$"](%1$s);nwr["amenity"~"^(kindergarten|childcare|school|clinic|doctors)$"](%1$s);nwr["healthcare"~"^(clinic|doctor|centre)$"](%1$s););out center tags;',
             implode(',', array_map(fn (float $value) => number_format($value, 4, '.', ''), $bbox)),
         );
 
@@ -131,6 +131,10 @@ class PoiImporter
             return $categories;
         }
 
+        if (in_array($amenity, ['clinic', 'doctors'], true) || in_array($tags['healthcare'] ?? null, ['clinic', 'doctor', 'centre'], true)) {
+            return $this->healthCategories($tags, $name, $amenity);
+        }
+
         if ($amenity !== 'school' || preg_match(self::SKIP_SCHOOL, $name) === 1) {
             return [];
         }
@@ -147,6 +151,28 @@ class PoiImporter
         }
 
         return $categories;
+    }
+
+    /**
+     * Przychodnia z pediatrą (tag healthcare:speciality=paediatrics albo pediatria w nazwie) albo zwykła przychodnia POZ.
+     * Gabinety jednej specjalności (dentysta, ginekolog) pomijamy.
+     *
+     * @return list<string>
+     */
+    private function healthCategories(array $tags, string $name, ?string $amenity): array
+    {
+        $speciality = mb_strtolower((string) ($tags['healthcare:speciality'] ?? ''));
+
+        if (str_contains($speciality, 'paediatric') || str_contains($speciality, 'pediatric') || preg_match('/pediatr|dzieci[eę]c|dla\s+dzieci/u', $name) === 1) {
+            return [Poi::PEDIATRIC, Poi::CLINIC];
+        }
+
+        $general = preg_match('/przychodni|nzoz|\bpoz\b|o[sś]rodek\s+zdrowia|centrum\s+medyczn|lekarz\w*\s+rodzinn|medycyny\s+rodzinnej|podstawowej\s+opieki/u', $name) === 1
+            || str_contains($speciality, 'general');
+
+        return $general || ($amenity === 'clinic' && $speciality === '' && preg_match('/stomatolog|dent|ortodon|rehabilit|weteryn|okulist|ginekolog|laborator/u', $name) !== 1)
+            ? [Poi::CLINIC]
+            : [];
     }
 
     private function address(array $tags): ?string

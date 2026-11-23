@@ -242,14 +242,14 @@ class ListingInfolist
                     ->icon('heroicon-o-shopping-cart')
                     ->columnSpanFull()
                     ->collapsible()
-                    ->description(fn (Listing $record) => 'Najbliższe sklepy, żłobek, przedszkole i szkoły (OpenStreetMap). Odległość drogą, czas pieszo i rowerem.'
+                    ->description(fn (Listing $record) => 'Najbliższe sklepy, żłobek, przedszkole, szkoły, przychodnie (OpenStreetMap) i szpital. Odległość drogą, czas pieszo, rowerem i autem. Przychodnia POZ zwykle ma pediatrę, ale OpenStreetMap tego nie potwierdza.'
                         .(in_array($record->geo_precision, ['district', 'city'], true) ? ' Położenie oferty jest przybliżone, więc odległości też.' : ''))
                     ->schema([
                         ViewEntry::make('infrastructureRows')
                             ->hiddenLabel()
                             ->state(fn (Listing $record) => self::infrastructureRows($record))
                             ->view('filament.listings.rows-table', ['columns' => [
-                                'category' => 'Co', 'name' => 'Najbliżej', 'address' => 'Adres', 'distance' => 'Odległość', 'walk' => 'Pieszo', 'bike' => 'Rowerem',
+                                'category' => 'Co', 'name' => 'Najbliżej', 'address' => 'Adres', 'distance' => 'Odległość', 'walk' => 'Pieszo', 'bike' => 'Rowerem', 'car' => 'Autem',
                             ]])
                             ->visible(fn (Listing $record) => filled($record->infrastructure)),
                         TextEntry::make('infrastructureMissing')
@@ -448,7 +448,7 @@ class ListingInfolist
             $pois = $listing->infrastructure['items'][$category] ?? [];
 
             if ($pois === []) {
-                $rows[] = ['category' => $label, 'name' => 'brak w promieniu '.config('infrastructure.search_km').' km', 'address' => '-', 'distance' => '-', 'walk' => '-', 'bike' => '-'];
+                $rows[] = ['category' => $label, 'name' => 'brak w promieniu '.config('infrastructure.search_km').' km', 'address' => '-', 'distance' => '-', 'walk' => '-', 'bike' => '-', 'car' => '-'];
 
                 continue;
             }
@@ -461,6 +461,7 @@ class ListingInfolist
                     'distance' => Infrastructure::km((float) $poi['km']).($poi['by_road'] ? '' : ' (w linii prostej)'),
                     'walk' => $poi['walk_min'].' min',
                     'bike' => $poi['bike_min'] ? $poi['bike_min'].' min' : '-',
+                    'car' => ($poi['car_min'] ?? null) ? $poi['car_min'].' min' : '-',
                 ];
             }
         }
