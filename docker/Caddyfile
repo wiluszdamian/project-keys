@@ -15,13 +15,9 @@
 }
 
 # Domena (np. przez proxy Cloudflare): HTTPS z certyfikatem Let's Encrypt, dostęp z każdego adresu.
-# Na wejściu hasło przeglądarki (basic auth), potem logowanie do panelu z 2FA.
-# Bez hasła są tylko /api (ma własne tokeny w nagłówku Authorization) i /up (sprawdzenie w deploy.sh).
+# Panel chroni logowanie (login + passkey), API tokeny Sanctum. Wyszukiwarki nie indeksują strony.
 {$CADDY_DOMAIN:http://localhost} {
-	@locked not path /api/* /up
-	basic_auth @locked {
-		{$PANEL_BASIC_AUTH_USER:panel} {$PANEL_BASIC_AUTH_HASH}
-	}
+	header X-Robots-Tag "noindex, nofollow"
 	import site
 }
 

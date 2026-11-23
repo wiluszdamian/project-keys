@@ -101,9 +101,6 @@ services:
       CADDY_DOMAIN: ${CADDY_DOMAIN:-http://localhost}
       # Adresy IP z dostępem do bloku :80 (spacja między adresami). Sieci prywatne zawsze: tunel SSH i ruch z serwera.
       PANEL_ALLOWED_IPS: ${PANEL_ALLOWED_IPS:-127.0.0.1}
-      # Hasło przeglądarki na domenie. Hash z: docker compose exec caddy caddy hash-password
-      PANEL_BASIC_AUTH_USER: ${PANEL_BASIC_AUTH_USER:-panel}
-      PANEL_BASIC_AUTH_HASH: ${PANEL_BASIC_AUTH_HASH:-}
     ports:
       # Bez domeny: 127.0.0.1:8080 (tylko tunel SSH) albo 0.0.0.0:80 (z internetu, tylko z PANEL_ALLOWED_IPS).
       - "${CADDY_HTTP_BIND:-127.0.0.1:8080}:80"
