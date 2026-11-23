@@ -2,7 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Resources\Listings\ListingResource;
+use App\Http\Middleware\RequirePasskey;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -21,6 +24,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use MarcelWeidum\Passkeys\PasskeysPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -31,8 +35,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('project-keys')
-            ->login()
-            ->profile()
+            // Login i passkey zamiast e-maila (Pages\Auth\Login), passkey wymagany (RequirePasskey).
+            ->login(Login::class)
+            ->profile(EditProfile::class)
+            ->plugin(PasskeysPlugin::make())
             // 2FA z aplikacji (Google Authenticator, Aegis, 1Password). Wymagane: bez niego panel pokazuje tylko konfigurację.
             ->multiFactorAuthentication([
                 AppAuthentication::make()
@@ -76,6 +82,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RequirePasskey::class,
             ]);
     }
 }

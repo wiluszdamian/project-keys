@@ -38,6 +38,7 @@ Wszystkie endpointy działają (fazy 2 i 5).
 
 Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 
+- `user:create {login} --admin`, `user:reset-passkeys {login}`, `user:reset-2fa {login}`
 - `search:create` (interaktywnie pyta o pola)
 - `search:list`
 - `search:run {id}`

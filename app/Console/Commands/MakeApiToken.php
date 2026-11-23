@@ -14,10 +14,10 @@ class MakeApiToken extends Command
 {
     public function handle(): int
     {
-        // Jeden użytkownik: właściciel. Hasło losowe, bo logujemy się tylko tokenem.
+        // Konto tylko do API: hasło losowe, logowanie tokenem. Nie jest administratorem, więc nie wejdzie do panelu.
         $user = User::firstOrCreate(
             ['email' => 'owner@localhost'],
-            ['name' => 'Właściciel', 'password' => Str::random(40)],
+            ['name' => 'Właściciel', 'username' => 'api', 'password' => Str::random(40), 'is_admin' => false],
         );
 
         $token = $user->createToken($this->argument('name'));

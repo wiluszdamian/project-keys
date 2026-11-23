@@ -33,13 +33,13 @@ it('logowanie z 2FA prosi o kod z aplikacji', function () {
 it('user:reset-2fa wyłącza 2FA dla konta', function () {
     $user = User::factory()->create(['app_authentication_recovery_codes' => ['a', 'b']]);
 
-    $this->artisan('user:reset-2fa', ['email' => $user->email])->assertSuccessful();
+    $this->artisan('user:reset-2fa', ['username' => $user->username])->assertSuccessful();
 
     $user->refresh();
     expect($user->app_authentication_secret)->toBeNull()
         ->and($user->app_authentication_recovery_codes)->toBeNull();
 
-    $this->artisan('user:reset-2fa', ['email' => 'nikt@example.com'])->assertFailed();
+    $this->artisan('user:reset-2fa', ['username' => 'nikt'])->assertFailed();
 });
 
 it('sekret 2FA jest zaszyfrowany w bazie', function () {

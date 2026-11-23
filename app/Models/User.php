@@ -16,13 +16,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'username', 'email', 'password', 'is_admin'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasPasskeys
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable;
+    use HasApiTokens, HasFactory, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, InteractsWithPasskeys, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -34,14 +36,33 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
     /**
-     * Panel jest prywatny: konta zakłada tylko właściciel (make:filament-user).
+     * Panel tylko dla administratorów. Konto API (token) nie wchodzi do panelu.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return $this->is_admin;
+    }
+
+    /**
+     * Passkey dla tego konta: nazwa konta w menedżerze haseł.
+     */
+    public function getPassKeyName(): string
+    {
+        return (string) ($this->username ?? $this->name);
+    }
+
+    public function getPassKeyId(): string
+    {
+        return (string) $this->getKey();
+    }
+
+    public function getPassKeyDisplayName(): string
+    {
+        return (string) ($this->name ?: $this->username);
     }
 }

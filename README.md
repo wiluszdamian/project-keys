@@ -109,6 +109,17 @@ repozytorium Dockera.
    docker compose exec app php artisan make:filament-user
    ```
 
+## Logowanie do panelu
+
+Najpierw hasło przeglądarki (Caddy), potem passkey: przycisk „Zaloguj passkey” (odcisk palca, Face ID
+albo klucz). Do panelu wchodzi tylko konto administratora. Konto bez passkey loguje się loginem, hasłem
+i kodem 2FA z aplikacji, a panel od razu kieruje je do profilu, żeby dodało passkey. Konto z passkey
+nie zaloguje się już hasłem. Polecenia przez SSH (`docker compose exec app php artisan ...`):
+
+- `user:create {login} --admin` zakłada konto administratora,
+- `user:reset-passkeys {login}` usuwa passkeys (np. po zgubieniu telefonu), potem logowanie hasłem i 2FA,
+- `user:reset-2fa {login}` wyłącza 2FA z aplikacji.
+
 ## Panel
 
 Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:

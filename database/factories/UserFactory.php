@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -26,6 +27,8 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'username' => fake()->unique()->userName(),
+            'is_admin' => true,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -33,6 +36,29 @@ class UserFactory extends Factory
             // Panel wymaga 2FA. Bez sekretu każde wejście kończy się na stronie konfiguracji.
             'app_authentication_secret' => 'JBSWY3DPEHPK3PXP',
         ];
+    }
+
+    /**
+     * Panel wymaga passkey: domyślnie konto ma jeden (bez prawdziwego klucza, wystarcza do testów panelu).
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(fn (User $user) => DB::table('passkeys')->insert([
+            'authenticatable_id' => $user->id,
+            'name' => 'test',
+            'credential_id' => Str::random(32),
+            'data' => '{}',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
+    }
+
+    /**
+     * Konto bez passkey (np. przed pierwszym logowaniem passkey).
+     */
+    public function withoutPasskey(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->passkeys()->delete());
     }
 
     /**
