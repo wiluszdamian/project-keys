@@ -53,7 +53,7 @@
             @if ($listing->risk_flags)
                 <x-filament::badge size="sm" color="danger">⚠ {{ count($listing->risk_flags) }}</x-filament::badge>
             @endif
-            <span>{{ Portals::label($listing->portal) }} · {{ $listing->first_seen_at?->diffForHumans(short: true) }}</span>
+            <span>{{ collect([$listing->portal, ...$listing->duplicates->pluck('portal')])->map(fn ($portal) => Portals::label($portal))->unique()->implode(', ') }} · {{ $listing->first_seen_at?->diffForHumans(short: true) }}</span>
         </div>
     </div>
 </div>

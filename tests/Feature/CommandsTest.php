@@ -1,9 +1,11 @@
 <?php
 
+use App\Jobs\AnalyzeListingJob;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\Search;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 
 it('tworzy token api', function () {
     $this->artisan('api:token', ['name' => 'laptop'])
@@ -83,4 +85,20 @@ it('search:refilter odłącza oferty, które nie pasują do nowych filtrów', fu
     $this->artisan('search:refilter', ['search' => [$search->id]])->assertSuccessful();
     expect($search->listings()->pluck('listings.id')->all())->toBe([$ok->id])
         ->and(ListingAnalysis::count())->toBe(0);
+});
+
+it('listings:score-missing zleca ocenę tylko aktywnym ofertom bez oceny', function () {
+    Queue::fake();
+    config(['ai.providers.opencode.key' => 'test-key']);
+    $search = Search::factory()->create();
+    $missing = Listing::factory()->create();
+    $scored = Listing::factory()->create();
+    $old = Listing::factory()->create(['last_seen_at' => now()->subDays(10)]);
+    $search->listings()->attach([$missing->id, $scored->id, $old->id], ['matched_at' => now()]);
+    ListingAnalysis::factory()->create(['search_id' => $search->id, 'listing_id' => $scored->id]);
+
+    $this->artisan('listings:score-missing')->expectsOutputToContain('Razem: 1.')->assertSuccessful();
+
+    Queue::assertPushed(AnalyzeListingJob::class, 1);
+    Queue::assertPushed(AnalyzeListingJob::class, fn ($job) => $job->listing->is($missing));
 });

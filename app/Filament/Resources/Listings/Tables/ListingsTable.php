@@ -57,7 +57,12 @@ class ListingsTable
                     ->lineClamp(2)
                     ->weight('medium')
                     ->extraAttributes(['class' => 'pk-col-title'])
-                    ->description(fn (Listing $record) => collect([$record->district ?: $record->city, $record->street, $record->first_seen_at?->diffForHumans(short: true)])->filter()->unique()->implode(' · '))
+                    ->description(fn (Listing $record) => collect([
+                        $record->district ?: $record->city,
+                        $record->street,
+                        $record->first_seen_at?->diffForHumans(short: true),
+                        $record->duplicates->isNotEmpty() ? 'też: '.$record->duplicates->map(fn (Listing $duplicate) => Portals::label($duplicate->portal))->unique()->implode(', ') : null,
+                    ])->filter()->unique()->implode(' · '))
                     ->visibleFrom(ListingCard::BREAKPOINT),
                 TextColumn::make('deal_type')
                     ->label('Rodzaj')

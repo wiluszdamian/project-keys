@@ -42,6 +42,7 @@ Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 - `search:list`
 - `search:run {id}`
 - `search:pause {id}`, `search:resume {id}`
+- `listings:score-missing` (ocena AI dla aktywnych ofert bez oceny, `--days=3`, `--dry-run`)
 - `deals:refresh` (przelicza okazje i wysyła powiadomienia o nowych, `--silent` bez wysyłki)
 - `search:refilter {id...}` (odłącza przypisane oferty, które nie pasują do obecnych filtrów)
 - `api:token {nazwa}`, `scraper:probe {portal} {id}`, `notify:test`, `ai:usage`, `alerts:check`, `search:dispatch-due` (uruchamia scheduler)

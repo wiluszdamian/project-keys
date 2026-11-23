@@ -25,6 +25,7 @@ class BestNewListings extends TableWidget
     {
         return $table
             ->query(fn () => Listing::query()
+                ->with('duplicates:id,duplicate_of_id,portal,url,price')
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost')
                 ->whereNull('duplicate_of_id')
