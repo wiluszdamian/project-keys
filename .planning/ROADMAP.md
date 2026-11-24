@@ -90,7 +90,7 @@ Gotowe gdy: wiadomość testowa dochodzi na oba kanały, nowa oferta z oceną po
 
 Status: do zrobienia
 
-- Backup i `restore.sh` z testem przywracania.
+- ✅ Backup i `restore.sh` z testem przywracania (2026-11-24). Zostało: kopia poza serwerem (R2, właściciel podepnie).
 - ✅ `scripts/deploy.sh` (2026-11-20): wdrożenie jedną komendą z laptopa.
 - ✅ Logi w panelu (2026-11-20): wspólny wolumen `logs`, strona Logi, nieudane zadania.
 - Przegląd logów i błędów po 24 h działania, poprawki.
@@ -125,5 +125,5 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - ✅ Okazje: oferty wyraźnie tańsze niż transakcje lub mediana za m², duże obniżki, zakładka i powiadomienia (2026-11-23).
 - ✅ Asystent z działaniami: statusy i notatki z czatu, kredyt, okazje, zarządzanie rozmowami (2026-11-23). Nowe wyszukiwania z czatu na razie nie.
 - ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).
-- Nadal otwarte z wcześniej: backup bazy (faza 8), Telegram.
+- Nadal otwarte z wcześniej: Telegram, kopia bazy w R2.
 
