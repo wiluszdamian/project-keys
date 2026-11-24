@@ -57,6 +57,13 @@ class AppSettings
         'discord_webhook_url' => ['notify.discord.webhook_url', 'secret'],
         'discord_webhook_url_rent' => ['notify.discord.webhook_url_rent', 'secret'],
         'discord_webhook_url_sale' => ['notify.discord.webhook_url_sale', 'secret'],
+        'discord_webhook_url_products' => ['notify.discord.webhook_url_products', 'secret'],
+
+        'products_check_every_hours' => ['products.check_every_hours', 'int'],
+        'products_notify' => ['products.notify', 'bool'],
+        'products_ai' => ['products.ai', 'bool'],
+        'products_search_every_days' => ['products.search.every_days', 'int'],
+        'brave_search_api_key' => ['products.search.brave_key', 'secret'],
 
         'rcn_enabled' => ['rcn.enabled', 'bool'],
         'rcn_counties' => ['rcn.counties', 'string'],

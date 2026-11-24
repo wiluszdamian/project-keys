@@ -204,6 +204,16 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   rata przy stałym i zmiennym oprocentowaniu, kwota kredytu, wkład, odsetki i limit ceny za m². BGK i
   POLSTR/WIBOR nie mają darmowego API, więc stawki ustawiasz w Ustawieniach (zakładka Kredyt). Stopa
   referencyjna NBP pobiera się sama i gdy się zmieni, strona prosi o aktualizację stawek.
+- **Monitor cen (Zakupy):** osobna sekcja do śledzenia cen rzeczy ze sklepów internetowych. Wklejasz
+  link do produktu (np. wózek z babyhit.pl), opcjonalnie cenę docelową i notatkę. Cena sprawdza się co
+  3 godziny (ustawienie produktu albo Ustawienia → Produkty). Strona produktu ma wykres ceny w każdym
+  sklepie, tabelę sklepów (cena, cena przed promocją, najniższa z 30 dni, dostępność, błędy odczytu) i
+  ocenę AI: kupuj, cena w porządku albo poczekaj, z powodami. Powiadomienia na Discordzie i w dzwoneczku:
+  obniżka (od ustawionego procentu), cena docelowa, znowu dostępny lub wyprzedany, tańszy inny sklep.
+  Cenę odczytujemy z danych strony, a gdy sklep jej nie podaje, z treści strony przez AI. „Szukaj w
+  innych sklepach” używa Brave Search API (klucz w Ustawieniach → Produkty) i AI, które sprawdza, czy to
+  ten sam model, kolor i zestaw. Link z innego sklepu możesz też dodać ręcznie. Allegro i Ceneo
+  blokują roboty, więc ich nie sprawdzamy. API: `/api/products` (opis w `.planning/API.md`).
 - **Logi:** wpisy z logów aplikacji, workerów i schedulera z filtrem poziomu i wyszukiwaniem, pobranie
   pliku i lista nieudanych zadań kolejki.
 - **Dzwoneczek:** nowe dobre oferty, obniżki cen, raport rynku i alerty pojawiają się w panelu od razu,

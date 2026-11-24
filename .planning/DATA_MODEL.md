@@ -103,3 +103,28 @@ listing_id, old_price, new_price, changed_at.
 search_id, portal, started_at, finished_at, status (running, ok, blocked, error), pages_fetched, found_count, new_count, error_message.
 
 Służy do diagnozy i do wykrywania blokad (kilka `blocked` z rzędu = wstrzymaj portal i wyślij alert).
+
+## products (monitor cen, od 2026-11-24)
+
+Produkt, który osoba chce kupić. Oferty w sklepach w `product_offers`.
+
+| Pole | Typ | Uwagi |
+|---|---|---|
+| name, image_url, brand | | ze strony głównego sklepu, nazwę można zmienić |
+| gtin, mpn | string nullable | EAN i kod producenta ze strony, pomagają znaleźć produkt w innych sklepach |
+| target_price | decimal nullable | cena docelowa: powiadomienie, gdy najlepsza cena do niej spadnie |
+| notify_drops, min_drop_percent, notify_rises, notify_stock | | co wysyłać (obniżki od X%, podwyżki, dostępność) |
+| check_every_hours | smallint nullable | null = `PRODUCTS_CHECK_EVERY_HOURS` (3) |
+| is_active | bool | czy sprawdzać |
+| best_price, best_offer_id | | najtańsza dostępna oferta w PLN |
+| initial_price, lowest_price (+ lowest_price_at), highest_price | decimal | historia najlepszej ceny |
+| last_checked_at, offers_searched_at | timestamp | ostatnie sprawdzenie i szukanie w innych sklepach |
+| ai_advice, ai_advice_at | jsonb | ocena AI: `verdict` (buy, good, wait), `score` 1-10, `summary`, `reasons`, `tips`, `price` |
+
+## product_offers
+
+product_id, url (bez parametrów śledzących), url_key (sha1, unique z product_id), shop (domena), title, price, regular_price (przed promocją), lowest_30d_price (Omnibus), currency, available (null = nie wiadomo), source (`manual` albo `search`), is_primary, is_active, extracted_by (`json-ld`, `meta`, `microdata`, `shop`, `text`, `ai`), match_note (dlaczego AI uznało ofertę za ten sam produkt), last_checked_at, last_error, failures.
+
+## product_prices
+
+product_offer_id, price, available, checked_at. Tylko pierwszy odczyt i zmiany ceny albo dostępności.

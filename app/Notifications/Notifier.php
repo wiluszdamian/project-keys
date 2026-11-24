@@ -6,6 +6,7 @@ use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\MarketReport;
+use App\Models\Product;
 use App\Models\Search;
 use App\Notifications\Discord\DiscordMessages;
 use App\Notifications\Discord\DiscordWebhook;
@@ -108,6 +109,29 @@ class Notifier
         }
 
         return true;
+    }
+
+    /**
+     * Monitor cen: Discord (webhook produktów albo główny) i dzwoneczek w panelu.
+     *
+     * @param  list<array{type: string, text: string}>  $events
+     */
+    public function productEvents(Product $product, array $events): void
+    {
+        if ($events === [] || ! config('products.notify')) {
+            return;
+        }
+
+        $product->loadMissing('offers');
+        app(PanelNotifier::class)->productEvents($product, $events);
+
+        if ($this->discord->isConfigured('products')) {
+            try {
+                $this->discord->send($this->messages->productEvents($product, $events), 'products');
+            } catch (\Throwable $exception) {
+                Log::warning("Monitor cen: Discord nie przyjął wiadomości o produkcie #{$product->id}: {$exception->getMessage()}");
+            }
+        }
     }
 
     public function test(string $channel): void

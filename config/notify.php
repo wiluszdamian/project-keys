@@ -38,6 +38,8 @@ return [
         'webhook_url' => env('DISCORD_WEBHOOK_URL'),
         'webhook_url_rent' => env('DISCORD_WEBHOOK_URL_RENT'),
         'webhook_url_sale' => env('DISCORD_WEBHOOK_URL_SALE'),
+        // Monitor cen produktów. Bez niego wiadomości idą na główny webhook.
+        'webhook_url_products' => env('DISCORD_WEBHOOK_URL_PRODUCTS'),
         'username' => env('DISCORD_USERNAME', 'Mieszkania'),
         // Przerwa między wiadomościami do tego samego webhooka.
         'delay_ms' => 1500,

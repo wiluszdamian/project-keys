@@ -125,5 +125,6 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 - ✅ Okazje: oferty wyraźnie tańsze niż transakcje lub mediana za m², duże obniżki, zakładka i powiadomienia (2026-11-23).
 - ✅ Asystent z działaniami: statusy i notatki z czatu, kredyt, okazje, zarządzanie rozmowami (2026-11-23). Nowe wyszukiwania z czatu na razie nie.
 - ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).
+- ✅ Monitor cen produktów ze sklepów: historia, cena docelowa, dostępność, szukanie w innych sklepach, ocena AI, Discord, panel i API (2026-11-24).
 - Nadal otwarte z wcześniej: Telegram, kopia bazy w R2.
 

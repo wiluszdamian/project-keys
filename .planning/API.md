@@ -57,6 +57,26 @@ Zdjęte oferty (od 2026-11-24): `inactive_at` (od kiedy nie ma ogłoszenia na po
 
 Okazje (od 2026-11-23): oferta w `GET /listings/{id}` i na listach ma `deal_reasons` (lista `{type, text}`, typy `below_transactions`, `price_drop`, `below_market`) i `deal_at`, gdy jest okazją.
 
+## Monitor cen produktów (od 2026-11-24)
+
+| Metoda | Ścieżka | Opis |
+|---|---|---|
+| GET | /products | produkty ze sklepami (`?active=1` tylko śledzone) |
+| POST | /products | `url` (wymagany) i opcjonalnie `target_price`, `notify_drops`, `min_drop_percent`, `notify_rises`, `notify_stock`, `check_every_hours` (1 do 168), `is_active`, `note`. Od razu sprawdza cenę i nazwę (201). Ten sam link drugi raz: 422 |
+| GET | /products/{id} | produkt: `best_price`, `best_offer_id`, `initial_price`, `lowest_price`, `highest_price`, `change_percent`, `target_reached`, `ai_advice`, `offers` |
+| PATCH | /products/{id} | zmiana ustawień (te same pola co przy dodaniu i `name`) |
+| DELETE | /products/{id} | usunięcie z historią |
+| POST | /products/{id}/check | sprawdza ceny od razu, zwraca produkt i `events` (`drop`, `rise`, `target`, `back_in_stock`, `out_of_stock`) |
+| GET | /products/{id}/prices | historia: `offer_id`, `shop`, `price`, `available`, `checked_at` (tylko zmiany) |
+| POST | /products/{id}/offers | `url`: ten sam produkt w innym sklepie (201) |
+| DELETE | /products/{id}/offers/{offer} | usuwa sklep |
+| POST | /products/{id}/find-offers | szukanie w innych sklepach w tle (202), wynik w panelu. Bez klucza Brave 422 |
+| POST | /products/{id}/advice | ocena ceny przez AI w tle (202) |
+
+Oferta (`offers`): `id`, `url`, `shop`, `title`, `price`, `regular_price`, `lowest_30d_price`, `currency`, `available`, `source` (`manual`, `search`), `is_primary`, `is_active`, `extracted_by`, `match_note`, `last_error`, `failures`, `last_checked_at`.
+
+Komendy: `products:check` (co 10 minut produkty, które czekają; `--id=` wybrane, `--sync` od razu z wynikiem), `products:find-offers {id}` (od razu) albo `--due` (codziennie o 11:00, co `PRODUCTS_SEARCH_EVERY_DAYS` dni).
+
 ## Ceny transakcyjne (od 2026-11-20)
 
 Oferta (`GET /listings/{id}` i listy ofert) ma pole `transaction_comparison` (tylko sprzedaż, inaczej `null`):

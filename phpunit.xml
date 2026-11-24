@@ -44,6 +44,9 @@
         <env force="true" name="BACKUP_EXPECTED" value="false"/>
         <env force="true" name="BACKUP_STATUS_PATH" value=""/>
         <env force="true" name="SESSION_DRIVER" value="array"/>
+        <env name="PRODUCTS_BLOCK_PRIVATE_HOSTS" value="false"/>
+        <env name="BRAVE_SEARCH_API_KEY" value=""/>
+        <env name="DISCORD_WEBHOOK_URL_PRODUCTS" value=""/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

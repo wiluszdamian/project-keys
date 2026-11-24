@@ -35,3 +35,10 @@ Schedule::command('pois:import')->monthlyOn(1, '03:30')->withoutOverlapping()->r
 
 // Alert, gdy od 3 godzin nie ma udanego przebiegu.
 Schedule::command('alerts:check')->hourly();
+
+// Monitor cen: produkty, które czekają na sprawdzenie (co ile godzin: ustawienie produktu albo PRODUCTS_CHECK_EVERY_HOURS).
+Schedule::command('products:check')->everyTenMinutes()->withoutOverlapping()->when(fn () => (bool) config('products.enabled'));
+
+// Monitor cen: szukanie produktów w innych sklepach (Brave Search + AI), codziennie o 11:00 dla tych, których dawno nie szukaliśmy.
+Schedule::command('products:find-offers --due')->dailyAt('11:00')->withoutOverlapping()
+    ->when(fn () => config('products.enabled') && filled(config('products.search.brave_key')) && config('products.search.every_days') > 0);

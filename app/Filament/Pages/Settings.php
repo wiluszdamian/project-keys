@@ -191,6 +191,30 @@ class Settings extends Page
                                     ]),
                             ]),
 
+                        Tab::make('Produkty')
+                            ->icon(Heroicon::OutlinedShoppingBag)
+                            ->schema([
+                                Section::make('Monitor cen')
+                                    ->description('Sprawdzanie cen produktów z sekcji Zakupy → Monitor cen.')
+                                    ->columns(2)
+                                    ->schema([
+                                        self::int('products_check_every_hours', 'Sprawdzaj ceny co', 'h', 1, 168),
+                                        self::int('products_search_every_days', 'Szukaj w innych sklepach co (0 = tylko ręcznie)', 'dni', 0, 60),
+                                        Toggle::make('products_notify')
+                                            ->label('Powiadomienia o cenach')
+                                            ->helperText('Obniżki, cena docelowa, dostępność, tańszy sklep. Discord i dzwoneczek w panelu.')
+                                            ->inline(false),
+                                        Toggle::make('products_ai')
+                                            ->label('AI w monitorze cen')
+                                            ->helperText('Odczyt ceny, gdy sklep jej nie podaje w danych strony, porównanie ofert z innych sklepów i ocena ceny. Używa modelu z zakładki AI.')
+                                            ->inline(false),
+                                        self::secret('brave_search_api_key', 'Klucz Brave Search API')
+                                            ->helperText('Do szukania produktu w innych sklepach. Klucz z api-dashboard.search.brave.com (plan Search, około 1000 zapytań miesięcznie w darmowym kredycie).'),
+                                        self::secret('discord_webhook_url_products', 'Webhook Discorda dla monitora cen')
+                                            ->helperText('Puste = główny webhook.'),
+                                    ]),
+                            ]),
+
                         Tab::make('AI')
                             ->icon(Heroicon::OutlinedSparkles)
                             ->schema([

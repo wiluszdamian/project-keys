@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\MarketReport;
+use App\Models\Product;
 use App\Models\Search;
 use App\Models\User;
 use App\Services\DealFinder;
@@ -185,6 +186,56 @@ class PanelNotifier
     /**
      * Zapis od razu (notifyNow). Domyślnie Filament kolejkuje to w "default", a ta kolejka czeka za pobieraniem portali.
      */
+    /**
+     * @param  list<array{type: string, text: string}>  $events
+     */
+    public function productEvents(Product $product, array $events): void
+    {
+        $types = array_column($events, 'type');
+        $good = array_intersect($types, ['drop', 'target', 'back_in_stock', 'cheaper_elsewhere']) !== [];
+
+        $this->send(
+            Notification::make()
+                ->title((in_array('target', $types, true) ? 'Cena docelowa: ' : ($good ? 'Taniej: ' : 'Zmiana: ')).Str::limit($product->name, 60))
+                ->body(collect($events)->pluck('text')->implode(' '))
+                ->icon($good ? 'heroicon-o-arrow-trending-down' : 'heroicon-o-shopping-bag')
+                ->iconColor($good ? 'success' : 'warning')
+                ->actions([
+                    Action::make('open')->label('Zobacz produkt')->url(route('filament.admin.resources.products.view', $product))->markAsRead(),
+                ]),
+        );
+    }
+
+    /**
+     * @param  array{candidates: int, added: int, rejected: int, errors: int}  $result
+     */
+    public function productSearch(Product $product, array $result): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Szukanie w innych sklepach: '.Str::limit($product->name, 50))
+                ->body($result['candidates'] === 0
+                    ? 'Wyszukiwarka nie znalazła nowych sklepów.'
+                    : "Sprawdzone strony: {$result['candidates']}. Ten sam produkt: {$result['added']}. Inne lub nie do odczytania: ".($result['rejected'] + $result['errors']).'.')
+                ->icon('heroicon-o-magnifying-glass')
+                ->iconColor($result['added'] > 0 ? 'success' : 'gray')
+                ->actions([
+                    Action::make('open')->label('Zobacz produkt')->url(route('filament.admin.resources.products.view', $product))->markAsRead(),
+                ]),
+        );
+    }
+
+    public function productSearchFailed(Product $product, string $message): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Szukanie w innych sklepach nie wyszło: '.Str::limit($product->name, 40))
+                ->body(Str::limit($message, 300))
+                ->icon('heroicon-o-exclamation-triangle')
+                ->iconColor('danger'),
+        );
+    }
+
     private function send(Notification $notification): void
     {
         foreach (User::all() as $user) {

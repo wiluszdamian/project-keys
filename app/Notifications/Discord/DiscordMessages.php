@@ -3,13 +3,17 @@
 namespace App\Notifications\Discord;
 
 use App\Enums\DealType;
+use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\MarketReport;
+use App\Models\Product;
+use App\Models\ProductOffer;
 use App\Models\Search;
 use App\Services\DealFinder;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
+use App\Services\Products\ProductAdvisor;
 use App\Services\Rcn\TransactionComparator;
 use App\Services\TimeOnMarket;
 use App\Support\Portals;
@@ -327,6 +331,49 @@ class DiscordMessages
             'footer' => ['text' => 'Oferty widziane przez nasze wyszukiwania w ostatnich 7 dniach, bez duplikatów.'],
             'timestamp' => now()->toIso8601String(),
         ]]];
+    }
+
+    /**
+     * Monitor cen: zmiany ceny lub dostępności jednego produktu.
+     *
+     * @param  list<array{type: string, text: string}>  $events
+     */
+    public function productEvents(Product $product, array $events): array
+    {
+        $types = array_column($events, 'type');
+        [$icon, $color] = match (true) {
+            in_array('target', $types, true) => ['🎯 Cena docelowa', self::COLOR_GOOD],
+            in_array('drop', $types, true), in_array('cheaper_elsewhere', $types, true) => ['📉 Taniej', self::COLOR_GOOD],
+            in_array('back_in_stock', $types, true) => ['✅ Znowu dostępny', self::COLOR_GOOD],
+            in_array('rise', $types, true) => ['📈 Drożej', self::COLOR_OK],
+            default => ['📦 Zmiana', self::COLOR_WEAK],
+        };
+        $best = $product->offers->firstWhere('id', $product->best_offer_id);
+        $advice = $product->ai_advice;
+        $fields = array_values(array_filter([
+            ['name' => '💰 Najlepsza cena', 'value' => $product->best_price !== null ? Format::pln($product->best_price).($best ? "\n{$best->shop}" : '') : 'niedostępny', 'inline' => true],
+            $product->lowest_price !== null ? ['name' => '⬇️ Najniższa', 'value' => Format::pln($product->lowest_price).($product->lowest_price_at ? "\n".$product->lowest_price_at->format('d.m.Y') : ''), 'inline' => true] : null,
+            $product->target_price !== null ? ['name' => '🎯 Cel', 'value' => Format::pln($product->target_price), 'inline' => true] : null,
+            $advice ? ['name' => '🤖 AI: '.(ProductAdvisor::VERDICTS[$advice['verdict']] ?? $advice['verdict'])." ({$advice['score']}/10)", 'value' => Str::limit((string) $advice['summary'], 1000) ?: '-', 'inline' => false] : null,
+            $product->offers->where('is_active', true)->count() > 1 ? ['name' => '🏪 Sklepy', 'value' => Str::limit($product->offers->where('is_active', true)->sortBy(fn (ProductOffer $offer) => $offer->isBuyable() ? $offer->price : PHP_INT_MAX)->take(6)
+                ->map(fn (ProductOffer $offer) => "[{$offer->shop}]({$offer->url}): ".($offer->available === false ? 'niedostępny' : (Format::pln($offer->price) ?? '?')))->implode("\n"), 1000), 'inline' => false] : null,
+        ]));
+
+        $embed = [
+            'author' => ['name' => "{$icon} · Monitor cen"],
+            'title' => Str::limit($product->name, 250),
+            'url' => $best?->url ?? $product->primaryOffer()?->url,
+            'description' => Str::limit(collect($events)->pluck('text')->implode("\n"), 4000),
+            'color' => $color,
+            'fields' => $fields,
+            'timestamp' => now()->toIso8601String(),
+        ];
+
+        if ($product->image_url) {
+            $embed['thumbnail'] = ['url' => $product->image_url];
+        }
+
+        return ['embeds' => [$embed]];
     }
 
     public function test(): array

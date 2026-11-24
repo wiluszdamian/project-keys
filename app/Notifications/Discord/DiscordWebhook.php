@@ -16,28 +16,29 @@ class DiscordWebhook
 {
     private const ATTEMPTS = 4;
 
-    public function isConfigured(?DealType $dealType = null): bool
+    public function isConfigured(DealType|string|null $channel = null): bool
     {
-        return $this->urlFor($dealType) !== null;
+        return $this->urlFor($channel) !== null;
     }
 
     /**
-     * Osobny webhook dla wynajmu lub sprzedaży, a gdy go nie ma, główny.
+     * Osobny webhook dla wynajmu, sprzedaży albo monitora cen ('products'), a gdy go nie ma, główny.
      */
-    public function urlFor(?DealType $dealType = null): ?string
+    public function urlFor(DealType|string|null $channel = null): ?string
     {
-        $specific = match ($dealType) {
+        $specific = match ($channel) {
             DealType::Rent => config('notify.discord.webhook_url_rent'),
             DealType::Sale => config('notify.discord.webhook_url_sale'),
-            null => null,
+            'products' => config('notify.discord.webhook_url_products'),
+            default => null,
         };
 
         return ($specific ?: config('notify.discord.webhook_url')) ?: null;
     }
 
-    public function send(array $payload, ?DealType $dealType = null): void
+    public function send(array $payload, DealType|string|null $channel = null): void
     {
-        $url = $this->urlFor($dealType) ?? throw new RuntimeException('Brak DISCORD_WEBHOOK_URL w .env.');
+        $url = $this->urlFor($channel) ?? throw new RuntimeException('Brak DISCORD_WEBHOOK_URL w .env.');
         $key = 'discord:'.sha1($url);
         $payload = ['username' => config('notify.discord.username')] + $payload;
 
