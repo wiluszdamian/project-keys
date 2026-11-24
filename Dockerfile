@@ -35,3 +35,14 @@ CMD ["php-fpm"]
 FROM caddy:2 AS web
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY --from=app /var/www/html/public /var/www/html/public
+
+# Kopia bazy: pg_dump w wersji serwera, rclone do kopii poza serwerem (R2), jq do status.json.
+# Skrypty w docker/backup, opis w README (Kopia bazy).
+FROM postgres:17 AS backup
+RUN apt-get update && apt-get install -y --no-install-recommends rclone jq ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
+COPY docker/backup/lib.sh /usr/local/lib/backup/lib.sh
+COPY --chmod=755 docker/backup/backup-* /usr/local/bin/
+ENV TZ=Europe/Warsaw
+ENTRYPOINT []
+CMD ["backup-loop"]

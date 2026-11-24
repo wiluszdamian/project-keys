@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Zapisuje kopię ze stdin do /backups/manual (np. plik z laptopa) i sprawdza, czy to poprawny pg_dump.
+# Wypisuje ścieżkę względem /backups. Użycie: backup-receive < plik.dump
+source /usr/local/lib/backup/lib.sh
+
+mkdir -p "${BACKUP_DIR}/manual"
+NAME="manual/pk-$(date +%Y%m%d-%H%M%S)-wgrana.dump"
+TARGET="${BACKUP_DIR}/${NAME}"
+
+cat > "${TARGET}.tmp"
+if ! pg_restore --list "${TARGET}.tmp" > /dev/null 2>&1; then
+    rm -f "${TARGET}.tmp"
+    echo "To nie jest poprawna kopia z pg_dump -Fc." >&2
+    exit 1
+fi
+
+chmod 644 "${TARGET}.tmp"
+mv "${TARGET}.tmp" "$TARGET"
+printf '%s\n' "$NAME"

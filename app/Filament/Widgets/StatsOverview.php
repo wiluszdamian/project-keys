@@ -7,6 +7,7 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\ScrapeRun;
 use App\Models\Search;
+use App\Services\BackupStatus;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
@@ -19,11 +20,11 @@ class StatsOverview extends StatsOverviewWidget
     protected ?string $pollingInterval = '60s';
 
     /**
-     * Na telefonie dwa kafelki w rzędzie zamiast pięciu wysokich kart jedna pod drugą.
+     * Na telefonie dwa kafelki w rzędzie zamiast sześciu wysokich kart jedna pod drugą.
      */
     protected function getColumns(): int|array|null
     {
-        return ['default' => 2, 'md' => 3, 'xl' => 5];
+        return ['default' => 2, 'md' => 3, 'xl' => 6];
     }
 
     protected function getStats(): array
@@ -60,6 +61,34 @@ class StatsOverview extends StatsOverviewWidget
             Stat::make('AI dzisiaj', $tokens->calls.' ocen')
                 ->description(Number::format((int) $tokens->input, locale: 'pl').' wej. / '.Number::format((int) $tokens->output, locale: 'pl').' wyj. tokenów'),
             Stat::make('Aktywne wyszukiwania', Search::active()->count().' z '.Search::count()),
+            $this->backupStat(),
         ];
+    }
+
+    /**
+     * Kopia bazy z kontenera backup: kiedy ostatnia, rozmiar, test przywracania. Czerwony, gdy coś jest nie tak.
+     */
+    private function backupStat(): Stat
+    {
+        $backup = app(BackupStatus::class);
+        $problems = $backup->problems();
+        $lastOk = $backup->lastOkAt();
+        $tested = $backup->restoreTestOkAt();
+
+        $description = match (true) {
+            $problems !== [] => $problems[0],
+            ! $backup->exists() => 'kopie wyłączone na tym serwerze',
+            $lastOk === null => 'pierwsza kopia za chwilę',
+            default => implode(', ', array_filter([
+                $backup->size(),
+                $tested ? 'test przywracania '.$tested->timezone(config('app.timezone'))->format('d.m') : 'bez testu przywracania',
+                $backup->remoteEnabled() ? 'kopia w R2' : null,
+            ])),
+        };
+
+        return Stat::make('Kopia bazy', $lastOk ? $lastOk->diffForHumans(short: true) : 'brak')
+            ->description($description)
+            ->descriptionColor($problems !== [] ? 'danger' : ($lastOk ? 'success' : 'gray'))
+            ->color($problems !== [] ? 'danger' : null);
     }
 }

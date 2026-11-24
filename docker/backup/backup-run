@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Kopia bazy: pg_dump -Fc, sprawdzenie pliku, rotacja, opcjonalnie wysyłka do R2.
+# Użycie: backup-run daily|manual [etykieta]
+#   daily   kopia z harmonogramu: daily/ (+ weekly/ w niedzielę, monthly/ 1. dnia miesiąca)
+#   manual  kopia na żądanie: manual/, np. przed przywróceniem (etykieta trafia do nazwy pliku)
+source /usr/local/lib/backup/lib.sh
+
+KIND="${1:-manual}"
+LABEL="${2:-}"
+if [ "$KIND" != daily ] && [ "$KIND" != manual ]; then
+    echo "Nieznany rodzaj kopii: $KIND" >&2
+    exit 1
+fi
+
+# Jedna kopia naraz (harmonogram i ręczna).
+exec 9>/tmp/backup.lock
+flock -w 900 9
+
+mkdir -p "$BACKUP_DIR"/daily "$BACKUP_DIR"/weekly "$BACKUP_DIR"/monthly "$BACKUP_DIR"/manual
+NAME="pk-$(date +%Y%m%d-%H%M%S)${LABEL:+-$LABEL}.dump"
+TARGET="${BACKUP_DIR}/${KIND}/${NAME}"
+
+fail() {
+    log "Kopia nie wyszła: $1"
+    rm -f "${TARGET}.tmp"
+    status_set last_error "$1" last_error_at "$(now_iso)"
+    exit 1
+}
+
+log "Kopia ${KIND}: ${NAME}"
+pg_dump -Fc --no-password -f "${TARGET}.tmp" 2>/tmp/pg_dump.err || fail "pg_dump: $(tail -c 500 /tmp/pg_dump.err)"
+pg_restore --list "${TARGET}.tmp" > /dev/null 2>/tmp/pg_restore.err || fail "plik kopii jest uszkodzony: $(tail -c 500 /tmp/pg_restore.err)"
+chmod 644 "${TARGET}.tmp"
+mv "${TARGET}.tmp" "$TARGET"
+
+SIZE="$(stat -c %s "$TARGET")"
+status_set last_ok_at "$(now_iso)" last_file "${KIND}/${NAME}" size_bytes "$SIZE" last_error null last_error_at null
+log "Gotowe: ${KIND}/${NAME} (${SIZE} B)"
+
+if [ "$KIND" = daily ]; then
+    # Twarde linki: kopia tygodniowa i miesięczna nie zajmują drugi raz miejsca na dysku.
+    if [ "$(date +%u)" = 7 ]; then ln -f "$TARGET" "${BACKUP_DIR}/weekly/${NAME}"; fi
+    if [ "$(date +%d)" = 01 ]; then ln -f "$TARGET" "${BACKUP_DIR}/monthly/${NAME}"; fi
+    rotate "${BACKUP_DIR}/daily" "${BACKUP_KEEP_DAILY:-7}"
+    rotate "${BACKUP_DIR}/weekly" "${BACKUP_KEEP_WEEKLY:-4}"
+    rotate "${BACKUP_DIR}/monthly" "${BACKUP_KEEP_MONTHLY:-6}"
+else
+    rotate "${BACKUP_DIR}/manual" "${BACKUP_KEEP_MANUAL:-5}"
+fi
+
+if remote_enabled; then
+    export_rclone_config
+    log "Wysyłam kopie do $(remote_path)"
+    if rclone copy "$BACKUP_DIR" "$(remote_path)" --include '*.dump' --log-level ERROR 2>/tmp/rclone.err \
+        && rclone delete "$(remote_path)" --min-age "${BACKUP_R2_KEEP_DAYS:-200}d" --log-level ERROR 2>>/tmp/rclone.err; then
+        status_set remote_enabled true remote_ok_at "$(now_iso)" remote_error null
+        log "Wysłane do R2."
+    else
+        status_set remote_enabled true remote_error "rclone: $(tail -c 500 /tmp/rclone.err)"
+        log "Wysyłka do R2 nie wyszła: $(tail -c 500 /tmp/rclone.err)"
+    fi
+else
+    status_set remote_enabled false remote_error null
+fi

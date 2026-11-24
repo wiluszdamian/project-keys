@@ -10,6 +10,8 @@ x-app: &app
   # Logi Laravela wspólne dla app, workerów i schedulera (strona Logi w panelu).
   volumes:
     - logs:/var/www/html/storage/logs
+    # Stan kopii bazy (status.json) dla panelu i alertów, tylko do odczytu.
+    - backups:/backups:ro
   depends_on:
     postgres:
       condition: service_healthy
@@ -74,6 +76,36 @@ services:
       retries: 10
     logging: *logging
 
+  # Kopia bazy: codziennie pg_dump do wolumenu backups, raz w tygodniu test przywracania,
+  # opcjonalnie kopia do Cloudflare R2. Skrypty w docker/backup, przywracanie: scripts/restore.sh.
+  backup:
+    build:
+      context: .
+      target: backup
+    image: project-keys-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USERNAME}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_DATABASE}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+      BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-6}
+      BACKUP_R2_ACCESS_KEY_ID: ${BACKUP_R2_ACCESS_KEY_ID:-}
+      BACKUP_R2_SECRET_ACCESS_KEY: ${BACKUP_R2_SECRET_ACCESS_KEY:-}
+      BACKUP_R2_ENDPOINT: ${BACKUP_R2_ENDPOINT:-}
+      BACKUP_R2_BUCKET: ${BACKUP_R2_BUCKET:-}
+      BACKUP_R2_PATH: ${BACKUP_R2_PATH:-project-keys}
+      BACKUP_R2_KEEP_DAYS: ${BACKUP_R2_KEEP_DAYS:-200}
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *logging
+
   redis:
     image: redis:7
     restart: unless-stopped
@@ -113,6 +145,7 @@ services:
 volumes:
   logs:
   pgdata:
+  backups:
   redisdata:
   caddy_data:
   caddy_config:

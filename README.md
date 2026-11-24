@@ -56,6 +56,7 @@ Postęp prac i podjęte decyzje: [`.planning/STATUS.md`](.planning/STATUS.md).
 | `scheduler` | `schedule:work`: uruchamia wyszukiwania, sprząta kolejki, sprawdza alerty |
 | `postgres` | baza danych (PostgreSQL 17) |
 | `redis` | kolejki, cache, blokady |
+| `backup` | codzienna kopia bazy (`pg_dump`), test przywracania, opcjonalnie kopia do Cloudflare R2 |
 | `osrm-car`, `osrm-bike` | trasy i czasy dojazdu (OSRM z mapą regionu) |
 | `caddy` | serwer WWW przed `app`, filtr adresów IP, pliki `public/` z obrazu aplikacji |
 
@@ -243,7 +244,7 @@ Polecenia uruchamiasz w kontenerze `app`, np. `docker compose exec app php artis
 | `scraper:probe {portal} {id}` | Pobiera oferty na żywo i wypisuje je, bez zapisu |
 | `notify:test` | Wiadomość testowa na Discorda |
 | `ai:usage` | Zużycie tokenów AI dziś i z 30 dni |
-| `alerts:check` | Czy był udany przebieg w 3 godziny i ile błędów AI (scheduler robi to co godzinę) |
+| `alerts:check` | Czy był udany przebieg w 3 godziny, ile błędów AI i czy jest świeża kopia bazy (scheduler robi to co godzinę) |
 | `reports:weekly-market` | Raport rynku z 7 dni (scheduler: soboty 20:00). `--no-send` tylko zapisuje |
 | `user:reset-2fa {email}` | Wyłącza 2FA konta, np. po utracie telefonu |
 | `rcn:import` | Pobiera ceny transakcyjne z RCN i porównuje oferty sprzedaży (scheduler: niedziele 4:30). `--compare-only` bez pobierania |
@@ -263,6 +264,51 @@ API (wymaga tokenu w nagłówku `Authorization: Bearer …`):
 | `GET /api/market-reports` | Raporty rynku (`deal_type=rent\|sale`, `limit`) |
 
 Pełny opis pól: [`.planning/API.md`](.planning/API.md).
+
+## Kopia bazy
+
+Kontener `backup` codziennie o 3:00 (`BACKUP_HOUR`, czas polski) robi `pg_dump` bazy do wolumenu
+`backups` i sprawdza, czy plik da się odczytać. Trzyma 7 kopii dziennych, 4 tygodniowe (z niedziel)
+i 6 miesięcznych (z 1. dnia miesiąca). Raz w tygodniu przywraca najnowszą kopię do tymczasowej bazy
+w tym samym kontenerze i porównuje liczbę wierszy z bazą produkcyjną. Produkcji to nie zmienia.
+Po pierwszym uruchomieniu kontener robi kopię po minucie.
+
+Stan (ostatnia kopia, rozmiar, test przywracania) jest na stronie głównej panelu w kafelku „Kopia
+bazy”. Gdy kopia jest starsza niż 26 godzin, nie wyszła albo test przywracania się nie udał,
+`alerts:check` wysyła alert do panelu. Logi: `docker compose logs backup`.
+
+Na serwerze, w `~/project-keys`:
+
+| Polecenie | Co robi |
+|---|---|
+| `scripts/restore.sh --list` | Lista kopii i stan |
+| `scripts/restore.sh --test [plik]` | Test przywracania (domyślnie najnowszej kopii) |
+| `docker compose exec backup backup-now [etykieta]` | Kopia od razu, do `manual/` (trzyma 5 ostatnich) |
+| `scripts/restore.sh daily/pk-20261124-030000.dump` | Przywraca kopię do bazy produkcyjnej |
+| `scripts/restore.sh --from ~/pk.dump` | Przywraca kopię z pliku na serwerze, np. przegranego z laptopa |
+
+Przywracanie najpierw sprawdza kopię w tymczasowej bazie, prosi o wpisanie `TAK`, robi kopię
+bezpieczeństwa obecnej bazy (`manual/...-przed-przywroceniem.dump`), zatrzymuje aplikację,
+przywraca bazę w jednej transakcji, uruchamia migracje i startuje aplikację z powrotem.
+
+Najnowsza kopia na laptopa:
+
+```bash
+ssh project-keys 'cd project-keys && docker compose exec -T backup backup-cat' > project-keys.dump
+# konkretny plik: ... backup-cat weekly/pk-20261122-030000.dump
+```
+
+Na serwer z powrotem: `scp project-keys.dump project-keys:` i `scripts/restore.sh --from ~/project-keys.dump`.
+
+**Kopia poza serwerem (Cloudflare R2).** W Cloudflare: R2, nowy bucket, potem token API R2 z prawem
+„Object Read & Write” tylko do tego bucketu. W `.env` na serwerze uzupełnij `BACKUP_R2_ACCESS_KEY_ID`,
+`BACKUP_R2_SECRET_ACCESS_KEY`, `BACKUP_R2_ENDPOINT` (`https://<ID konta>.r2.cloudflarestorage.com`)
+i `BACKUP_R2_BUCKET`, potem `docker compose up -d backup`. Każda kopia trafia wtedy też do R2
+(katalog `BACKUP_R2_PATH`), a pliki starsze niż 200 dni są tam usuwane. Od razu sprawdzisz to przez
+`docker compose exec backup backup-now` i `scripts/restore.sh --list` (pole `remote_ok_at`).
+
+**`.env` nie ma w kopii.** Trzymaj go osobno, np. w menedżerze haseł. Bez tego samego `APP_KEY`
+przywrócona baza działa, ale sekrety 2FA i inne zaszyfrowane pola nie dadzą się odczytać.
 
 ## Gdy coś nie działa
 

@@ -42,9 +42,15 @@ Skrypt `deploy.sh`: `git pull`, `docker compose build`, `docker compose up -d`, 
 
 ## 5. Backup
 
-- Codziennie o 3:30 `pg_dump` (skompresowany) do `/home/deploy/backups`, trzymaj 14 ostatnich.
-- Opcjonalnie kopia poza serwer (np. rclone do chmury). Zapytaj użytkownika, czy chce i gdzie.
-- Skrypt `restore.sh` i jednorazowy test przywracania do osobnej bazy.
+Zrobione 2026-11-24, obsługa opisana w README (Kopia bazy).
+
+- Kontener `backup` (obraz `postgres:17` z `rclone` i `jq`, target `backup` w `Dockerfile`, skrypty w `docker/backup`).
+- Codziennie o `BACKUP_HOUR` (domyślnie 3:00 czasu polskiego) `pg_dump -Fc` do wolumenu `backups`: `daily/` (7), `weekly/` (4, niedziele), `monthly/` (6, 1. dzień miesiąca), `manual/` (5, kopie ręczne i sprzed przywrócenia). Tygodniowe i miesięczne to twarde linki do dziennych.
+- Każdy plik sprawdzany przez `pg_restore --list`. Raz w tygodniu pełny test przywracania do tymczasowego klastra w `/tmp` kontenera i porównanie liczby wierszy (`listings`, `searches`, `users`, `listing_analyses`) z produkcją.
+- Stan w `backups/status.json`. Aplikacja ma wolumen tylko do odczytu w `/backups`: kafelek „Kopia bazy” w panelu i alert z `alerts:check` (kopia starsza niż 26 h, błąd kopii, nieudany test, błąd wysyłki do R2). `BACKUP_EXPECTED=false` wyłącza alert o braku pliku stanu.
+- Kopia poza serwer: Cloudflare R2 przez `rclone copy`, gdy w `.env` są `BACKUP_R2_*`. Pliki starsze niż `BACKUP_R2_KEEP_DAYS` (200) są usuwane z R2. Na razie wyłączone, właściciel podepnie R2 później.
+- `scripts/restore.sh`: `--list`, `--test [plik]`, przywrócenie pliku z wolumenu albo `--from` z dysku serwera. Przed przywróceniem test w tymczasowej bazie, potwierdzenie `TAK`, kopia bezpieczeństwa, zatrzymanie aplikacji, `pg_restore --clean --single-transaction`, migracje, start.
+- `.env` (z `APP_KEY`) nie jest w kopii: właściciel trzyma go osobno.
 
 ## 6. Monitoring (prosty)
 

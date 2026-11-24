@@ -40,6 +40,9 @@
         <!-- Testy nigdy nie wołają prawdziwego modelu AI. -->
         <env force="true" name="OPENCODE_GO_API_KEY" value=""/>
         <env force="true" name="QUEUE_CONNECTION" value="sync"/>
+        <!-- Testy nie czytają stanu kopii z serwera. -->
+        <env force="true" name="BACKUP_EXPECTED" value="false"/>
+        <env force="true" name="BACKUP_STATUS_PATH" value=""/>
         <env force="true" name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

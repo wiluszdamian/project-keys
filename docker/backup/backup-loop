@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Główny proces kontenera backup: codziennie o BACKUP_HOUR kopia bazy, raz w tygodniu test przywracania.
+# Po starcie robi kopię od razu, jeśli ostatnia udana jest starsza niż doba (np. pierwsze uruchomienie).
+source /usr/local/lib/backup/lib.sh
+
+HOUR="${BACKUP_HOUR:-3}"
+VERIFY_EVERY=$((7 * 86400))
+
+# docker stop: sleep chodzi w tle, więc sygnał przerywa czekanie od razu.
+trap 'log "Koniec pracy."; exit 0' TERM INT
+
+pause() {
+    sleep "$1" &
+    wait $!
+}
+
+backup_and_verify() {
+    backup-run daily || return 0
+    if [ "$(seconds_since restore_test_ok_at)" -ge "$VERIFY_EVERY" ]; then
+        backup-verify || true
+    fi
+}
+
+log "Kopia bazy codziennie o ${HOUR}:00 (${TZ:-UTC}). Pliki w ${BACKUP_DIR}."
+# Panel wie, że kontener działa, zanim powstanie pierwsza kopia.
+status_set started_at "$(now_iso)"
+if remote_enabled; then
+    log "Kopia poza serwer: $(remote_path)"
+else
+    log "Kopia poza serwer wyłączona (brak BACKUP_R2_*)."
+fi
+
+if [ "$(seconds_since last_ok_at)" -ge 86400 ]; then
+    # Chwila na start bazy po wdrożeniu.
+    pause 60
+    backup_and_verify
+fi
+
+while true; do
+    now="$(date +%s)"
+    next="$(date -d "today ${HOUR}:00" +%s)"
+    if [ "$next" -le "$now" ]; then
+        next="$(date -d "tomorrow ${HOUR}:00" +%s)"
+    fi
+    pause $((next - now))
+    backup_and_verify
+done

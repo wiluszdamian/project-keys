@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Kopia na żądanie do /backups/manual. Użycie: backup-now [etykieta], np. backup-now przed-migracja
+set -euo pipefail
+LABEL="$(printf '%s' "${1:-}" | tr -c 'a-zA-Z0-9-' '-' | cut -c1-40)"
+exec backup-run manual "$LABEL"

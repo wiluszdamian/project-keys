@@ -6,17 +6,20 @@ use App\Enums\ScrapeRunStatus;
 use App\Models\ScrapeRun;
 use App\Models\Search;
 use App\Notifications\Notifier;
+use App\Services\BackupStatus;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 #[Signature('alerts:check')]
-#[Description('Sprawdza, czy system działa: udany przebieg w ostatnich 3 godzinach, błędy AI')]
+#[Description('Sprawdza, czy system działa: udany przebieg w ostatnich 3 godzinach, błędy AI, kopia bazy')]
 class AlertsCheck extends Command
 {
     public function handle(Notifier $notifier): int
     {
+        $this->checkBackup($notifier);
+
         if (! Search::active()->exists()) {
             return self::SUCCESS;
         }
@@ -35,6 +38,21 @@ class AlertsCheck extends Command
         $this->checkAiErrors($notifier);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Kopia bazy: brak świeżej kopii, błąd kopii, nieudany test przywracania albo wysyłki do R2.
+     */
+    private function checkBackup(Notifier $notifier): void
+    {
+        $problems = app(BackupStatus::class)->problems();
+
+        if ($problems === []) {
+            return;
+        }
+
+        $notifier->alert('backup', 'Problem z kopią bazy', implode(' ', $problems).' Szczegóły: docker compose logs backup.');
+        $this->warn('Problem z kopią bazy.');
     }
 
     /**

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Przywraca kopię do bazy produkcyjnej (zastępuje jej zawartość). Wołane przez scripts/restore.sh,
+# który najpierw robi kopię bezpieczeństwa i zatrzymuje aplikację.
+# Użycie: backup-restore <plik>   (ścieżka względem /backups albo pełna)
+source /usr/local/lib/backup/lib.sh
+
+if [ -z "${1:-}" ]; then
+    echo "Podaj plik kopii." >&2
+    exit 1
+fi
+
+FILE="$(resolve_dump "$1")"
+pg_restore --list "$FILE" > /dev/null
+
+log "Przywracam ${FILE#"$BACKUP_DIR"/} do bazy ${PGDATABASE}"
+# Jedna transakcja: przy błędzie baza zostaje taka, jak była.
+pg_restore --no-password -d "$PGDATABASE" --clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error "$FILE"
+log "Przywrócone."

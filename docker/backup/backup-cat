@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Wypisuje plik kopii na stdout, żeby ściągnąć go przez SSH na laptopa.
+# Użycie: backup-cat [plik]   (domyślnie najnowsza kopia; ścieżka względem /backups)
+source /usr/local/lib/backup/lib.sh
+
+if [ -n "${1:-}" ]; then
+    FILE="$(resolve_dump "$1")"
+else
+    FILE="$(latest_dump)"
+fi
+
+if [ -z "$FILE" ]; then
+    echo "Nie ma żadnej kopii." >&2
+    exit 1
+fi
+
+echo "Plik: ${FILE#"$BACKUP_DIR"/}" >&2
+cat "$FILE"

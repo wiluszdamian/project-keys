@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Test przywracania: kopia trafia do tymczasowej bazy w tym kontenerze (osobny klaster w /tmp),
+# potem porównanie liczby wierszy z bazą produkcyjną. Produkcji nic nie zmienia.
+# Użycie: backup-verify [plik]   (domyślnie najnowsza kopia; ścieżka względem /backups albo pełna)
+source /usr/local/lib/backup/lib.sh
+
+TABLES="listings searches users listing_analyses"
+WORK=/tmp/pk-verify
+SOCKET="$WORK"
+
+if [ -n "${1:-}" ]; then
+    FILE="$(resolve_dump "$1")"
+else
+    FILE="$(latest_dump)"
+fi
+
+fail() {
+    log "Test przywracania nie wyszedł: $1"
+    status_set restore_test_error "$1" restore_test_error_at "$(now_iso)"
+    exit 1
+}
+
+[ -n "$FILE" ] || fail "nie ma żadnej kopii do sprawdzenia"
+
+cleanup() {
+    if [ -f "$WORK/data/postmaster.pid" ]; then
+        gosu postgres pg_ctl -D "$WORK/data" -m immediate stop > /dev/null 2>&1 || true
+    fi
+    rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+exec 8>/tmp/verify.lock
+flock -w 900 8
+
+log "Test przywracania: ${FILE#"$BACKUP_DIR"/}"
+rm -rf "$WORK"
+install -d -o postgres -g postgres "$WORK"
+
+gosu postgres initdb -D "$WORK/data" -U postgres --auth=trust > /tmp/verify.log 2>&1 || fail "initdb: $(tail -c 300 /tmp/verify.log)"
+gosu postgres pg_ctl -D "$WORK/data" -w -l "$WORK/server.log" \
+    -o "-c listen_addresses='' -k $SOCKET -c fsync=off -c full_page_writes=off" start > /dev/null 2>&1 \
+    || fail "nie wystartował tymczasowy Postgres: $(tail -c 300 "$WORK/server.log")"
+
+# Zmienne PG* wskazują produkcję, więc lokalny serwer podajemy wprost.
+local_psql() { env -u PGHOST -u PGPASSWORD -u PGUSER -u PGDATABASE gosu postgres psql -h "$SOCKET" -U postgres -XAt "$@"; }
+
+local_psql -d postgres -c 'create database verify' > /dev/null || fail "createdb"
+env -u PGHOST -u PGPASSWORD -u PGUSER -u PGDATABASE gosu postgres \
+    pg_restore -h "$SOCKET" -U postgres -d verify --no-owner --no-acl --exit-on-error "$FILE" 2>/tmp/verify.log \
+    || fail "pg_restore: $(tail -c 500 /tmp/verify.log)"
+
+SUMMARY=""
+for table in $TABLES; do
+    restored="$(local_psql -d verify -c "select count(*) from ${table}")" || fail "w kopii nie ma tabeli ${table}"
+    live="$(psql -XAt -c "select count(*) from ${table}" 2>/dev/null || echo '?')"
+    SUMMARY="${SUMMARY}${table} ${restored}/${live}, "
+    # Kopia jest sprzed kilku godzin: wierszy może być trochę mniej niż teraz, ale nie o więcej niż 20%.
+    if [ "$live" != '?' ] && [ "$live" -gt 0 ] && [ $((restored * 100)) -lt $((live * 80)) ]; then
+        fail "tabela ${table}: w kopii ${restored} wierszy, w bazie ${live}"
+    fi
+done
+
+if [ "$(local_psql -d verify -c 'select count(*) from users')" = 0 ]; then
+    fail "w kopii nie ma żadnego użytkownika"
+fi
+
+SUMMARY="${SUMMARY%, }"
+status_set restore_test_ok_at "$(now_iso)" restore_test_file "${FILE#"$BACKUP_DIR"/}" restore_test_summary "$SUMMARY" \
+    restore_test_error null restore_test_error_at null
+log "Test przywracania OK (kopia/baza): ${SUMMARY}"

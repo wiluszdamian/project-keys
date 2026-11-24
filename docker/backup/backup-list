@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Lista kopii (od najnowszej) i stan z status.json.
+source /usr/local/lib/backup/lib.sh
+
+for dir in daily weekly monthly manual; do
+    echo "== ${dir}"
+    if [ -d "${BACKUP_DIR}/${dir}" ]; then
+        find "${BACKUP_DIR}/${dir}" -name '*.dump' -type f -printf '%T@ %TY-%Tm-%Td %TH:%TM  %s B  %P\n' | sort -rn | cut -d' ' -f2-
+    fi
+done
+
+echo "== status.json"
+if [ -s "$STATUS_FILE" ]; then
+    jq . "$STATUS_FILE"
+else
+    echo "brak (nie było jeszcze kopii)"
+fi
