@@ -43,6 +43,20 @@ class ListingInfolist
                             ->color(fn (string $state, Listing $record) => ListingFacts::badges($record)[$state] ?? 'gray')
                             ->columnSpanFull()
                             ->visible(fn (Listing $record) => ListingFacts::badges($record) !== []),
+                        // Ogłoszenie zdjęte z portalu (listings:check-active). Gdy jest jeszcze na innym portalu, mówimy gdzie.
+                        TextEntry::make('inactive_at')
+                            ->hiddenLabel()
+                            ->state(function (Listing $record) {
+                                $active = $record->duplicates->whereNull('inactive_at')->map(fn (Listing $duplicate) => Portals::label($duplicate->portal));
+
+                                return 'Ogłoszenie zdjęte z '.Portals::label($record->portal).' '.$record->inactive_at->format('d.m.Y').' ('.$record->inactive_reason.').'
+                                    .($active->isNotEmpty() ? ' Wciąż jest na: '.$active->implode(', ').'.' : '');
+                            })
+                            ->color(fn (Listing $record) => $record->isGone() ? 'danger' : 'warning')
+                            ->icon('heroicon-o-archive-box-x-mark')
+                            ->weight('medium')
+                            ->columnSpanFull()
+                            ->visible(fn (Listing $record) => $record->inactive_at !== null),
                         // Duplikat: ocena, okolica i reszta są przy oryginale (pierwszy portal z tą ofertą).
                         TextEntry::make('duplicate_of')
                             ->hiddenLabel()
@@ -148,7 +162,8 @@ class ListingInfolist
                         TextEntry::make('also_on')
                             ->label('Też na')
                             ->state(fn (Listing $record) => $record->duplicates->map(fn (Listing $duplicate) => '<a href="'.e($duplicate->url).'" target="_blank" rel="noopener" class="pk-rows__link">'.e(Portals::label($duplicate->portal)).'</a>'
-                                .($duplicate->price !== $record->price && $duplicate->price ? ' ('.e(Format::pln($duplicate->price)).')' : ''))->implode(', '))
+                                .($duplicate->price !== $record->price && $duplicate->price ? ' ('.e(Format::pln($duplicate->price)).')' : '')
+                                .($duplicate->inactive_at ? ' (zdjęta)' : ''))->implode(', '))
                             ->html()
                             ->visible(fn (Listing $record) => $record->duplicates->isNotEmpty()),
                         TextEntry::make('is_private_owner')

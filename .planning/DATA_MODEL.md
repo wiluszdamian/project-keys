@@ -52,6 +52,9 @@ Okazje: `deal_reasons` (jsonb, lista `{type, text}`), `deal_at` (od kiedy jest o
 | content_hash | string | hash tytułu, ceny, metrażu i opisu |
 | duplicate_of_id | fk listings nullable | ta sama oferta z innego portalu, zapisana wcześniej (faza 4) |
 | first_seen_at, last_seen_at | timestamp | |
+| inactive_at | timestamp null | ogłoszenie zdjęte z portalu (404/410, komunikat „archiwalne”, przekierowanie); znów w wynikach = null |
+| inactive_reason | string null | skąd wiemy, że zdjęte |
+| availability_checked_at | timestamp null | ostatnie sprawdzenie strony ogłoszenia (`listings:check-active`) |
 | timestamps | | |
 
 Indeksy: unique(portal, external_id), index(city, district), index(last_seen_at).

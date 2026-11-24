@@ -30,7 +30,7 @@ class QuickLinks extends Widget
      */
     public function getLinks(): array
     {
-        $listings = fn () => Listing::query()->whereNull('duplicate_of_id')->whereHas('searches', fn (Builder $query) => $query->where('is_active', true));
+        $listings = fn () => Listing::query()->whereNull('duplicate_of_id')->available()->whereHas('searches', fn (Builder $query) => $query->where('is_active', true));
 
         return [
             [

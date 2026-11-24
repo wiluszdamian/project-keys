@@ -110,6 +110,21 @@ Sprawdzone 2026-11-18. Głównie oferty bez pośredników.
 - Lista (`article.single-offer`): tytuł w `alt` zdjęcia, miejscowość, ulica, cena, metraż, pokoje.
 - Strona ogłoszenia: opis (`.lang-description .lang-text`), numer oferty, pinezka z `L.marker([lat, lng])`, piętro z opisu.
 
+## Zdjęte ogłoszenia (od 2026-11-24)
+
+`listings:check-active` (co 30 minut, do 120 stron) pobiera stronę ogłoszenia przez `HttpFetcher::probe` (te same przerwy,
+blokady i ponowienia co scrapery) dla ofert, których nie było w wynikach od 6 h. Sprawdzone na żywych stronach 2026-11-24:
+
+- OLX, Otodom: HTTP 410. Otodom ma też tytuł „Archiwalne: …”. OLX ma teksty o niedostępnym ogłoszeniu w kodzie każdej strony, więc dla OLX liczy się tylko kod.
+- Stoprocent, Adresowo: 404 dla usuniętych. Adresowo dla wygasłych: 200 i „Ogłoszenie usunięte”.
+- Domiporta: 200, tytuł „… - Archiwum Domiporta.pl”. Nieistniejące id przekierowuje na listę ofert.
+- Morizon: 200 i „To ogłoszenie nie jest już dostępne”. Nieistniejące id daje 500 (bez decyzji).
+- Nieruchomości-online: 200 i „Ogłoszenie archiwalne” albo „Strona błędu 404” w tytule.
+- Rzeszowiak: 200 i „Ogłoszenie wygasło” (ISO-8859-2).
+- 1pietro, Rzeszowskie: przekierowanie na stronę główną.
+
+Wzorce są w `config/scrapers.php` (`availability.markers`), przekierowanie „w górę” (krótsza ścieżka) i 404/410 działają dla każdego portalu.
+
 ## Promień wokół miasta
 
 - Wyszukiwanie może mieć `radius_km`. Otodom (`distanceRadius`), OLX (`distance`), Domiporta (`Distance`) i Nieruchomości-online (pole odległości) dostają promień w adresie, zaokrąglony w górę do wartości portalu.

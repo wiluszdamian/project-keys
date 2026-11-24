@@ -38,7 +38,7 @@ class ListingsTable
                 ->whereHas('searches')
                 ->with([
                     'commutes.place',
-                    'duplicates:id,duplicate_of_id,portal,url,price,rent_extra',
+                    'duplicates:id,duplicate_of_id,portal,url,price,rent_extra,inactive_at',
                     'analyses:id,listing_id,cost_breakdown',
                     'originalListing' => fn ($query) => $query->withMax('analyses', 'score')->withMax('analyses', 'monthly_cost')->with(['analyses:id,listing_id,cost_breakdown', 'duplicates:id,duplicate_of_id,portal,rent_extra']),
                 ])
@@ -143,6 +143,7 @@ class ListingsTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(fn (Listing $record) => array_values(array_filter([
+                        $record->isGone() ? 'Zdjęta' : null,
                         $record->deal_at ? 'Okazja' : null,
                         $record->status?->getLabel(),
                         $record->risk_flags ? '⚠ '.count($record->risk_flags) : null,
@@ -150,10 +151,12 @@ class ListingsTable
                     ->badge()
                     ->color(fn (string $state, Listing $record) => match (true) {
                         $state === 'Okazja' => 'success',
+                        $state === 'Zdjęta' => 'danger',
                         str_starts_with($state, '⚠') => 'danger',
                         default => $record->status?->getColor() ?? 'gray',
                     })
                     ->tooltip(fn (Listing $record) => collect([
+                        $record->isGone() ? 'Zdjęta z portalu '.$record->inactive_at->format('d.m.Y').': '.$record->inactive_reason : null,
                         $record->deal_reasons ? 'Okazja: '.DealFinder::summary($record->deal_reasons) : null,
                         ...collect($record->risk_flags ?? [])->pluck('message'),
                     ])->filter()->implode("\n") ?: null)
@@ -231,6 +234,16 @@ class ListingsTable
                     ->label('Ukryj odrzucone')
                     ->default()
                     ->query(fn (Builder $query) => $query->where(fn (Builder $query) => $query->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value))),
+                // Zdjęte = nie ma ich już na żadnym portalu (ta oferta i jej kopie). Sprawdza listings:check-active.
+                SelectFilter::make('availability')
+                    ->label('Zdjęte z portali')
+                    ->options(['hide' => 'Ukryj zdjęte', 'only' => 'Tylko zdjęte'])
+                    ->default('hide')
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'hide' => $query->available(),
+                        'only' => $query->gone(),
+                        default => $query,
+                    }),
                 Filter::make('hide_duplicates')
                     ->label('Ukryj duplikaty z drugiego portalu')
                     ->default()

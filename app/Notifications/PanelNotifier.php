@@ -82,6 +82,27 @@ class PanelNotifier
         );
     }
 
+    /**
+     * Oferta z Twoim statusem (ulubiona, kontakt, oglądanie) zniknęła ze wszystkich portali.
+     */
+    public function listingGone(Listing $listing): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Oferta zdjęta: '.Str::limit($listing->title, 60))
+                ->body(implode(' · ', array_filter([
+                    $listing->status?->getLabel(),
+                    Format::pln($listing->price),
+                    $listing->inactive_reason,
+                ])))
+                ->icon('heroicon-o-archive-box-x-mark')
+                ->iconColor('warning')
+                ->actions([
+                    Action::make('open')->label('Zobacz ofertę')->url(route('filament.admin.resources.listings.view', $listing))->markAsRead(),
+                ]),
+        );
+    }
+
     public function deals(int $count): void
     {
         $this->send(

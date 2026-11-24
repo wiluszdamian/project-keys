@@ -44,6 +44,9 @@
         @endif
 
         <div class="pk-card__meta">
+            @if ($listing->isGone())
+                <x-filament::badge size="sm" color="danger">Zdjęta</x-filament::badge>
+            @endif
             @if ($listing->deal_at)
                 <x-filament::badge size="sm" color="success">Okazja</x-filament::badge>
             @endif

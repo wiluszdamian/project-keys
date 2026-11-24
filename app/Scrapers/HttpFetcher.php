@@ -5,6 +5,7 @@ namespace App\Scrapers;
 use App\Scrapers\Exceptions\PortalBlockedException;
 use App\Scrapers\Exceptions\ScraperException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -16,6 +17,38 @@ use Illuminate\Support\Sleep;
 class HttpFetcher
 {
     public function get(string $portal, string $url, array $headers = []): string
+    {
+        $response = $this->send($portal, $url, $headers);
+
+        if (! $response->successful()) {
+            throw new ScraperException("Portal {$portal} odpowiedział {$response->status()} dla {$url}");
+        }
+
+        return $response->body();
+    }
+
+    /**
+     * Strona ogłoszenia z kodem odpowiedzi i adresem po przekierowaniach (sprawdzanie, czy oferta jest aktywna).
+     * 404 i 410 to zwykła odpowiedź, nie błąd. Przerwy, blokady i ponowienia jak w get().
+     *
+     * @return array{status: int, body: string, url: string}
+     */
+    public function probe(string $portal, string $url): array
+    {
+        $response = $this->send($portal, $url, []);
+
+        if ($response->serverError()) {
+            throw new ScraperException("Portal {$portal} odpowiedział {$response->status()} dla {$url}");
+        }
+
+        return [
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'url' => (string) ($response->effectiveUri() ?? $url),
+        ];
+    }
+
+    private function send(string $portal, string $url, array $headers): Response
     {
         $this->ensureNotPaused($portal);
 
@@ -67,7 +100,7 @@ class HttpFetcher
         }
     }
 
-    private function request(string $portal, string $url, array $headers): string
+    private function request(string $portal, string $url, array $headers): Response
     {
         $retries = config('scrapers.retries');
 
@@ -105,11 +138,7 @@ class HttpFetcher
                 continue;
             }
 
-            if (! $response->successful()) {
-                throw new ScraperException("Portal {$portal} odpowiedział {$response->status()} dla {$url}");
-            }
-
-            return $response->body();
+            return $response;
         }
     }
 }

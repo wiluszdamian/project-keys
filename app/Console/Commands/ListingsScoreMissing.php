@@ -28,6 +28,7 @@ class ListingsScoreMissing extends Command
         foreach (Search::active()->get() as $search) {
             $listings = $search->listings()
                 ->whereNull('duplicate_of_id')
+                ->whereNull('inactive_at')
                 ->where('last_seen_at', '>=', now()->subDays((int) $this->option('days')))
                 ->whereDoesntHave('analyses', fn (Builder $query) => $query->where('search_id', $search->id))
                 ->get();

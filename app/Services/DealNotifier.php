@@ -28,6 +28,7 @@ class DealNotifier
             ->whereNotNull('deal_at')
             ->whereNull('deal_notified_at')
             ->whereNull('duplicate_of_id')
+            ->whereNull('inactive_at')
             ->where(fn (Builder $query) => $query->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value))
             ->whereHas('searches', fn (Builder $query) => $query->where('is_active', true))
             ->with(['searches' => fn ($query) => $query->where('is_active', true)])

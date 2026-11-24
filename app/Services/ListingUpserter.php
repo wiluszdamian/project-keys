@@ -58,7 +58,8 @@ class ListingUpserter
                 $attributes['raw']['details'] = $listing->raw['details'];
             }
 
-            $listing->fill($attributes + ['last_seen_at' => $now]);
+            // Oferta znów w wynikach portalu: aktywna (np. odnowiona po wygaśnięciu).
+            $listing->fill($attributes + ['last_seen_at' => $now, 'inactive_at' => null, 'inactive_reason' => null]);
             $listing->content_hash = ListingData::hashOf($listing->title, $listing->price, $listing->area, $listing->description);
             $listing->save();
 

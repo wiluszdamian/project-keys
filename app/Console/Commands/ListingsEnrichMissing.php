@@ -73,10 +73,10 @@ class ListingsEnrichMissing extends Command
     }
 
     /**
-     * Aktualne oferty (widziane w ostatnich 30 dniach), bez duplikatów z innych portali.
+     * Aktualne oferty (widziane w ostatnich 30 dniach, niezdjęte z portalu), bez duplikatów z innych portali.
      */
     private function current(): Builder
     {
-        return Listing::query()->whereNull('duplicate_of_id')->where('last_seen_at', '>=', now()->subDays(30));
+        return Listing::query()->whereNull('duplicate_of_id')->whereNull('inactive_at')->where('last_seen_at', '>=', now()->subDays(30));
     }
 }

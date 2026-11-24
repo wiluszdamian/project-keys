@@ -19,12 +19,15 @@ class DealsRefresh extends Command
         $activeSince = now()->subDays((int) config('deals.active_days'));
 
         // Oferty, których nie ma już na portalu, przestają być okazjami.
-        $stale = Listing::whereNotNull('deal_at')->where('last_seen_at', '<', $activeSince)->update(['deal_reasons' => null, 'deal_at' => null]);
+        $stale = Listing::whereNotNull('deal_at')
+            ->where(fn (Builder $query) => $query->where('last_seen_at', '<', $activeSince)->orWhereNotNull('inactive_at'))
+            ->update(['deal_reasons' => null, 'deal_at' => null]);
 
         $checked = 0;
         Listing::query()
             ->whereNull('duplicate_of_id')
             ->whereNotNull('price')
+            ->whereNull('inactive_at')
             ->where('last_seen_at', '>=', $activeSince)
             ->whereHas('searches', fn (Builder $query) => $query->where('is_active', true))
             ->chunkById(200, function ($listings) use ($finder, &$checked) {

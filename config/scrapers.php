@@ -47,6 +47,29 @@ return [
     // Jak długo portal jest wstrzymany po 403 lub 429.
     'block_hours' => 2,
 
+    // Sprawdzanie, czy ogłoszenie wciąż jest na portalu (listings:check-active).
+    'availability' => [
+        // Oferta widziana w wynikach w tym czasie jest aktywna, nie pobieramy jej strony.
+        'unseen_hours' => 6,
+        // Aktywną ofertę sprawdzamy ponownie po tylu godzinach.
+        'recheck_hours' => 24,
+        // Ile stron ogłoszeń na jeden przebieg (co 30 minut).
+        'per_run' => 120,
+        // Komunikat na stronie zdjętego ogłoszenia. Sprawdzone na żywych stronach 2026-11-24.
+        // OLX i Otodom odpowiadają 410, stoprocent i adresowo 404, 1pietro, rzeszowskie i Domiporta
+        // przekierowują na stronę główną albo listę ofert. To łapie ListingAvailability bez wzorców.
+        'markers' => [
+            'otodom' => '/<title>Archiwalne:|"status":"removed_by_user"/',
+            'domiporta' => '/- Archiwum Domiporta\.pl|<section class="archive">/',
+            'morizon' => '/To ogłoszenie nie jest już dostępne/u',
+            'nieruchomosci_online' => '/Ogłoszenie archiwalne|<title>Strona błędu 404/u',
+            'adresowo' => '/Ogłoszenie usunięte/u',
+            // Strona w ISO-8859-2, dlatego "ł" jako dowolny znak (bajt).
+            'rzeszowiak' => '/Og.{1,2}oszenie wygas.{1,2}o/',
+            // OLX: bez wzorca, bo teksty "nie jest już dostępne" są też w kodzie aktywnych stron.
+        ],
+    ],
+
     'otodom' => [
         'base_url' => 'https://www.otodom.pl',
         // Miasto (slug) -> lokalizacja w adresie Otodom. Sprawdzone na żywej stronie 2026-11-17.

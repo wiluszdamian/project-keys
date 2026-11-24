@@ -74,6 +74,7 @@ class ListingsMap extends Page
             ->whereHas('searches')
             ->whereNull('duplicate_of_id')
             ->whereNotNull('lat')
+            ->available()
             ->where('last_seen_at', '>=', now()->subDays((int) ($filters['days'] ?? 30)))
             ->withMax('analyses', 'score')
             ->when($filters['deal_type'] ?? null, fn (Builder $q, $deal) => $q->where('deal_type', $deal instanceof DealType ? $deal->value : $deal))

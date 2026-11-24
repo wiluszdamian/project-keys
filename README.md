@@ -143,6 +143,12 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   za m² niż transakcje z RCN w okolicy, o 15% tańsza za m² niż mediana ofert o podobnym metrażu w dzielnicy albo mieście (przy wynajmie
   25%), albo po obniżce ceny o co najmniej 5%. Tylko oferty z oceną AI od 6/10. Co godzinę `deals:refresh` przelicza okazje i wysyła nowe na Discorda
   i do dzwoneczka (kilka naraz jako jedno podsumowanie). Progi w Ustawieniach.
+- **Zdjęte oferty:** co 30 minut `listings:check-active` otwiera strony ogłoszeń, których od 6 godzin
+  nie było w wynikach (aktywne co najwyżej raz na dobę). Zdjęte z portalu (410, 404, „Ogłoszenie archiwalne”,
+  „wygasło”, przekierowanie na stronę główną) dostają etykietę „Zdjęta”, przestają być okazjami i nie idą do
+  oceny AI. Mieszkanie liczy się jako zdjęte, gdy nie ma go na żadnym portalu. Lista ofert domyślnie je ukrywa
+  (filtr „Zdjęte z portali”). Gdy zniknie oferta ulubiona, z kontaktem albo oglądaniem, przychodzi powiadomienie
+  w dzwoneczku. Oferta, która wróci do wyników, znów jest aktywna.
 - **Nauka na decyzjach:** oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona, razem
   z notatkami, trafiają do oceny AI jako przykłady tego, czego szukasz. Przy odrzuceniu i dodaniu do
   ulubionych możesz wpisać powód, który zapisuje się w notatce.

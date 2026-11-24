@@ -45,9 +45,12 @@ Komendy artisan jako alternatywa dla API (wygodne przez SSH):
 - `search:pause {id}`, `search:resume {id}`
 - `listings:score-missing` (ocena AI dla aktywnych ofert bez oceny, `--days=3`, `--dry-run`)
 - `pois:import` (sklepy, żłobki, przedszkola, szkoły i przychodnie z OpenStreetMap przez Overpass, potem infrastruktura ofert; co miesiąc). Gdy Overpass nie działa: `scripts/pois-extract.sh` na serwerze (lokalna mapa)
+- `listings:check-active` (czy ogłoszenia niewidziane od 6 h są jeszcze na portalu; zdjęte dostają `inactive_at`; co 30 minut, `--limit=`, `--id=`)
 - `deals:refresh` (przelicza okazje i wysyła powiadomienia o nowych, `--silent` bez wysyłki)
 - `search:refilter {id...}` (odłącza przypisane oferty, które nie pasują do obecnych filtrów)
 - `api:token {nazwa}`, `scraper:probe {portal} {id}`, `notify:test`, `ai:usage`, `alerts:check`, `search:dispatch-due` (uruchamia scheduler)
+
+Zdjęte oferty (od 2026-11-24): `inactive_at` (od kiedy nie ma ogłoszenia na portalu) i `inactive_reason`, `null` dla aktywnej.
 
 Okazje (od 2026-11-23): oferta w `GET /listings/{id}` i na listach ma `deal_reasons` (lista `{type, text}`, typy `below_transactions`, `price_drop`, `below_market`) i `deal_at`, gdy jest okazją.
 

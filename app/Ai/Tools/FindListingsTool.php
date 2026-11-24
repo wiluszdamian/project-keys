@@ -27,7 +27,7 @@ class FindListingsTool implements Tool
     public function description(): Stringable|string
     {
         return 'Szuka ofert w bazie (bez duplikatów z innych portali). Wszystkie parametry opcjonalne. '
-            .'Zwraca do 20 ofert z ceną, czynszem (admin_fee_source: portal, duplicate albo description, czyli z opisu), kosztem miesięcznym z oceny AI, metrażem, pokojami, lokalizacją, oceną AI, źródłami (portale i biura), okazją, statusem i linkami.';
+            .'Zwraca do 20 ofert z ceną, czynszem (admin_fee_source: portal, duplicate albo description, czyli z opisu), kosztem miesięcznym z oceny AI, metrażem, pokojami, lokalizacją, oceną AI, źródłami (portale i biura), okazją, statusem i linkami. Oferty zdjęte z portali są pomijane, chyba że include_inactive.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -59,7 +59,8 @@ class FindListingsTool implements Tool
             ->when($data['only_deals'] ?? false, fn (Builder $q) => $q->whereNotNull('deal_at'))
             ->when($data['portal'] ?? null, fn (Builder $q, $portal) => $q->where(fn (Builder $q) => $q->where('portal', $portal)->orWhereHas('duplicates', fn (Builder $q) => $q->where('portal', $portal))))
             ->when($data['status'] ?? null, fn (Builder $q, $status) => $status === 'none' ? $q->whereNull('status') : $q->where('status', $status))
-            ->when(($data['status'] ?? null) === null, fn (Builder $q) => $q->where(fn (Builder $q) => $q->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value)));
+            ->when(($data['status'] ?? null) === null, fn (Builder $q) => $q->where(fn (Builder $q) => $q->whereNull('status')->orWhere('status', '!=', ListingStatus::Rejected->value)))
+            ->when(! ($data['include_inactive'] ?? false), fn (Builder $q) => $q->available());
 
         $query = match ($data['sort'] ?? 'score') {
             'newest' => $query->orderByDesc('first_seen_at'),
@@ -69,7 +70,7 @@ class FindListingsTool implements Tool
         };
 
         $total = (clone $query)->count();
-        $rows = $query->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,rent_extra', 'analyses:id,listing_id,cost_breakdown'])->limit($limit)->get()->map(fn (Listing $listing) => [
+        $rows = $query->with(['commutes.place', 'duplicates:id,duplicate_of_id,portal,rent_extra,inactive_at', 'analyses:id,listing_id,cost_breakdown'])->limit($limit)->get()->map(fn (Listing $listing) => [
             'id' => $listing->id,
             'title' => Str::limit($listing->title, 90),
             'deal_type' => $listing->deal_type->value,
@@ -89,6 +90,7 @@ class FindListingsTool implements Tool
             'commutes' => Format::commutes($listing),
             'risk_flags' => collect($listing->risk_flags ?? [])->pluck('message')->all(),
             'status' => $listing->status?->getLabel(),
+            'inactive' => $listing->isGone() ? 'zdjęta z portalu od '.$listing->inactive_at->format('Y-m-d') : null,
             'found' => $listing->first_seen_at?->format('Y-m-d H:i'),
             'panel_url' => route('filament.admin.resources.listings.view', $listing),
             'offer_url' => $listing->url,
@@ -118,6 +120,7 @@ class FindListingsTool implements Tool
             'commute_place_id' => $schema->integer()->description('Konkretne miejsce dojazdu (id z list_searches -> commute_places). Puste = dowolne.'),
             'only_deals' => $schema->boolean()->description('Tylko okazje: wyraźnie taniej niż transakcje lub mediana albo po dużej obniżce.'),
             'portal' => $schema->string()->enum(config('scrapers.portals'))->description('Tylko oferty z tego portalu lub biura (także gdy to duplikat).'),
+            'include_inactive' => $schema->boolean()->description('Także oferty zdjęte już z portali (domyślnie pomijane).'),
             'sort' => $schema->string()->enum(['score', 'newest', 'price', 'price_per_m2']),
             'limit' => $schema->integer()->description('Ile ofert, najwyżej 20.'),
         ];

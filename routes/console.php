@@ -21,6 +21,9 @@ Schedule::command('rcn:import')->weeklyOn(0, '04:30')->withoutOverlapping()->run
 Schedule::command('queue:prune-batches --hours=48')->daily();
 Schedule::command('queue:prune-failed --hours=168')->daily();
 
+// Czy ogłoszenia, których nie ma w wynikach, są jeszcze na portalu. Zdjęte dostają znacznik "nieaktywna".
+Schedule::command('listings:check-active')->everyThirtyMinutes()->withoutOverlapping(60)->runInBackground();
+
 // Okazje: przeliczenie i powiadomienia o nowych, co godzinę.
 Schedule::command('deals:refresh')->hourlyAt(15)->withoutOverlapping()->runInBackground();
 

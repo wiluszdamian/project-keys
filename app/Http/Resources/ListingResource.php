@@ -40,6 +40,9 @@ class ListingResource extends JsonResource
             'duplicate_of_id' => $this->duplicate_of_id,
             'first_seen_at' => $this->first_seen_at,
             'last_seen_at' => $this->last_seen_at,
+            // Zdjęta z portalu (listings:check-active) i dlaczego. null = aktywna.
+            'inactive_at' => $this->inactive_at,
+            'inactive_reason' => $this->inactive_reason,
             'matched_at' => $this->whenHas('matched_at'),
             'analyses' => ListingAnalysisResource::collection($this->whenLoaded('analyses')),
             'commutes' => $this->whenLoaded('commutes', fn () => $this->commutes->map(fn ($commute) => [

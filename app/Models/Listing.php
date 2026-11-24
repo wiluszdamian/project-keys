@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\DealType;
 use App\Enums\ListingStatus;
 use App\Services\ListingFeatures;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +42,8 @@ class Listing extends Model
             'infrastructure_at' => 'datetime',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'inactive_at' => 'datetime',
+            'availability_checked_at' => 'datetime',
         ];
     }
 
@@ -142,6 +145,33 @@ class Listing extends Model
         }
 
         return [null, null];
+    }
+
+    /**
+     * Mieszkania nie ma już nigdzie: ta oferta i wszystkie jej kopie z innych portali są zdjęte.
+     * Używa wczytanych duplicates, gdy są.
+     */
+    public function isGone(): bool
+    {
+        return $this->inactive_at !== null && $this->duplicates->every(fn (Listing $duplicate) => $duplicate->inactive_at !== null);
+    }
+
+    /**
+     * Mieszkania, które są jeszcze na jakimś portalu (ta oferta albo jej kopia).
+     */
+    public function scopeAvailable(Builder $query): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->whereNull('inactive_at')
+            ->orWhereHas('duplicates', fn (Builder $query) => $query->whereNull('inactive_at')));
+    }
+
+    /**
+     * Mieszkania zdjęte ze wszystkich portali.
+     */
+    public function scopeGone(Builder $query): void
+    {
+        $query->whereNotNull('inactive_at')->whereDoesntHave('duplicates', fn (Builder $query) => $query->whereNull('inactive_at'));
     }
 
     public function hasCoordinates(): bool
