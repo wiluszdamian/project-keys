@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\MarketReportController;
 use App\Http\Controllers\Api\NotificationSettingsController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductShopController;
 use App\Http\Controllers\Api\ScrapeRunController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +36,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::delete('products/{product}/offers/{offer}', [ProductController::class, 'destroyOffer']);
     Route::post('products/{product}/find-offers', [ProductController::class, 'findOffers']);
     Route::post('products/{product}/advice', [ProductController::class, 'advice']);
+    Route::apiResource('product-shops', ProductShopController::class)->except('show');
+    Route::post('product-shops/{productShop}/sync', [ProductShopController::class, 'sync']);
 });

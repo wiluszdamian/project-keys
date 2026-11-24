@@ -211,9 +211,12 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   ocenę AI: kupuj, cena w porządku albo poczekaj, z powodami. Powiadomienia na Discordzie i w dzwoneczku:
   obniżka (od ustawionego procentu), cena docelowa, znowu dostępny lub wyprzedany, tańszy inny sklep.
   Cenę odczytujemy z danych strony, a gdy sklep jej nie podaje, z treści strony przez AI. „Szukaj w
-  innych sklepach” używa Brave Search API (klucz w Ustawieniach → Produkty) i AI, które sprawdza, czy to
-  ten sam model, kolor i zestaw. Link z innego sklepu możesz też dodać ręcznie. Allegro i Ceneo
-  blokują roboty, więc ich nie sprawdzamy. API: `/api/products` (opis w `.planning/API.md`).
+  innych sklepach” jest darmowe: przeszukuje mapy stron (sitemap) sklepów z listy Zakupy → Sklepy, a AI
+  proponuje kolejne sklepy i sprawdza, czy znaleziona oferta to ten sam model, kolor i zestaw. Raz na
+  3 dni robi to samo. Z kluczem Brave Search API (opcjonalnie, w Ustawieniach → Produkty) szuka też w
+  całym internecie. Link z innego sklepu możesz też dodać ręcznie. Allegro, Ceneo i wyszukiwarki
+  internetowe blokują roboty, więc ich nie sprawdzamy. API: `/api/products` i `/api/product-shops`
+  (opis w `.planning/API.md`).
 - **Logi:** wpisy z logów aplikacji, workerów i schedulera z filtrem poziomu i wyszukiwaniem, pobranie
   pliku i lista nieudanych zadań kolejki.
 - **Dzwoneczek:** nowe dobre oferty, obniżki cen, raport rynku i alerty pojawiają się w panelu od razu,

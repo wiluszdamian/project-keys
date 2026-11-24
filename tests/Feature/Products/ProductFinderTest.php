@@ -1,9 +1,11 @@
 <?php
 
 use App\Ai\Agents\ProductMatchAgent;
+use App\Ai\Agents\ProductShopsAgent;
 use App\Filament\Support\Format;
 use App\Models\Product;
 use App\Models\ProductOffer;
+use App\Models\ProductShop;
 use App\Models\User;
 use App\Services\Products\ProductFinder;
 use Illuminate\Http\Client\Request;
@@ -22,6 +24,9 @@ beforeEach(function () {
     Queue::fake();
     User::factory()->create();
     config(['products.search.brave_key' => 'brave-test', 'ai.providers.opencode.key' => 'test-key', 'scoring.enabled' => true]);
+    // Bez sklepów startowych z migracji: test nie może pobierać prawdziwych map stron.
+    ProductShop::query()->delete();
+    ProductShopsAgent::fake([['query' => 'Cybex Balios S Lux', 'shops' => []]]);
 
     $this->product = Product::factory()->create(['name' => 'Cybex Balios S Lux 2026 Chocolate Brown', 'best_price' => 4999, 'initial_price' => 4999, 'lowest_price' => 4999]);
     $this->primary = ProductOffer::factory()->for($this->product)->create(['url' => 'https://babyhit.test/balios', 'shop' => 'babyhit.test', 'price' => 4999]);
@@ -68,8 +73,40 @@ it('bez AI porównuje nazwy', function () {
         ->and($this->product->offers()->pluck('shop')->all())->toContain('tanszy.test')->not->toContain('inny.test');
 });
 
-it('bez klucza wyszukiwarki nie szuka', function () {
-    config(['products.search.brave_key' => null]);
+it('bez sklepów, AI i klucza wyszukiwarki nie szuka', function () {
+    config(['products.search.brave_key' => null, 'products.ai' => false]);
 
     app(ProductFinder::class)->find($this->product);
-})->throws(RuntimeException::class, 'Brave');
+})->throws(RuntimeException::class, 'Nie ma gdzie szukać');
+
+it('szuka za darmo w mapach stron sklepów, które zaproponowało AI', function () {
+    config(['products.search.brave_key' => null]);
+    ProductShopsAgent::fake([['query' => 'Cybex Balios S Lux', 'shops' => [
+        ['domain' => 'https://www.wozki.test/', 'name' => 'Wózki', 'why' => 'Sklep z wózkami.'],
+        ['domain' => 'allegro.pl', 'name' => 'Allegro', 'why' => 'Marketplace.'],
+    ]]]);
+    ProductMatchAgent::fake([['matches' => [
+        ['index' => 0, 'same' => true, 'reason' => 'Ten sam zestaw i kolor.'],
+        ['index' => 1, 'same' => false, 'reason' => 'To adaptery, nie wózek.'],
+    ]]]);
+    Http::fake([
+        'wozki.test/robots.txt' => Http::response("User-agent: *\nDisallow: /szukaj\nSitemap: https://www.wozki.test/sitemap_index.xml"),
+        'www.wozki.test/sitemap_index.xml' => Http::response('<sitemapindex><sitemap><loc>https://www.wozki.test/sitemap-categories.xml</loc></sitemap><sitemap><loc>https://www.wozki.test/sitemap-products.xml</loc></sitemap></sitemapindex>'),
+        'www.wozki.test/sitemap-products.xml' => Http::response('<urlset><url><loc>https://www.wozki.test/p/cybex-balios-s-lux-2026-chocolate-brown-cloud-g3</loc></url><url><loc>https://www.wozki.test/p/cybex-adaptery-balios-s-lux</loc></url><url><loc>https://www.wozki.test/p/joie-versatrax</loc></url></urlset>'),
+        'www.wozki.test/p/cybex-balios-s-lux-2026-chocolate-brown-cloud-g3' => Http::response(offerPage('Cybex Balios S Lux 2026 Chocolate Brown + Cloud G3', 4699)),
+        'www.wozki.test/p/cybex-adaptery-balios-s-lux' => Http::response(offerPage('Cybex adaptery do Balios S Lux', 129)),
+        'discord.com/*' => Http::response('', 204),
+    ]);
+
+    $result = app(ProductFinder::class)->find($this->product, notify: false);
+
+    $shop = ProductShop::firstWhere('domain', 'wozki.test');
+
+    expect($this->product->refresh()->search_query)->toBe('Cybex Balios S Lux')
+        ->and(ProductShop::pluck('domain')->all())->toBe(['wozki.test'])
+        ->and($shop)->source->toBe('ai')->status->toBe('ok')->urls_count->toBe(3)
+        ->and($result)->candidates->toBe(2)->added->toBe(1)
+        ->and($this->product->offers()->where('shop', 'wozki.test')->first())->price->toBe(4699.0)->source->toBe('search');
+
+    Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'sitemap-categories') || str_contains($request->url(), 'brave.com') || str_contains($request->url(), 'joie'));
+});

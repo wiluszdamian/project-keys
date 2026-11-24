@@ -76,10 +76,10 @@ class ViewProduct extends ViewRecord
                     ->label('Szukaj w innych sklepach')
                     ->icon(Heroicon::OutlinedMagnifyingGlass)
                     ->disabled(fn () => ! ProductFinder::isConfigured())
-                    ->tooltip(fn () => ProductFinder::isConfigured() ? null : 'Dodaj klucz Brave Search API w Ustawieniach → Produkty.')
+                    ->tooltip(fn () => ProductFinder::isConfigured() ? null : 'Dodaj sklepy w Zakupy → Sklepy albo włącz AI.')
                     ->action(function (Product $record) {
                         FindProductOffersJob::dispatch($record, report: true);
-                        Notification::make()->info()->title('Szukam w innych sklepach')->body('Sprawdzam wyniki wyszukiwarki, AI porównuje produkty. Zwykle 1 do 3 minut, dam znać w dzwoneczku.')->send();
+                        Notification::make()->info()->title('Szukam w innych sklepach')->body('Szukam w mapach stron sklepów z listy, AI proponuje kolejne sklepy i porównuje produkty. Zwykle kilka minut, dam znać w dzwoneczku.')->send();
                     }),
                 Action::make('add_offer')
                     ->label('Dodaj link z innego sklepu')

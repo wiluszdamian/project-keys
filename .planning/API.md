@@ -70,12 +70,16 @@ Okazje (od 2026-11-23): oferta w `GET /listings/{id}` i na listach ma `deal_reas
 | GET | /products/{id}/prices | historia: `offer_id`, `shop`, `price`, `available`, `checked_at` (tylko zmiany) |
 | POST | /products/{id}/offers | `url`: ten sam produkt w innym sklepie (201) |
 | DELETE | /products/{id}/offers/{offer} | usuwa sklep |
-| POST | /products/{id}/find-offers | szukanie w innych sklepach w tle (202), wynik w panelu. Bez klucza Brave 422 |
+| POST | /products/{id}/find-offers | szukanie w innych sklepach w tle (202), wynik w panelu. 422, gdy nie ma sklepów, AI ani klucza Brave |
 | POST | /products/{id}/advice | ocena ceny przez AI w tle (202) |
 
 Oferta (`offers`): `id`, `url`, `shop`, `title`, `price`, `regular_price`, `lowest_30d_price`, `currency`, `available`, `source` (`manual`, `search`), `is_primary`, `is_active`, `extracted_by`, `match_note`, `last_error`, `failures`, `last_checked_at`.
 
-Komendy: `products:check` (co 10 minut produkty, które czekają; `--id=` wybrane, `--sync` od razu z wynikiem), `products:find-offers {id}` (od razu) albo `--due` (codziennie o 11:00, co `PRODUCTS_SEARCH_EVERY_DAYS` dni).
+Produkt ma też `search_query` (czego szukać w innych sklepach, np. "Cybex Balios S Lux"; puste = ustali AI albo początek nazwy).
+
+Sklepy do darmowego szukania (mapy stron): `GET /product-shops`, `POST /product-shops` (`domain`, opcjonalnie `name`, `sitemap_url`, `is_active`; od razu pobiera mapę w tle), `PATCH/DELETE /product-shops/{id}`, `POST /product-shops/{id}/sync`. Pola: `status` (`ok`, `empty`, `blocked`, `error`), `last_error`, `urls_count`, `synced_at`, `source` (`manual`, `ai`, `default`).
+
+Komendy: `products:sync-shops` (mapy stron starsze niż tydzień, w niedziele o 5:00; `{domena}` od razu z wynikiem, `--all` wszystkie), `products:check` (co 10 minut produkty, które czekają; `--id=` wybrane, `--sync` od razu z wynikiem), `products:find-offers {id}` (od razu) albo `--due` (codziennie o 11:00, co `PRODUCTS_SEARCH_EVERY_DAYS` dni).
 
 ## Ceny transakcyjne (od 2026-11-20)
 

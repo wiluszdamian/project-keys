@@ -17,7 +17,7 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'image_url', 'brand', 'gtin', 'mpn', 'target_price', 'notify_drops', 'min_drop_percent',
+        'name', 'image_url', 'brand', 'gtin', 'mpn', 'search_query', 'target_price', 'notify_drops', 'min_drop_percent',
         'notify_rises', 'notify_stock', 'check_every_hours', 'is_active', 'note',
     ];
 

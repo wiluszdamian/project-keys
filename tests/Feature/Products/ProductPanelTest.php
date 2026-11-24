@@ -34,6 +34,7 @@ it('otwiera listę, produkt z wykresem i ustawienia produktu', function () {
     $this->get("/admin/products/{$product->id}")->assertOk()->assertSee('Historia ceny')->assertSee('Kupuj')->assertSee('babyhit.pl')->assertSee('Dobra cena.');
     $this->get("/admin/products/{$product->id}/edit")->assertOk();
     $this->get('/admin/settings?tab=produkty::data::tab')->assertOk()->assertSee('Klucz Brave Search API');
+    $this->get('/admin/product-shops')->assertOk()->assertSee('bobowozki.com.pl');
 });
 
 it('dodaje produkt z wklejonego linku', function () {

@@ -3,9 +3,11 @@
 namespace App\Services\Products;
 
 use App\Ai\Agents\ProductMatchAgent;
+use App\Ai\Agents\ProductShopsAgent;
 use App\Filament\Support\Format;
 use App\Models\Product;
 use App\Models\ProductOffer;
+use App\Models\ProductShop;
 use App\Notifications\Notifier;
 use App\Services\ListingScorer;
 use Illuminate\Support\Collection;
@@ -17,8 +19,9 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Szuka tego samego produktu w innych sklepach: wyszukiwarka (Brave Search API), odczyt cen ze stron
- * i sprawdzenie przez AI, czy to ten sam model, wariant i zestaw. Pasujące oferty dochodzą do śledzenia.
+ * Szuka tego samego produktu w innych sklepach. Za darmo: mapy stron sklepów z listy (Zakupy → Sklepy),
+ * a AI proponuje zapytanie i kolejne sklepy. Opcjonalnie cały internet przez Brave Search API (klucz).
+ * Ze znalezionych stron czytamy cenę, AI sprawdza, czy to ten sam model, wariant i zestaw. Pasujące dochodzą do śledzenia.
  */
 class ProductFinder
 {
@@ -29,9 +32,15 @@ class ProductFinder
         private ProductTracker $tracker,
         private Notifier $notifier,
         private ListingScorer $scorer,
+        private ShopSitemaps $sitemaps,
     ) {}
 
     public static function isConfigured(): bool
+    {
+        return self::hasBrave() || ProductReader::aiEnabled() || ProductShop::where('is_active', true)->exists();
+    }
+
+    public static function hasBrave(): bool
     {
         return filled(config('products.search.brave_key'));
     }
@@ -42,17 +51,17 @@ class ProductFinder
     public function find(Product $product, bool $notify = true): array
     {
         if (! self::isConfigured()) {
-            throw new RuntimeException('Brak klucza Brave Search API (Ustawienia → Produkty).');
+            throw new RuntimeException('Nie ma gdzie szukać: dodaj sklepy (Zakupy → Sklepy), włącz AI albo dodaj klucz Brave Search API.');
         }
 
         $product->loadMissing('offers');
+        $this->prepare($product);
         $before = $this->tracker->snapshot($product);
         $known = $product->offers->pluck('shop')->all();
         $rejected = Cache::get($this->rejectedKey($product), []);
 
         $candidates = $this->search($product)
             ->reject(fn (array $result) => in_array($result['shop'], $known, true) || in_array(sha1($result['url']), $rejected, true) || $this->skipped($result['shop']))
-            ->unique('shop')
             ->take((int) config('products.search.max_candidates'))
             ->values();
 
@@ -73,12 +82,17 @@ class ProductFinder
 
         $verdicts = $this->match($product, $candidates, $pages);
         $added = [];
+        $addedShops = [];
         $report = [];
 
         foreach ($pages as $index => $page) {
             $candidate = $candidates[$index];
             [$same, $reason] = $verdicts[$index] ?? [false, null];
-            $report[] = ['shop' => $candidate['shop'], 'price' => $page->price, 'same' => $same, 'reason' => $reason];
+            $report[] = ['shop' => $candidate['shop'], 'url' => $candidate['url'], 'price' => $page->price, 'same' => $same, 'reason' => $reason];
+
+            if ($same && in_array($candidate['shop'], $addedShops, true)) {
+                continue;
+            }
 
             if (! $same) {
                 $rejected[] = sha1($candidate['url']);
@@ -88,6 +102,7 @@ class ProductFinder
 
             try {
                 $added[] = $this->tracker->addOffer($product, $candidate['url'], ProductOffer::SOURCE_SEARCH, $page, $reason)->id;
+                $addedShops[] = $candidate['shop'];
             } catch (Throwable $exception) {
                 Log::info("Monitor cen: nie dodałem {$candidate['url']}: {$exception->getMessage()}");
             }
@@ -122,21 +137,82 @@ class ProductFinder
     }
 
     /**
-     * Wyniki wyszukiwania: po kodzie EAN (gdy jest) i po nazwie.
+     * Kandydaci: strony z map sklepów z listy, a z kluczem Brave także wyniki z całego internetu (po EAN i nazwie).
      *
      * @return Collection<int, array{url: string, shop: string, title: string, snippet: string}>
      */
     public function search(Product $product): Collection
     {
-        $queries = array_filter([
-            $product->gtin,
-            Str::words(Str::squish(preg_replace('/[|–—].*$/u', '', $product->name)), 14, ''),
-        ]);
+        $known = $product->offers->pluck('shop')->all();
+        $results = $this->sitemaps->search(ShopSitemaps::queryFor($product), $known, $product->name)
+            ->map(fn (array $row) => collect($row)->except('score')->all());
 
-        return collect($queries)
-            ->flatMap(fn (string $query) => $this->brave($query))
-            ->unique('url')
-            ->values();
+        if (self::hasBrave()) {
+            $queries = array_filter([$product->gtin, ShopSitemaps::queryFor($product)]);
+            $web = collect($queries)->flatMap(fn (string $query) => $this->brave($query))->unique('shop');
+            $results = $results->concat($web);
+        }
+
+        return $results->unique('url')->values();
+    }
+
+    /**
+     * Przed szukaniem: AI ustala krótkie zapytanie i proponuje sklepy (raz na 30 dni na produkt),
+     * a mapy nowych i starych sklepów pobieramy od nowa (kilka naraz, reszta co tydzień w tle).
+     */
+    public function prepare(Product $product): void
+    {
+        if (ProductReader::aiEnabled() && Cache::add("products:shops-suggested:{$product->id}", true, now()->addDays(30))) {
+            try {
+                $this->suggestShops($product);
+            } catch (Throwable $exception) {
+                $this->scorer->countError();
+                Log::warning("Monitor cen: AI nie zaproponowało sklepów dla produktu #{$product->id}: {$exception->getMessage()}");
+            }
+        }
+
+        ProductShop::where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('synced_at')->orWhere('synced_at', '<=', now()->subDays((int) config('products.shops.sync_every_days'))))
+            ->orderByRaw('synced_at is not null')
+            ->orderBy('synced_at')
+            ->limit((int) config('products.shops.sync_per_search'))
+            ->get()
+            ->each(fn (ProductShop $shop) => $this->sitemaps->sync($shop));
+    }
+
+    /**
+     * AI: zapytanie do szukania (gdy osoba go nie ustawiła) i sklepy, które mogą mieć produkt.
+     *
+     * @return list<string> domeny dodane do listy sklepów
+     */
+    public function suggestShops(Product $product): array
+    {
+        $this->scorer->countCall();
+        $data = ProductShopsAgent::make()->prompt(implode("\n", array_filter([
+            "Produkt: {$product->name}",
+            $product->brand ? "Marka: {$product->brand}" : null,
+            $product->note ? 'Notatka osoby: '.Str::squish($product->note) : null,
+            'Sklepy, które już znamy: '.(ProductShop::pluck('domain')->merge($product->offers->pluck('shop'))->unique()->implode(', ') ?: 'brak'),
+        ])))->toArray();
+
+        if (blank($product->search_query) && is_string($data['query'] ?? null) && trim($data['query']) !== '') {
+            $product->forceFill(['search_query' => Str::limit(trim($data['query']), 120, '')])->save();
+        }
+
+        $added = [];
+
+        foreach (array_slice($data['shops'] ?? [], 0, 8) as $row) {
+            $domain = is_array($row) ? ProductUrl::shop('https://'.preg_replace('#^https?://#i', '', trim((string) ($row['domain'] ?? '')))) : '';
+
+            if (! preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/', $domain) || $this->skipped($domain) || ProductShop::where('domain', $domain)->exists()) {
+                continue;
+            }
+
+            ProductShop::create(['domain' => $domain, 'name' => Str::limit(trim((string) ($row['name'] ?? '')), 100, '') ?: null, 'source' => 'ai']);
+            $added[] = $domain;
+        }
+
+        return $added;
     }
 
     /**

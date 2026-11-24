@@ -3,6 +3,7 @@
 use App\Jobs\FindProductOffersJob;
 use App\Models\Product;
 use App\Models\ProductOffer;
+use App\Models\ProductShop;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Sleep;
@@ -67,7 +68,9 @@ it('dodaje i usuwa sklep przy produkcie', function () {
     expect($product->refresh()->best_price)->toBe(1599.0);
 });
 
-it('szukanie w innych sklepach idzie w tle, bez klucza 422', function () {
+it('szukanie w innych sklepach idzie w tle, bez sklepów, AI i klucza 422', function () {
+    ProductShop::query()->delete();
+    config(['products.ai' => false]);
     $product = Product::factory()->create();
 
     $this->postJson("/api/products/{$product->id}/find-offers")->assertStatus(422);

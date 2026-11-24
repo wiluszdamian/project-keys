@@ -11,13 +11,13 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('products:find-offers {id? : jeden produkt, od razu z wynikiem} {--due : wszystkie aktywne, których dawno nie szukaliśmy (w kolejce)}')]
-#[Description('Monitor cen: szuka produktu w innych sklepach (Brave Search + AI)')]
+#[Description('Monitor cen: szuka produktu w innych sklepach (mapy stron sklepów, AI, opcjonalnie Brave)')]
 class ProductsFindOffers extends Command
 {
     public function handle(ProductFinder $finder): int
     {
         if (! ProductFinder::isConfigured()) {
-            $this->warn('Brak klucza Brave Search API (BRAVE_SEARCH_API_KEY albo Ustawienia → Produkty).');
+            $this->warn('Nie ma gdzie szukać: dodaj sklepy (Zakupy → Sklepy), włącz AI albo ustaw BRAVE_SEARCH_API_KEY.');
 
             return $this->option('due') ? self::SUCCESS : self::FAILURE;
         }
@@ -27,7 +27,7 @@ class ProductsFindOffers extends Command
             $this->info("Wyniki: {$result['candidates']}, dodane: {$result['added']}, odrzucone: {$result['rejected']}, błędy: {$result['errors']}.");
 
             foreach ($result['offers'] as $offer) {
-                $this->line(($offer['same'] ? '  + ' : '  - ').$offer['shop'].': '.($offer['price'] !== null ? number_format($offer['price'], 2, ',', ' ').' zł' : '?').($offer['reason'] ? " ({$offer['reason']})" : ''));
+                $this->line(($offer['same'] ? '  + ' : '  - ').$offer['url'].': '.($offer['price'] !== null ? number_format($offer['price'], 2, ',', ' ').' zł' : '?').($offer['reason'] ? " ({$offer['reason']})" : ''));
             }
 
             return self::SUCCESS;

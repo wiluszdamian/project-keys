@@ -23,13 +23,26 @@ return [
     // Ocena AI najwyżej raz na tyle godzin (chyba że zmieni się cena).
     'advice_every_hours' => 24,
 
-    // Szukanie tego produktu w innych sklepach przez Brave Search API (klucz z api-dashboard.search.brave.com).
+    // Darmowe szukanie w innych sklepach: lista sklepów (Zakupy → Sklepy) i ich mapy stron (sitemap).
+    'shops' => [
+        // Mapy stron pobieramy od nowa co tyle dni.
+        'sync_every_days' => 7,
+        // Najwyżej tyle adresów z jednego sklepu i tyle map podrzędnych.
+        'max_urls' => 200_000,
+        'max_sitemaps' => 40,
+        // Ile nowych lub starych sklepów odświeżyć przy jednym szukaniu (reszta w tle co tydzień).
+        'sync_per_search' => 4,
+        // Ile stron produktu sprawdzić z jednego sklepu.
+        'candidates_per_shop' => 3,
+    ],
+
+    // Dodatkowo (opcjonalnie) cały internet przez Brave Search API (klucz z api-dashboard.search.brave.com).
     'search' => [
         'brave_key' => env('BRAVE_SEARCH_API_KEY'),
         // Automatycznie co tyle dni dla aktywnych produktów (0 = tylko ręcznie).
         'every_days' => (int) env('PRODUCTS_SEARCH_EVERY_DAYS', 3),
         // Ile stron z wyników sprawdzić za jednym razem.
-        'max_candidates' => 8,
+        'max_candidates' => 15,
         // Strony, które nie są sklepami albo blokują roboty.
         'skip_domains' => [
             'ceneo.pl', 'allegro.pl', 'google.com', 'google.pl', 'youtube.com', 'facebook.com', 'instagram.com',

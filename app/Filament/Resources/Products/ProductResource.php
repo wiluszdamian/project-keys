@@ -84,6 +84,12 @@ class ProductResource extends Resource
             Toggle::make('notify_rises')->label('Powiadamiaj o podwyżkach')->inline(false),
             Toggle::make('notify_stock')->label('Powiadamiaj o dostępności')->helperText('Znowu dostępny albo wyprzedany.')->inline(false),
             Toggle::make('is_active')->label('Śledź cenę')->inline(false),
+            TextInput::make('search_query')
+                ->label('Czego szukać w innych sklepach')
+                ->placeholder('np. Cybex Balios S Lux')
+                ->helperText('Marka i model, bez koloru i opisu. Puste = AI ustali samo przy pierwszym szukaniu.')
+                ->maxLength(120)
+                ->columnSpanFull(),
             Textarea::make('note')
                 ->label('Notatka')
                 ->helperText('AI bierze ją pod uwagę przy ocenie ceny i porównaniu ofert (np. "tylko kolor Chocolate Brown, z bazą").')

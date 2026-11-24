@@ -39,6 +39,9 @@ Schedule::command('alerts:check')->hourly();
 // Monitor cen: produkty, które czekają na sprawdzenie (co ile godzin: ustawienie produktu albo PRODUCTS_CHECK_EVERY_HOURS).
 Schedule::command('products:check')->everyTenMinutes()->withoutOverlapping()->when(fn () => (bool) config('products.enabled'));
 
-// Monitor cen: szukanie produktów w innych sklepach (Brave Search + AI), codziennie o 11:00 dla tych, których dawno nie szukaliśmy.
+// Monitor cen: szukanie produktów w innych sklepach (mapy stron sklepów, AI, opcjonalnie Brave), codziennie o 11:00 dla tych, których dawno nie szukaliśmy.
 Schedule::command('products:find-offers --due')->dailyAt('11:00')->withoutOverlapping()
-    ->when(fn () => config('products.enabled') && filled(config('products.search.brave_key')) && config('products.search.every_days') > 0);
+    ->when(fn () => config('products.enabled') && config('products.search.every_days') > 0);
+
+// Monitor cen: mapy stron sklepów z listy (darmowe szukanie produktów), w niedziele o 5:00 te starsze niż tydzień.
+Schedule::command('products:sync-shops')->weeklyOn(0, '05:00')->withoutOverlapping()->when(fn () => (bool) config('products.enabled'));

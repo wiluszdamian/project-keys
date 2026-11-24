@@ -112,6 +112,7 @@ Produkt, który osoba chce kupić. Oferty w sklepach w `product_offers`.
 |---|---|---|
 | name, image_url, brand | | ze strony głównego sklepu, nazwę można zmienić |
 | gtin, mpn | string nullable | EAN i kod producenta ze strony, pomagają znaleźć produkt w innych sklepach |
+| search_query | string nullable | czego szukać w innych sklepach; puste = AI albo początek nazwy |
 | target_price | decimal nullable | cena docelowa: powiadomienie, gdy najlepsza cena do niej spadnie |
 | notify_drops, min_drop_percent, notify_rises, notify_stock | | co wysyłać (obniżki od X%, podwyżki, dostępność) |
 | check_every_hours | smallint nullable | null = `PRODUCTS_CHECK_EVERY_HOURS` (3) |
@@ -128,3 +129,11 @@ product_id, url (bez parametrów śledzących), url_key (sha1, unique z product_
 ## product_prices
 
 product_offer_id, price, available, checked_at. Tylko pierwszy odczyt i zmiany ceny albo dostępności.
+
+## product_shops
+
+Sklepy do darmowego szukania produktów: domain (unique, bez www), name, sitemap_url (puste = z robots.txt albo /sitemap.xml), is_active, source (`manual`, `ai`, `default`), status (`ok`, `empty`, `blocked`, `error`), last_error, urls_count, synced_at.
+
+## product_shop_urls
+
+product_shop_id, url, slug (słowa z adresu małymi literami bez polskich znaków). Adresy z mapy strony sklepu, bez zakazanych w robots.txt, najwyżej 200 000 na sklep.

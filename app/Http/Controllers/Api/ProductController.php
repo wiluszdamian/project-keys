@@ -124,7 +124,7 @@ class ProductController extends Controller
      */
     public function findOffers(Product $product): JsonResponse
     {
-        abort_unless(ProductFinder::isConfigured(), 422, 'Brak klucza Brave Search API (BRAVE_SEARCH_API_KEY).');
+        abort_unless(ProductFinder::isConfigured(), 422, 'Nie ma gdzie szukać: dodaj sklepy (/api/product-shops), włącz AI albo ustaw BRAVE_SEARCH_API_KEY.');
 
         FindProductOffersJob::dispatch($product, report: true);
 
@@ -152,13 +152,14 @@ class ProductController extends Controller
             'check_every_hours' => ['nullable', 'integer', 'min:1', 'max:168'],
             'is_active' => ['sometimes', 'boolean'],
             'note' => ['nullable', 'string', 'max:2000'],
+            'search_query' => ['nullable', 'string', 'max:120'],
         ];
     }
 
     private function present(Product $product, bool $withHistory = false): array
     {
         return $product->only([
-            'id', 'name', 'image_url', 'brand', 'gtin', 'mpn', 'target_price', 'notify_drops', 'min_drop_percent', 'notify_rises',
+            'id', 'name', 'image_url', 'brand', 'gtin', 'mpn', 'search_query', 'target_price', 'notify_drops', 'min_drop_percent', 'notify_rises',
             'notify_stock', 'check_every_hours', 'is_active', 'note', 'best_price', 'best_offer_id', 'initial_price', 'lowest_price',
             'highest_price', 'ai_advice',
         ]) + [
