@@ -119,8 +119,9 @@ Gotowe gdy: system działa 24 h bez ręcznej pomocy, backup jest i daje się prz
 
 - ✅ AI uczy się z decyzji: oferty ulubione i odrzucone jako przykłady w prompcie oceny (2026-11-23).
 - Wiadomość do ogłoszeniodawcy: przycisk, AI pisze pytania o brakujące informacje (kaucja, media, zwierzęta, termin, parking).
-- Lista pytań na oglądanie dla statusu "Oglądanie" i termin w kalendarzu (iCal).
-- ✅ Oferty, które zniknęły z portalu: sprawdzanie stron ogłoszeń, etykieta „Zdjęta”, filtr, powiadomienie o zdjętej ulubionej (2026-11-24). Zostało: czas schodzenia ofert i statystyki z tego.
+- ✅ Lista pytań na oglądanie (reguły i AI), termin z plikiem .ics, przypomnienie, wrażenia po oglądaniu (2026-11-24).
+- ✅ Warunki najmu przy ofercie: rodzaj umowy, okres, kaucja, zwierzęta, prowizja, kto wynajmuje (2026-11-24).
+- ✅ Oferty, które zniknęły z portalu: sprawdzanie stron ogłoszeń, etykieta „Zdjęta”, filtr, powiadomienie o zdjętej ulubionej (2026-11-24). ✅ Czas na rynku, etykieta „Wisi N dni” i sekcja w raporcie tygodniowym (2026-11-24).
 - ✅ Okazje: oferty wyraźnie tańsze niż transakcje lub mediana za m², duże obniżki, zakładka i powiadomienia (2026-11-23).
 - ✅ Asystent z działaniami: statusy i notatki z czatu, kredyt, okazje, zarządzanie rozmowami (2026-11-23). Nowe wyszukiwania z czatu na razie nie.
 - ✅ Tygodniowy raport rynku na Discordzie i w panelu (2026-11-20, soboty 20:00).

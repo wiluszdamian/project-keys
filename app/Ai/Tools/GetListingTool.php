@@ -8,9 +8,11 @@ use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Services\DealFinder;
 use App\Services\Geo\Infrastructure;
+use App\Services\LeaseTerms;
 use App\Services\ListingFacts;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
+use App\Services\TimeOnMarket;
 use App\Support\Portals;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Str;
@@ -55,6 +57,8 @@ class GetListingTool implements Tool
             'private_owner' => $listing->is_private_owner,
             'details' => $listing->raw['details'] ?? null,
             'facts' => ListingFacts::labels($listing),
+            'lease_terms' => LeaseTerms::labels($listing),
+            'time_on_market' => TimeOnMarket::describe($listing),
             'surroundings' => Infrastructure::lines($listing),
             'description' => Str::limit((string) $listing->description, 2500),
             'found' => $listing->first_seen_at?->format('Y-m-d H:i'),

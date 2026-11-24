@@ -65,6 +65,7 @@ class MarketReportBuilder
             'best_new' => $this->bestNew($dealType, $from, $to),
             'has_previous' => $previous !== null,
             'transactions' => $dealType === DealType::Sale ? $this->transactions($from, $to) : null,
+            'time_on_market' => TimeOnMarket::weekly($dealType, $from, $to),
         ];
     }
 

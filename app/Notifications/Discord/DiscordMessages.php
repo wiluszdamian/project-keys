@@ -11,6 +11,7 @@ use App\Services\DealFinder;
 use App\Services\Geo\CommuteCalculator;
 use App\Services\ListingScorer;
 use App\Services\Rcn\TransactionComparator;
+use App\Services\TimeOnMarket;
 use App\Support\Portals;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -280,6 +281,20 @@ class DiscordMessages
                     ->map(fn (array $drop) => '['.Str::limit(str_replace(['[', ']'], '', $drop['title']), 50)."]({$drop['url']}): "
                         .$this->money($drop['old_price']).' → '.$this->money($drop['new_price']).' (−'.$this->percent($drop['percent']).')')
                     ->implode("\n"), 1000),
+                'inline' => false,
+            ];
+        }
+
+        $timing = $data['time_on_market'] ?? null;
+
+        if ($timing && ($timing['gone'] > 0 || $timing['longest'] !== [])) {
+            $fields[] = [
+                'name' => "⏱️ Zdjęte z portali: {$timing['gone']}".($timing['median_days'] !== null ? ', mediana '.TimeOnMarket::days($timing['median_days']) : ''),
+                'value' => Str::limit(implode("\n", array_filter([
+                    $timing['by_rooms'] !== [] ? collect($timing['by_rooms'])->map(fn (array $row) => "{$row['rooms']} pok.: {$row['median_days']} dni")->implode(' · ') : null,
+                    ...collect($timing['longest'])->take(3)->map(fn (array $row) => 'Wisi '.($row['known'] ? '' : 'min. ').TimeOnMarket::days($row['days']).': ['
+                        .Str::limit(str_replace(['[', ']'], '', $row['title']), 50)."]({$row['url']}) · ".$this->money($row['price']))->all(),
+                ])) ?: 'Brak danych.', 1000),
                 'inline' => false,
             ];
         }

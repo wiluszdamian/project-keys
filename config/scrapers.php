@@ -184,4 +184,12 @@ return [
         'area_tolerance' => 1.0,
         'days' => 7,
     ],
+    // Jak długo oferty wiszą (TimeOnMarket). "Wisi długo" od 75. percentyla zdjętych podobnych ofert,
+    // ale nie mniej niż min_long_days. Gdy zdjętych jest mniej niż min_sample, próg z long_days.
+    'time_on_market' => [
+        'long_days' => ['rent' => (int) env('LONG_ON_MARKET_RENT_DAYS', 30), 'sale' => (int) env('LONG_ON_MARKET_SALE_DAYS', 90)],
+        'min_long_days' => 14,
+        'min_sample' => 5,
+        'lookback_days' => 120,
+    ],
 ];

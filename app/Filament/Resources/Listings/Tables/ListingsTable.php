@@ -11,7 +11,9 @@ use App\Filament\Support\StatusActions;
 use App\Models\CommutePlace;
 use App\Models\Listing;
 use App\Services\DealFinder;
+use App\Services\LeaseTerms;
 use App\Services\Rcn\TransactionComparator;
+use App\Services\TimeOnMarket;
 use App\Support\Portals;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -38,9 +40,9 @@ class ListingsTable
                 ->whereHas('searches')
                 ->with([
                     'commutes.place',
-                    'duplicates:id,duplicate_of_id,portal,url,price,rent_extra,inactive_at',
+                    'duplicates:id,duplicate_of_id,portal,url,price,rent_extra,inactive_at,first_seen_at,published_at',
                     'analyses:id,listing_id,cost_breakdown',
-                    'originalListing' => fn ($query) => $query->withMax('analyses', 'score')->withMax('analyses', 'monthly_cost')->with(['analyses:id,listing_id,cost_breakdown', 'duplicates:id,duplicate_of_id,portal,rent_extra']),
+                    'originalListing' => fn ($query) => $query->withMax('analyses', 'score')->withMax('analyses', 'monthly_cost')->with(['analyses:id,listing_id,cost_breakdown', 'duplicates:id,duplicate_of_id,portal,rent_extra,inactive_at,first_seen_at,published_at']),
                 ])
                 ->withMax('analyses', 'score')
                 ->withMax('analyses', 'monthly_cost'))
@@ -65,6 +67,7 @@ class ListingsTable
                     ->description(fn (Listing $record) => collect([
                         $record->district ?: $record->city,
                         $record->street,
+                        LeaseTerms::short($record),
                         $record->first_seen_at?->diffForHumans(short: true),
                     ])->filter()->unique()->implode(' · '))
                     ->visibleFrom(ListingCard::BREAKPOINT),
@@ -147,17 +150,20 @@ class ListingsTable
                         $record->deal_at ? 'Okazja' : null,
                         $record->status?->getLabel(),
                         $record->risk_flags ? '⚠ '.count($record->risk_flags) : null,
+                        TimeOnMarket::longBadge($record),
                     ])))
                     ->badge()
                     ->color(fn (string $state, Listing $record) => match (true) {
                         $state === 'Okazja' => 'success',
                         $state === 'Zdjęta' => 'danger',
                         str_starts_with($state, '⚠') => 'danger',
+                        str_starts_with($state, 'Wisi ') => 'warning',
                         default => $record->status?->getColor() ?? 'gray',
                     })
                     ->tooltip(fn (Listing $record) => collect([
                         $record->isGone() ? 'Zdjęta z portalu '.$record->inactive_at->format('d.m.Y').': '.$record->inactive_reason : null,
                         $record->deal_reasons ? 'Okazja: '.DealFinder::summary($record->deal_reasons) : null,
+                        TimeOnMarket::longBadge($record) ? TimeOnMarket::describe($record) : null,
                         ...collect($record->risk_flags ?? [])->pluck('message'),
                     ])->filter()->implode("\n") ?: null)
                     ->placeholder('-')

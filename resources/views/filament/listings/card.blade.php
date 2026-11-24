@@ -1,5 +1,7 @@
 @php
     use App\Filament\Support\Format;
+    use App\Services\LeaseTerms;
+    use App\Services\TimeOnMarket;
     use App\Support\Portals;
 
     $listing = $getRecord();
@@ -43,6 +45,10 @@
             <div class="pk-card__muted">{{ $facts }}</div>
         @endif
 
+        @if ($lease = LeaseTerms::short($listing))
+            <div class="pk-card__muted">{{ $lease }}</div>
+        @endif
+
         <div class="pk-card__meta">
             @if ($listing->isGone())
                 <x-filament::badge size="sm" color="danger">Zdjęta</x-filament::badge>
@@ -52,6 +58,9 @@
             @endif
             @if ($listing->status)
                 <x-filament::badge size="sm" :color="$listing->status->getColor()">{{ $listing->status->getLabel() }}</x-filament::badge>
+            @endif
+            @if ($long = TimeOnMarket::longBadge($listing))
+                <x-filament::badge size="sm" color="warning">{{ $long }}</x-filament::badge>
             @endif
             @if ($listing->risk_flags)
                 <x-filament::badge size="sm" color="danger">⚠ {{ count($listing->risk_flags) }}</x-filament::badge>

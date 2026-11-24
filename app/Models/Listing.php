@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Enums\DealType;
 use App\Enums\ListingStatus;
+use App\Jobs\SuggestViewingQuestionsJob;
 use App\Services\ListingFeatures;
+use App\Services\ListingScorer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +46,11 @@ class Listing extends Model
             'last_seen_at' => 'datetime',
             'inactive_at' => 'datetime',
             'availability_checked_at' => 'datetime',
+            'published_at' => 'datetime',
+            'viewing_at' => 'datetime',
+            'viewing_questions' => 'array',
+            'viewing_questions_at' => 'datetime',
+            'viewing_reminded_at' => 'datetime',
         ];
     }
 
@@ -111,6 +118,11 @@ class Listing extends Model
         }
 
         $this->update(['status' => $status, 'note' => $note !== '' ? $note : null]);
+
+        // Oglądanie: AI od razu przygotowuje pytania do tej oferty (raz, potem na żądanie w panelu).
+        if ($status === ListingStatus::Viewing && $this->viewing_questions_at === null && ListingScorer::isEnabled()) {
+            SuggestViewingQuestionsJob::dispatch($this);
+        }
     }
 
     /**

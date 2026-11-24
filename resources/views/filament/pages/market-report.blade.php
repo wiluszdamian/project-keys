@@ -1,6 +1,7 @@
 @php
     use App\Filament\Pages\MarketReportPage;
     use App\Filament\Support\Format;
+    use App\Services\TimeOnMarket;
     use Illuminate\Support\Str;
 
     $current = $this->current;
@@ -164,6 +165,35 @@
                         </table>
                     @endif
                 </x-filament::section>
+
+                @if ($timing = $data['time_on_market'] ?? null)
+                    <x-filament::section heading="Jak szybko schodzą oferty" :description="$timing['gone'] > 0 ? 'Zdjęte w tym tygodniu: '.$timing['gone'].($timing['median_days'] !== null ? ', mediana '.TimeOnMarket::days($timing['median_days']).' na rynku' : '').'.' : 'W tym tygodniu nic nie zeszło z portali.'">
+                        @if ($timing['by_rooms'] !== [])
+                            <table>
+                                <thead><tr><th>Pokoje</th><th class="num">Zdjęte</th><th class="num">Mediana dni</th></tr></thead>
+                                <tbody>
+                                    @foreach ($timing['by_rooms'] as $row)
+                                        <tr><td>{{ $row['rooms'] }}</td><td class="num">{{ $row['count'] }}</td><td class="num">{{ $row['median_days'] }}</td></tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                        @if ($timing['longest'] !== [])
+                            <p class="pk-report__muted">Wiszą najdłużej (jest pole do negocjacji):</p>
+                            <table>
+                                <tbody>
+                                    @foreach ($timing['longest'] as $row)
+                                        <tr>
+                                            <td><a href="{{ route('filament.admin.resources.listings.view', $row['id']) }}">{{ Str::limit($row['title'], 60) }}</a></td>
+                                            <td class="num">{{ Format::pln($row['price']) }}</td>
+                                            <td class="num">{{ $row['known'] ? '' : 'min. ' }}{{ TimeOnMarket::days($row['days']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                    </x-filament::section>
+                @endif
 
                 <x-filament::section heading="Najlepsze nowe oferty" description="Najwyższa ocena AI wśród ofert z tego tygodnia.">
                     @if ($data['best_new'] === [])

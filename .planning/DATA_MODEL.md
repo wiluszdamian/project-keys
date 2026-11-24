@@ -55,6 +55,11 @@ Okazje: `deal_reasons` (jsonb, lista `{type, text}`), `deal_at` (od kiedy jest o
 | inactive_at | timestamp null | ogłoszenie zdjęte z portalu (404/410, komunikat „archiwalne”, przekierowanie); znów w wynikach = null |
 | inactive_reason | string null | skąd wiemy, że zdjęte |
 | availability_checked_at | timestamp null | ostatnie sprawdzenie strony ogłoszenia (`listings:check-active`) |
+| published_at | timestamp null | data dodania ogłoszenia według portalu (Otodom, OLX, Morizon, Domiporta, Rzeszowiak); najwcześniejsza widziana |
+| viewing_at | timestamp null | umówione oglądanie |
+| viewing_questions | jsonb null | pytania od AI na oglądanie: lista `{question, why}` |
+| viewing_questions_at | timestamp null | kiedy AI przygotowało pytania |
+| viewing_reminded_at | timestamp null | wysłane przypomnienie o oglądaniu (zerowane przy zmianie terminu) |
 | timestamps | | |
 
 Indeksy: unique(portal, external_id), index(city, district), index(last_seen_at).

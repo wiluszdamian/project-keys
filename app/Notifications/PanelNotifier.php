@@ -103,6 +103,38 @@ class PanelNotifier
         );
     }
 
+    public function viewingQuestions(Listing $listing, int $count): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Pytania na oglądanie: '.Str::limit($listing->title, 60))
+                ->body($count > 0 ? "AI zaproponowało {$count} pytań do tej oferty." : 'AI nie znalazło dodatkowych pytań, zostaje lista z panelu.')
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->iconColor('info')
+                ->actions([
+                    Action::make('open')->label('Zobacz pytania')->url(route('filament.admin.resources.listings.view', $listing))->markAsRead(),
+                ]),
+        );
+    }
+
+    public function viewingReminder(Listing $listing): void
+    {
+        $this->send(
+            Notification::make()
+                ->title('Oglądanie o '.$listing->viewing_at->format('H:i').': '.Str::limit($listing->title, 50))
+                ->body(implode(' · ', array_filter([
+                    $listing->viewing_at->isToday() ? 'dzisiaj' : $listing->viewing_at->format('d.m.Y'),
+                    collect([$listing->street, $listing->district, $listing->city])->filter()->unique()->implode(', ') ?: null,
+                    Format::pln($listing->price),
+                ])))
+                ->icon('heroicon-o-calendar-days')
+                ->iconColor('success')
+                ->actions([
+                    Action::make('open')->label('Pytania i szczegóły')->url(route('filament.admin.resources.listings.view', $listing))->markAsRead(),
+                ]),
+        );
+    }
+
     public function deals(int $count): void
     {
         $this->send(

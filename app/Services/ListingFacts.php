@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DealType;
 use App\Models\Listing;
 
 /**
@@ -79,6 +80,8 @@ class ListingFacts
     {
         $facts = self::of($listing);
         $yesNo = fn (?bool $value) => $value === null ? null : ($value ? 'tak' : 'nie');
+        // Przy najmie kaucja i termin są w warunkach najmu (LeaseTerms).
+        $rent = $listing->deal_type === DealType::Rent;
 
         return array_filter([
             'Ogrzewanie' => $facts['heating'],
@@ -89,8 +92,8 @@ class ListingFacts
             'Garaż / parking' => self::extraText($facts['parking']),
             'Komórka / piwnica' => self::extraText($facts['storage']),
             'Stan' => $facts['condition'],
-            'Kaucja' => $facts['deposit'] ? number_format($facts['deposit'], 0, ',', ' ').' zł' : null,
-            'Dostępne od' => $facts['free_from'],
+            'Kaucja' => ! $rent && $facts['deposit'] ? number_format($facts['deposit'], 0, ',', ' ').' zł' : null,
+            'Dostępne od' => $rent ? null : $facts['free_from'],
         ], fn ($value) => $value !== null && $value !== '');
     }
 

@@ -149,6 +149,23 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   oceny AI. Mieszkanie liczy się jako zdjęte, gdy nie ma go na żadnym portalu. Lista ofert domyślnie je ukrywa
   (filtr „Zdjęte z portali”). Gdy zniknie oferta ulubiona, z kontaktem albo oglądaniem, przychodzi powiadomienie
   w dzwoneczku. Oferta, która wróci do wyników, znów jest aktywna.
+- **Warunki najmu:** przy ofercie wynajmu sekcja z rodzajem umowy (zwykła, najem okazjonalny,
+  instytucjonalny, na doby), okresem najmu, kaucją, terminem, zwierzętami, ogłoszeniodawcą (osoba prywatna
+  albo nazwa biura) i prowizją. Dane z portalu, a gdy ich brak, z opisu. „Nie podano” znaczy, że warto zapytać.
+  Na liście ofert pod tytułem jest skrót, np. „prywatnie · okazjonalny · min. 12 mies.”.
+- **Jak długo wisi:** przy ofercie widać, od kiedy jest na rynku (data dodania z portalu, a gdy jej nie ma,
+  pierwsze zobaczenie u nas) i po ilu dniach schodzą podobne zdjęte oferty. Oferta wisząca dłużej niż
+  3/4 podobnych (najmniej 14 dni; bez danych 30 dni przy najmie i 90 przy sprzedaży) dostaje etykietę
+  „Wisi N dni”: jest miejsce na negocjację. Oferta znaleziona w pierwszym przebiegu portalu mogła wisieć
+  wcześniej, więc wtedy panel pisze „co najmniej”. To samo widzi ocena AI, asystent i sobotni raport
+  (ile ofert zeszło w tygodniu, po ilu dniach, które wiszą najdłużej).
+- **Oglądanie:** menu „Oglądanie” na stronie oferty: termin (status zmienia się na Oglądanie, pobiera się
+  plik .ics do kalendarza z przypomnieniem godzinę wcześniej), pytania od AI, „Po oglądaniu” (wrażenia
+  trafiają do notatki, z której uczy się AI, i od razu można zmienić status) i odwołanie terminu. Sekcja
+  „Oglądanie” na stronie oferty ma pytania od AI, pytania o to, czego ogłoszenie nie mówi (czynsz, kaucja,
+  ogrzewanie, winda, uwagi z oceny AI, sygnały ryzyka) i stałą listę rzeczy do sprawdzenia na miejscu.
+  AI przygotowuje pytania samo przy zmianie statusu na Oglądanie. Na 2 godziny przed terminem przychodzi
+  przypomnienie w dzwoneczku. Zakładka „Oglądania” na liście ofert pokazuje umówione terminy.
 - **Nauka na decyzjach:** oferty oznaczone jako ulubiona, kontakt, oglądanie albo odrzucona, razem
   z notatkami, trafiają do oceny AI jako przykłady tego, czego szukasz. Przy odrzuceniu i dodaniu do
   ulubionych możesz wpisać powód, który zapisuje się w notatce.

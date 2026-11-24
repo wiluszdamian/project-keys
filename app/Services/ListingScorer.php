@@ -108,6 +108,8 @@ class ListingScorer
             $features->visualizations ? '- zdjęcia to wizualizacje, nie prawdziwe mieszkanie' : null,
             ...$this->details($listing),
             ...collect(ListingFacts::labels($listing))->map(fn (string $value, string $label) => '- '.mb_strtolower($label).' (z portalu albo opisu): '.$value)->values()->all(),
+            ...($rent ? collect(LeaseTerms::labels($listing))->except('Ogłoszeniodawca')->map(fn (string $value, string $label) => '- '.mb_strtolower($label).' (odczytane automatycznie): '.$value)->values()->all() : []),
+            ($onMarket = TimeOnMarket::describe($listing)) ? '- jak długo wisi: '.$onMarket : null,
             '- opis: '.($listing->description ? Str::limit(Str::squish($listing->description), config('scoring.description_limit')) : 'portal nie podał opisu'),
             '',
             '## Dojazd (trasa z naszego serwera, bez korków)',
@@ -245,7 +247,7 @@ class ListingScorer
         $this->increment('errors');
     }
 
-    private function countCall(): void
+    public function countCall(): void
     {
         $this->increment('calls');
     }

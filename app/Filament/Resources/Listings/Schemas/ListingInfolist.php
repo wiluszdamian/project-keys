@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Listings\Schemas;
 
+use App\Enums\ListingStatus;
 use App\Filament\Pages\MortgagePage;
 use App\Filament\Support\Format;
 use App\Models\Listing;
@@ -10,10 +11,14 @@ use App\Models\Poi;
 use App\Models\RcnTransaction;
 use App\Services\DealFinder;
 use App\Services\Geo\Infrastructure;
+use App\Services\LeaseTerms;
 use App\Services\ListingFacts;
 use App\Services\ListingFeatures;
+use App\Services\ListingScorer;
 use App\Services\Mortgage\RkmSimulator;
 use App\Services\Rcn\TransactionComparator;
+use App\Services\TimeOnMarket;
+use App\Services\ViewingQuestions;
 use App\Support\Portals;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -166,10 +171,16 @@ class ListingInfolist
                                 .($duplicate->inactive_at ? ' (zdjęta)' : ''))->implode(', '))
                             ->html()
                             ->visible(fn (Listing $record) => $record->duplicates->isNotEmpty()),
-                        TextEntry::make('is_private_owner')
+                        // Przy najmie ogłoszeniodawca jest w sekcji Warunki najmu.
+                        TextEntry::make('advertiser')
                             ->label('Ogłoszeniodawca')
-                            ->formatStateUsing(fn ($state) => $state ? 'osoba prywatna' : 'agencja / firma')
-                            ->placeholder('nie wiadomo'),
+                            ->state(fn (Listing $record) => LeaseTerms::advertiser($record))
+                            ->visible(fn (Listing $record) => $record->deal_type->value !== 'rent'),
+                        TextEntry::make('time_on_market')
+                            ->label('Na rynku')
+                            ->state(fn (Listing $record) => TimeOnMarket::describe($record))
+                            ->color(fn (Listing $record) => TimeOnMarket::assess($record)['long'] ? 'warning' : null)
+                            ->columnSpanFull(),
                         TextEntry::make('first_seen_at')
                             ->label('Znaleziona')
                             ->dateTime('d.m.Y H:i'),
@@ -202,6 +213,69 @@ class ListingInfolist
                                     ->placeholder('Bez notatki'),
                             ]),
                     ]),
+
+                Section::make('Oglądanie')
+                    ->icon('heroicon-o-calendar-days')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->description('Pytania do zadania na miejscu. Termin, pytania od AI i wrażenia po oglądaniu są w menu „Oglądanie” u góry.')
+                    ->visible(fn (Listing $record) => $record->status === ListingStatus::Viewing || $record->viewing_at !== null || filled($record->viewing_questions))
+                    ->schema([
+                        TextEntry::make('viewing_at')
+                            ->label('Termin')
+                            ->state(fn (Listing $record) => $record->viewing_at
+                                ? $record->viewing_at->translatedFormat('l, d.m.Y, H:i').' ('.$record->viewing_at->diffForHumans().')'
+                                : null)
+                            ->placeholder('nie ustawiony')
+                            ->weight('medium'),
+                        TextEntry::make('viewing_ai')
+                            ->label('Od AI')
+                            ->state(fn (Listing $record) => array_map(
+                                fn (array $row) => '<strong>'.e($row['question']).'</strong>'.($row['why'] ? '<br><span class="text-gray-500 text-sm">'.e($row['why']).'</span>' : ''),
+                                ViewingQuestions::fromAi($record),
+                            ) ?: null)
+                            ->html()
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->placeholder(fn (Listing $record) => match (true) {
+                                ! ListingScorer::isEnabled() => 'AI jest wyłączone.',
+                                $record->viewing_questions_at !== null => 'AI nie dodało pytań poza listą poniżej.',
+                                $record->status === ListingStatus::Viewing => 'AI przygotowuje pytania. Odśwież stronę za chwilę.',
+                                default => 'Wybierz „Pytania od AI” w menu Oglądanie.',
+                            }),
+                        TextEntry::make('viewing_offer')
+                            ->label('Czego ogłoszenie nie mówi')
+                            ->state(fn (Listing $record) => ViewingQuestions::forListing($record) ?: null)
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->placeholder('Ogłoszenie podaje wszystko, o co zwykle pytamy.'),
+                        Section::make('Zawsze warto sprawdzić')
+                            ->collapsed()
+                            ->compact()
+                            ->schema([
+                                TextEntry::make('viewing_base')
+                                    ->hiddenLabel()
+                                    ->state(fn (Listing $record) => ViewingQuestions::base($record))
+                                    ->listWithLineBreaks()
+                                    ->bulleted(),
+                            ]),
+                    ]),
+
+                Section::make('Warunki najmu')
+                    ->icon('heroicon-o-document-check')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->description('Z danych portalu, a gdy ich brak, z opisu ogłoszenia. „Nie podano” znaczy, że warto zapytać.')
+                    ->columns(['default' => 2, 'md' => 4])
+                    ->visible(fn (Listing $record) => $record->deal_type->value === 'rent')
+                    ->schema(array_map(
+                        fn (string $label) => TextEntry::make('lease_'.md5($label))
+                            ->label($label)
+                            ->state(fn (Listing $record) => LeaseTerms::labels($record, withUnknown: true)[$label] ?? null)
+                            ->color(fn (?string $state) => $state === 'nie podano' ? 'gray' : null)
+                            ->placeholder('nie podano'),
+                        LeaseTerms::RENT_LABELS,
+                    )),
 
                 Section::make('Sygnały ryzyka')
                     ->icon('heroicon-o-exclamation-triangle')

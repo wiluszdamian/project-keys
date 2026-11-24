@@ -14,6 +14,8 @@ return [
     'alert_cooldown_hours' => 6,
     // Tygodniowy raport rynku w każdą sobotę o 20:00: Discord (kanał wynajmu i sprzedaży) i panel.
     'weekly_report' => (bool) env('NOTIFY_WEEKLY_REPORT', true),
+    // Przypomnienie w panelu o oglądaniu: tyle minut przed terminem.
+    'viewing_reminder_minutes' => (int) env('NOTIFY_VIEWING_REMINDER_MINUTES', 120),
     // Alerty systemowe zawsze idą do panelu. Na Discorda tylko po włączeniu.
     'alerts_discord' => (bool) env('NOTIFY_ALERTS_DISCORD', false),
 

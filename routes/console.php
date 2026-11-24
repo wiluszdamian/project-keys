@@ -24,6 +24,9 @@ Schedule::command('queue:prune-failed --hours=168')->daily();
 // Czy ogłoszenia, których nie ma w wynikach, są jeszcze na portalu. Zdjęte dostają znacznik "nieaktywna".
 Schedule::command('listings:check-active')->everyThirtyMinutes()->withoutOverlapping(60)->runInBackground();
 
+// Przypomnienie o oglądaniu (dzwoneczek w panelu) na 2 godziny przed terminem.
+Schedule::command('viewings:remind')->everyFiveMinutes()->withoutOverlapping();
+
 // Okazje: przeliczenie i powiadomienia o nowych, co godzinę.
 Schedule::command('deals:refresh')->hourlyAt(15)->withoutOverlapping()->runInBackground();
 

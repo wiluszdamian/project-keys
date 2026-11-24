@@ -34,6 +34,7 @@ class ListingUpserter
                 $listing = Listing::create($data->toAttributes() + [
                     'first_seen_at' => $now,
                     'last_seen_at' => $now,
+                    'published_at' => TimeOnMarket::publishedAt($data->portal, $data->toAttributes()['raw'] ?? []),
                 ]);
 
                 if ($original = $this->duplicates->findOriginal($listing)) {
@@ -56,6 +57,13 @@ class ListingUpserter
 
             if (isset($listing->raw['details']) && ! isset($attributes['raw']['details'])) {
                 $attributes['raw']['details'] = $listing->raw['details'];
+            }
+
+            // Data dodania z portalu: najwcześniejsza, jaką widzieliśmy (odświeżenie ogłoszenia jej nie przesuwa).
+            $published = TimeOnMarket::publishedAt($data->portal, $attributes['raw'] ?? []);
+
+            if ($published !== null && ($listing->published_at === null || $published->lt($listing->published_at))) {
+                $attributes['published_at'] = $published;
             }
 
             // Oferta znów w wynikach portalu: aktywna (np. odnowiona po wygaśnięciu).
