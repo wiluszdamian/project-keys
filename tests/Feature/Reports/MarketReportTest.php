@@ -1,10 +1,13 @@
 <?php
 
+use App\Ai\Agents\MarketReportAgent;
 use App\Enums\DealType;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
 use App\Models\ListingPriceChange;
 use App\Models\MarketReport;
+use App\Models\Product;
+use App\Models\ProductOffer;
 use App\Models\Search;
 use App\Models\User;
 use App\Services\MarketReportBuilder;
@@ -142,4 +145,63 @@ it('API zwraca raporty i ustawienia raportu oraz alertów', function () {
         ->assertOk()
         ->assertJsonPath('data.weekly_report', false)
         ->assertJsonPath('data.alerts_discord', true);
+});
+
+it('łączy różne zapisy tej samej dzielnicy i pomija oferty spoza wyszukiwań', function () {
+    foreach (['Os. Projektant', 'Projektant', 'Os Projketant', 'OŚ.Projektant', 'Drabinianka', 'drabinianka', 'Drabinnianka'] as $district) {
+        seenListing($this->search, ['district' => $district, 'price_per_m2' => 50]);
+    }
+    Listing::factory()->create(['deal_type' => 'rent', 'district' => 'Projektant', 'price' => 1, 'rooms' => 1]);
+
+    $data = app(MarketReportBuilder::class)->build(DealType::Rent, now()->subDays(7), now());
+
+    expect(collect($data['districts'])->pluck('count', 'name')->sortKeys()->all())->toBe(['Drabinianka' => 3, 'Projektant' => 4])
+        ->and($data['totals']['active'])->toBe(7)
+        ->and(MarketReportBuilder::districtKey('Gen. Władysława Andersa'))->toBe(MarketReportBuilder::districtKey('Generała Władysława Andersa'))
+        ->and(MarketReportBuilder::districtKey('Miłocin - św. Huberta'))->toBe(MarketReportBuilder::districtKey('Miłocin-św. Huberta'))
+        ->and(MarketReportBuilder::districtKey('1000-Lecia'))->toBe(MarketReportBuilder::districtKey('Tysiąclecia'));
+});
+
+it('podaż, koszt z czynszem, trend, twoja lista, okazje i monitor cen', function () {
+    seenListing($this->search, ['price' => 2000, 'rent_extra' => 500, 'first_seen_at' => now()->subDays(2)]);
+    seenListing($this->search, ['price' => 3000, 'rent_extra' => null, 'first_seen_at' => now()->subDays(10)]);
+    $favorite = seenListing($this->search, ['price' => 2800, 'rent_extra' => 300, 'status' => 'favorite', 'first_seen_at' => now()->subDays(12), 'viewing_at' => now()->addDays(2)]);
+    ListingPriceChange::create(['listing_id' => $favorite->id, 'old_price' => 3000, 'new_price' => 2800, 'changed_at' => now()->subDays(2)]);
+    seenListing($this->search, ['price' => 2500, 'first_seen_at' => now()->subDays(20), 'last_seen_at' => now()->subDays(3), 'inactive_at' => now()->subDays(3)]);
+    seenListing($this->search, ['price' => 1900, 'deal_at' => now()->subDay(), 'deal_reasons' => [['type' => 'below_market', 'text' => '20% taniej niż mediana']]]);
+
+    $product = Product::factory()->create(['name' => 'Wózek', 'best_price' => 4500, 'target_price' => 4600]);
+    $offer = ProductOffer::factory()->for($product)->create(['price' => 4500]);
+    $offer->prices()->create(['price' => 5000, 'available' => true, 'checked_at' => now()->subDays(10)]);
+    $offer->prices()->create(['price' => 4500, 'available' => true, 'checked_at' => now()->subDay()]);
+    $product->forceFill(['best_offer_id' => $offer->id])->save();
+
+    $data = app(MarketReportBuilder::class)->build(DealType::Rent, now()->subDays(7), now());
+
+    expect($data['totals'])->toMatchArray(['median_total' => 2800, 'total_known' => 2])
+        ->and($data['supply'])->toMatchArray(['gone' => 1, 'active_change' => null])
+        ->and($data['trend'])->toHaveCount(3)
+        ->and(end($data['trend'])['active'])->toBe($data['totals']['active'])
+        ->and($data['your_list'][0])->toMatchArray(['id' => $favorite->id, 'status' => 'favorite', 'price' => 2800, 'old_price' => 3000, 'gone' => false])
+        ->and($data['your_list'][0]['viewing_at'])->not->toBeNull()
+        ->and($data['deals'])->toMatchArray(['count' => 1])
+        ->and($data['deals']['top'][0]['reasons'])->toBe('20% taniej niż mediana')
+        ->and($data['products'][0])->toMatchArray(['name' => 'Wózek', 'best_price' => 4500.0, 'price_week_ago' => 5000.0, 'change_percent' => -10.0, 'target_reached' => true]);
+});
+
+it('AI pisze podsumowanie raportu, które idzie na Discorda i do panelu', function () {
+    config(['ai.providers.opencode.key' => 'test-key', 'scoring.enabled' => true]);
+    MarketReportAgent::fake([['summary' => 'Ceny stoją, ofert przybyło.', 'points' => ['Zadzwoń w sprawie oferty z obniżką.']]]);
+    Http::fake(['discord.com/*' => Http::response('', 204)]);
+    $user = User::factory()->create();
+    seenListing($this->search, ['price' => 3000]);
+
+    $this->artisan('reports:weekly-market', ['--deal' => ['rent']])->assertSuccessful();
+
+    $report = MarketReport::sole();
+    expect($report->data['ai_summary'])->toBe(['text' => 'Ceny stoją, ofert przybyło.', 'points' => ['Zadzwoń w sprawie oferty z obniżką.']]);
+
+    Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['description'], 'Ceny stoją, ofert przybyło.') && str_contains($request['embeds'][0]['description'], '• Zadzwoń'));
+
+    $this->actingAs($user)->get('/admin/market-report?report='.$report->id)->assertOk()->assertSee('Podsumowanie')->assertSee('Ceny stoją, ofert przybyło.');
 });

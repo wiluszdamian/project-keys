@@ -28,7 +28,7 @@ Zbiorcze powiadomienia kanałów (wynajem i sprzedaż osobno):
 
 - `GET /notification-settings`: `{"data": {"rent": {"schedule", "every_hours", "daily_at", "last_sent_at"}, "sale": {...}, "weekly_report": true, "alerts_discord": false}}`.
 - `PUT /notification-settings`: np. `{"rent": {"schedule": "daily", "daily_at": "20:00"}, "sale": {"schedule": "every_hours", "every_hours": 4}}`. `schedule`: `per_search` (decydują wyszukiwania), `every_hours`, `daily`. Dodatkowo `weekly_report` (raport rynku w soboty o 20:00) i `alerts_discord` (alerty także na Discorda), oba bool.
-- `GET /market-reports?deal_type=rent&limit=4`: tygodniowe raporty rynku od najnowszego: `id`, `deal_type`, `period_start`, `period_end`, `sent_at`, `data` (`totals`, `searches`, `districts`, `rooms`, `price_drops`, `best_new`, `has_previous`).
+- `GET /market-reports?deal_type=rent&limit=4`: tygodniowe raporty rynku od najnowszego: `id`, `deal_type`, `period_start`, `period_end`, `sent_at`, `data` (`totals` z `median_total` i `total_known` dla najmu z czynszem, `searches`, `districts`, `rooms`, `price_drops`, `best_new`, `has_previous`, `time_on_market`, od 2026-11-25 także `ai_summary` (`text`, `points`), `supply` (`new`, `gone`, `net`, `active_change`), `trend` (8 tygodni: `label`, `active`, `new`, `median_price`, `median_price_per_m2`, `median_total`), `your_list`, `deals` (`count`, `top`), `products`).
 
 Limity: 60 zapytań na minutę na token.
 

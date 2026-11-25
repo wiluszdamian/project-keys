@@ -64,6 +64,18 @@ class Notifier
         }
     }
 
+    /**
+     * Monitor cen w raporcie tygodnia (kanał produktów albo główny).
+     *
+     * @param  list<array<string, mixed>>  $products
+     */
+    public function productsWeekly(array $products): void
+    {
+        if ($products !== [] && config('products.notify') && $this->discord->isConfigured('products')) {
+            $this->discord->send($this->messages->productsWeekly($products), 'products');
+        }
+    }
+
     public function canNotifyGroup(DealType $dealType): bool
     {
         return $this->discord->isConfigured($dealType);

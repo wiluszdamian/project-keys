@@ -194,8 +194,11 @@ Panel jest pod `/admin` (adres `/` przekierowuje do niego). Masz w nim:
   Rozmowy można przeszukiwać, zmieniać im nazwę, pobrać jako Markdown i usuwać (pojedynczo albo wszystkie).
   Długie czekanie można przerwać, a po błędzie ponowić pytanie.
 - **Raport rynku:** w każdą sobotę o 20:00 raport z ostatnich 7 dni, osobno dla wynajmu i sprzedaży:
-  liczba ofert, nowe, mediany cen z porównaniem do poprzedniego tygodnia, dzielnice, pokoje, obniżki
-  i najlepsze nowe oferty. Idzie na Discorda i do panelu. W panelu jest też podgląd na żywo.
+  podsumowanie AI z punktami do zrobienia, liczba ofert, nowe, mediany cen z porównaniem do poprzedniego
+  tygodnia (przy najmie także z czynszem administracyjnym), podaż (nowe i zniknięte), trend z 8 tygodni,
+  Twoja lista (ulubione, kontakt, oglądanie: zmiany cen, zdjęte, terminy), okazje, dzielnice, pokoje,
+  obniżki, czas na rynku, najlepsze nowe oferty i ceny z monitora cen. Idzie na Discorda i do panelu.
+  W panelu jest też podgląd na żywo (bez podsumowania AI).
 - **Kredyt:** symulacja Rodzinnego Kredytu Mieszkaniowego (gwarancja BGK zamiast wkładu własnego).
   Liczy kwotę kredytu, gwarancję, potrzebny wkład (do 500 000 zł zero, powyżej różnica, bo gwarancja to
   najwyżej 100 000 zł), ratę przy stałym oprocentowaniu przez 5 lat albo zmiennym, ratę po wzroście stóp,

@@ -3,6 +3,7 @@
 namespace App\Notifications\Discord;
 
 use App\Enums\DealType;
+use App\Enums\ListingStatus;
 use App\Filament\Support\Format;
 use App\Models\Listing;
 use App\Models\ListingAnalysis;
@@ -17,6 +18,7 @@ use App\Services\Products\ProductAdvisor;
 use App\Services\Rcn\TransactionComparator;
 use App\Services\TimeOnMarket;
 use App\Support\Portals;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -237,6 +239,55 @@ class DiscordMessages
             ];
         }
 
+        if ($supply = $data['supply'] ?? null) {
+            $fields[] = [
+                'name' => '📦 Podaż',
+                'value' => "nowe **{$supply['new']}**, zniknęły **{$supply['gone']}**, bilans **".($supply['net'] > 0 ? '+' : '')."{$supply['net']}**"
+                    .($supply['active_change'] !== null ? "\nliczba ofert".$this->changeText($supply['active_change']) : ''),
+                'inline' => true,
+            ];
+        }
+
+        if ($report->deal_type === DealType::Rent && ($totals['median_total'] ?? null) !== null) {
+            $fields[] = [
+                'name' => '🧾 Najem z czynszem adm.',
+                'value' => 'mediana **'.$this->money($totals['median_total']).'**'.$this->changeText($totals['median_total_change'] ?? null)."\n({$totals['total_known']} ofert podaje czynsz)",
+                'inline' => true,
+            ];
+        }
+
+        if (count($trend = $data['trend'] ?? []) >= 2) {
+            $key = $report->deal_type === DealType::Rent ? 'median_price' : 'median_price_per_m2';
+            $fields[] = [
+                'name' => '📈 Trend '.count($trend).' tyg. ('.($report->deal_type === DealType::Rent ? 'mediana najmu' : 'mediana za m²').')',
+                'value' => Str::limit(collect($trend)->map(fn (array $week) => "{$week['label']}: ".($this->money($week[$key]) ?? '-'))->implode(' → '), 1000),
+                'inline' => false,
+            ];
+        }
+
+        if (($yourList = $data['your_list'] ?? []) !== []) {
+            $fields[] = [
+                'name' => '👀 Twoja lista',
+                'value' => Str::limit(collect($yourList)->take(6)->map(fn (array $item) => '**'.ListingStatus::from($item['status'])->getLabel().'** ['
+                    .Str::limit(str_replace(['[', ']'], '', $item['title']), 45)."]({$item['url']}) · ".$this->money($item['price'])
+                    .($item['old_price'] ? ' (było '.$this->money($item['old_price']).')' : '')
+                    .($item['gone'] ? ' · zdjęta' : '')
+                    .($item['viewing_at'] ? ' · oglądanie '.Carbon::parse($item['viewing_at'])->timezone(config('app.timezone'))->format('d.m H:i') : ''))
+                    ->implode("\n"), 1000),
+                'inline' => false,
+            ];
+        }
+
+        if (($deals = $data['deals'] ?? null) && $deals['count'] > 0) {
+            $fields[] = [
+                'name' => "🔥 Okazje tygodnia: {$deals['count']}",
+                'value' => Str::limit(collect($deals['top'])->map(fn (array $deal) => ($deal['score'] !== null ? "`{$deal['score']}/10` " : '').'['
+                    .Str::limit(str_replace(['[', ']'], '', $deal['title']), 45)."]({$deal['url']}) · ".$this->money($deal['price']).($deal['reasons'] ? "\n{$deal['reasons']}" : ''))
+                    ->implode("\n"), 1000),
+                'inline' => false,
+            ];
+        }
+
         if ($data['districts'] !== []) {
             $fields[] = [
                 'name' => '🏘️ Dzielnice (mediana za m²)',
@@ -319,18 +370,19 @@ class DiscordMessages
             $totals['median_price_per_m2'] !== null ? '**'.$this->money($totals['median_price_per_m2']).'/m²**'.$this->changeText($totals['median_price_per_m2_change']) : null,
         ]);
 
-        return ['embeds' => [[
+        return ['embeds' => [$this->fit([
             'author' => ['name' => "📊 Raport tygodnia · {$deal}"],
             'title' => "{$deal}: rynek {$report->periodLabel()}",
             'url' => rtrim(config('app.url'), '/')."/admin/market-report?report={$report->id}",
-            'description' => "**{$totals['active']}** ".$this->offersWord($totals['active'])." w tym tygodniu, z tego **{$totals['new']}** ".($totals['new'] === 1 ? 'nowa' : 'nowych').'.'
+            'description' => Str::limit((($summary = $data['ai_summary'] ?? null) ? "🤖 {$summary['text']}".collect($summary['points'])->map(fn (string $point) => "\n• {$point}")->implode('')."\n\n" : '')
+                ."**{$totals['active']}** ".$this->offersWord($totals['active'])." w tym tygodniu, z tego **{$totals['new']}** ".($totals['new'] === 1 ? 'nowa' : 'nowych').'.'
                 .($median !== [] ? "\nMediana: ".implode(', ', $median).'.' : '')
-                .($data['has_previous'] ? '' : "\nPierwszy raport, porównanie z poprzednim tygodniem będzie od następnego."),
+                .($data['has_previous'] ? '' : "\nPierwszy raport, porównanie z poprzednim tygodniem będzie od następnego."), 4000),
             'fields' => array_slice($fields, 0, 25),
             'color' => self::COLOR_INFO,
             'footer' => ['text' => 'Oferty widziane przez nasze wyszukiwania w ostatnich 7 dniach, bez duplikatów.'],
             'timestamp' => now()->toIso8601String(),
-        ]]];
+        ])]];
     }
 
     /**
@@ -374,6 +426,31 @@ class DiscordMessages
         }
 
         return ['embeds' => [$embed]];
+    }
+
+    /**
+     * Monitor cen w raporcie tygodnia: najlepsza cena teraz i tydzień temu.
+     *
+     * @param  list<array<string, mixed>>  $products
+     */
+    public function productsWeekly(array $products): array
+    {
+        $lines = collect($products)->map(fn (array $product) => '['.Str::limit(str_replace(['[', ']'], '', $product['name']), 60).']('
+            .rtrim(config('app.url'), '/')."/admin/products/{$product['id']}): **".(Format::pln($product['best_price']) ?? 'niedostępny').'**'
+            .$this->changeText($product['change_percent'] !== null && abs($product['change_percent']) >= 0.1 ? $product['change_percent'] : null)
+            .($product['shop'] ? " · {$product['shop']}" : '')
+            .($product['target_reached'] ? ' · 🎯 cena docelowa' : '')
+            .($product['verdict'] ? ' · AI: '.(ProductAdvisor::VERDICTS[$product['verdict']] ?? $product['verdict'])." {$product['score']}/10" : ''));
+
+        return ['embeds' => [[
+            'author' => ['name' => '📊 Raport tygodnia · Monitor cen'],
+            'title' => 'Ceny produktów: tydzień',
+            'url' => rtrim(config('app.url'), '/').'/admin/products',
+            'description' => Str::limit($lines->implode("\n"), 4000),
+            'color' => self::COLOR_INFO,
+            'footer' => ['text' => 'Zmiana: najlepsza cena teraz wobec ceny sprzed 7 dni.'],
+            'timestamp' => now()->toIso8601String(),
+        ]]];
     }
 
     public function test(): array
@@ -532,6 +609,24 @@ class DiscordMessages
     /**
      * @param  array{active: int, new: int, median_price: int|null, median_price_per_m2: int|null, median_price_change: float|null, median_price_per_m2_change: float|null}  $summary
      */
+    /**
+     * Discord przyjmuje embed do 6000 znaków razem: przy dłuższym odcinamy ostatnie pola.
+     *
+     * @param  array<string, mixed>  $embed
+     * @return array<string, mixed>
+     */
+    private function fit(array $embed): array
+    {
+        $length = fn (array $embed) => mb_strlen(($embed['title'] ?? '').($embed['description'] ?? '').($embed['author']['name'] ?? '').($embed['footer']['text'] ?? ''))
+            + collect($embed['fields'] ?? [])->sum(fn (array $field) => mb_strlen($field['name'].$field['value']));
+
+        while ($length($embed) > 5900 && ($embed['fields'] ?? []) !== []) {
+            array_pop($embed['fields']);
+        }
+
+        return $embed;
+    }
+
     private function reportLine(array $summary): string
     {
         return "{$summary['active']} ".$this->offersWord($summary['active']).", {$summary['new']} ".($summary['new'] === 1 ? 'nowa' : 'nowych')

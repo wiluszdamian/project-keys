@@ -8,6 +8,7 @@ use App\Services\MarketReportBuilder;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Url;
 
 /**
@@ -95,6 +96,32 @@ class MarketReportPage extends Page
             'live' => false,
             'data' => $report->data,
         ] : null;
+    }
+
+    /**
+     * Mały wykres liniowy (SVG) z kropką na ostatnim tygodniu. Kolory z motywu panelu.
+     *
+     * @param  list<int|float|null>  $values
+     */
+    public static function sparkline(array $values, int $width = 240, int $height = 48): HtmlString
+    {
+        $points = array_values(array_filter($values, fn ($value) => $value !== null));
+
+        if (count($points) < 2) {
+            return new HtmlString('');
+        }
+
+        [$min, $max] = [min($points), max($points)];
+        $range = $max - $min ?: 1;
+        $step = $width / (count($points) - 1);
+        $coords = collect($points)->map(fn ($value, int $i) => round($i * $step, 1).','.round($height - 4 - ($value - $min) / $range * ($height - 8), 1));
+        [$lastX, $lastY] = explode(',', $coords->last());
+
+        return new HtmlString(
+            '<svg viewBox="0 0 '.$width.' '.$height.'" width="100%" height="'.$height.'" preserveAspectRatio="none" role="img" aria-hidden="true">'
+            .'<polyline fill="none" stroke="var(--primary-500)" stroke-width="2" vector-effect="non-scaling-stroke" points="'.$coords->implode(' ').'"/>'
+            .'<circle cx="'.$lastX.'" cy="'.$lastY.'" r="3" fill="var(--primary-500)"/></svg>'
+        );
     }
 
     public static function change(?float $change): ?string
