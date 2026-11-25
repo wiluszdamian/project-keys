@@ -76,7 +76,7 @@ it('porównuje z poprzednim raportem', function () {
         'deal_type' => 'rent',
         'period_start' => now()->subDays(14),
         'period_end' => now()->subDays(7),
-        'data' => ['totals' => ['median_price' => 2500, 'median_price_per_m2' => 50], 'searches' => [['id' => $this->search->id, 'median_price' => 2500, 'median_price_per_m2' => 50]]],
+        'data' => ['version' => MarketReportBuilder::VERSION, 'totals' => ['median_price' => 2500, 'median_price_per_m2' => 50], 'searches' => [['id' => $this->search->id, 'median_price' => 2500, 'median_price_per_m2' => 50]]],
     ]);
     seenListing($this->search, ['price' => 3000, 'price_per_m2' => 60]);
 
@@ -204,4 +204,20 @@ it('AI pisze podsumowanie raportu, które idzie na Discorda i do panelu', functi
     Http::assertSent(fn ($request) => str_contains($request['embeds'][0]['description'], 'Ceny stoją, ofert przybyło.') && str_contains($request['embeds'][0]['description'], '• Zadzwoń'));
 
     $this->actingAs($user)->get('/admin/market-report?report='.$report->id)->assertOk()->assertSee('Podsumowanie')->assertSee('Ceny stoją, ofert przybyło.');
+});
+
+it('nie porównuje z raportem liczonym starszym sposobem', function () {
+    MarketReport::create([
+        'deal_type' => 'rent',
+        'period_start' => now()->subDays(14),
+        'period_end' => now()->subDays(7),
+        'data' => ['totals' => ['active' => 300, 'median_price' => 2500, 'median_price_per_m2' => 50], 'searches' => []],
+    ]);
+    seenListing($this->search, ['price' => 3000, 'price_per_m2' => 60]);
+
+    $data = app(MarketReportBuilder::class)->build(DealType::Rent, now()->subDays(7), now());
+
+    expect($data)->has_previous->toBeFalse()->version->toBe(MarketReportBuilder::VERSION)
+        ->and($data['totals']['median_price_change'])->toBeNull()
+        ->and($data['supply']['active_change'])->toBeNull();
 });

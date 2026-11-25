@@ -27,6 +27,11 @@ class MarketReportBuilder
     public const MIN_DISTRICT_SAMPLE = 3;
 
     /**
+     * Wersja sposobu liczenia. Raportu liczonego inaczej nie porównujemy (2: tylko oferty z aktywnych wyszukiwań).
+     */
+    public const VERSION = 2;
+
+    /**
      * Ile tygodni wstecz w trendzie.
      */
     public const TREND_WEEKS = 8;
@@ -45,6 +50,10 @@ class MarketReportBuilder
             ->where('period_end', '<', $to)
             ->latest('period_end')
             ->first()?->data;
+
+        if (($previous['version'] ?? 1) < self::VERSION) {
+            $previous = null;
+        }
 
         $totals = $this->summary($this->seen($dealType, $from, $to), $from);
         $totals['median_price_change'] = $this->change($totals['median_price'], $previous['totals']['median_price'] ?? null);
@@ -75,6 +84,7 @@ class MarketReportBuilder
             ->all();
 
         return [
+            'version' => self::VERSION,
             'totals' => $totals,
             'searches' => $searches,
             'districts' => $this->districts($dealType, $from, $to),
