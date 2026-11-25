@@ -110,6 +110,17 @@ Sprawdzone 2026-11-18. Głównie oferty bez pośredników.
 - Lista (`article.single-offer`): tytuł w `alt` zdjęcia, miejscowość, ulica, cena, metraż, pokoje.
 - Strona ogłoszenia: opis (`.lang-description .lang-text`), numer oferty, pinezka z `L.marker([lat, lng])`, piętro z opisu.
 
+## Joker House Nieruchomości (jokerhouse-nieruchomosci.pl)
+
+Sprawdzone 2026-11-25.
+
+- Biuro z Rzeszowa, WordPress z wtyczką WP Directory Kit. robots.txt blokuje tylko `/wp-admin/`.
+- Lista: `/results-listings/?search_category=2&field_5=Na+wynajem` (albo `Na+sprzedaż`; kategoria 1 to domy), strony `wmvc_paged=N`, 9 ofert na stronę, ok. 3 strony najmu i 8 sprzedaży. Kategorie i miejscowości z `admin-ajax.php` (`treefieldid`, tabele `category_m`, `location_m`).
+- Kafelek (`div.wdk-listing-card`): miejscowość, tytuł, metraż (pole 8), cena. Zamiast pokoi jest liczba sypialni, więc pokoje bierzemy z tytułu, a potem ze strony ogłoszenia. Tytuły z „ARCHIWALNA” pomijamy.
+- Id oferty to slug z adresu `/wdk-listing/{slug}/` (numer wpisu jest tylko na stronie ogłoszenia, `postid-N`).
+- API WordPressa (`/wp-json/wp/v2/wdk-listing`) ma tylko tytuł i opis, bez ceny, kategorii i transakcji, więc z niego nie korzystamy.
+- Strona ogłoszenia: sekcja „Informacje” (`.wdk-listing-fields-section`): pokoje, piętro, opłaty eksploatacyjne (zapisujemy jako czynsz), rynek, rok budowy, stan. Opis w `div.wdk-field-value .value`. Mapy z pinezką nie ma.
+
 ## Zdjęte ogłoszenia (od 2026-11-24)
 
 `listings:check-active` (co 30 minut, do 120 stron) pobiera stronę ogłoszenia przez `HttpFetcher::probe` (te same przerwy,
@@ -122,6 +133,7 @@ blokady i ponowienia co scrapery) dla ofert, których nie było w wynikach od 6 
 - Nieruchomości-online: 200 i „Ogłoszenie archiwalne” albo „Strona błędu 404” w tytule.
 - Rzeszowiak: 200 i „Ogłoszenie wygasło” (ISO-8859-2).
 - 1pietro, Rzeszowskie: przekierowanie na stronę główną.
+- Joker House: 200 i pole „Sprzedaż / Wynajem” = „Oferty Archiwalne”, usunięte 404.
 
 Wzorce są w `config/scrapers.php` (`availability.markers`), przekierowanie „w górę” (krótsza ścieżka) i 404/410 działają dla każdego portalu.
 

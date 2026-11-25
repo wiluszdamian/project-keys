@@ -39,6 +39,7 @@ class DiscordMessages
         'stoprocent' => 0xC0392B,
         'rzeszowskie' => 0x2C3E50,
         'pierwsze_pietro' => 0x16A085,
+        'jokerhouse' => 0xD4AC0D,
     ];
 
     private const COLOR_GOOD = 0x2ECC71;

@@ -18,7 +18,7 @@ Prywatny serwis, który szuka mieszkań za ciebie.
 
 project-keys co 20 minut przegląda portale z ogłoszeniami (Otodom, OLX, Rzeszowiak, Morizon, Gratka,
 Nieruchomości-online, Domiporta, Adresowo) i strony biur Stoprocent Nieruchomości, Rzeszowskie
-Nieruchomości i Pierwsze Piętro według zapisanych wyszukiwań. Nowe oferty ocenia
+Nieruchomości, Pierwsze Piętro i Joker House według zapisanych wyszukiwań. Nowe oferty ocenia
 AI według twoich preferencji, a te z dobrą oceną przychodzą na Discorda. Zbudowany na Laravel 13
 i PHP 8.5, działa w Docker Compose na jednym serwerze.
 

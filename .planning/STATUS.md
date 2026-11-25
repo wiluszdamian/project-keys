@@ -29,6 +29,7 @@ Aktualizuje Claude Code po każdej fazie.
 
 (data, decyzja, powód)
 
+- 2026-11-25: Czwarte biuro (prośba właściciela): Joker House Nieruchomości (jokerhouse-nieruchomosci.pl), WordPress z WP Directory Kit, lista HTML z filtrem kategorii i transakcji, szczegóły ze strony ogłoszenia. Szczegóły w SCRAPERS.md. Dodane do aktywnych wyszukiwań.
 - 2026-11-17: PHP 8.5 i najnowszy Laravel zamiast PHP 8.4. Prośba właściciela.
 - 2026-11-17: Serwer ma Debian 13 zamiast Ubuntu 24.04. Docker z oficjalnego repozytorium dla Debiana, reszta kroków bez zmian.
 - 2026-11-17: `deploy` ma sudo bez hasła (NOPASSWD), bo logowanie jest tylko kluczem i użytkownik nie ma hasła.

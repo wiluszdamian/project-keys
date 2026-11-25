@@ -22,6 +22,7 @@ class Portals
         'stoprocent' => 'Stoprocent',
         'rzeszowskie' => 'Rzeszowskie Nieruchomości',
         'pierwsze_pietro' => 'Pierwsze Piętro',
+        'jokerhouse' => 'Joker House',
     ];
 
     // Kolory Filamenta w panelu.
@@ -37,6 +38,7 @@ class Portals
         'stoprocent' => 'danger',
         'rzeszowskie' => 'primary',
         'pierwsze_pietro' => 'info',
+        'jokerhouse' => 'warning',
     ];
 
     /**

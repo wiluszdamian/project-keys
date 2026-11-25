@@ -3,6 +3,7 @@
 use App\Scrapers\AdresowoScraper;
 use App\Scrapers\DomiportaScraper;
 use App\Scrapers\GratkaScraper;
+use App\Scrapers\JokerHouseScraper;
 use App\Scrapers\MorizonScraper;
 use App\Scrapers\NieruchomosciOnlineScraper;
 use App\Scrapers\OlxScraper;
@@ -14,7 +15,7 @@ use App\Scrapers\StoprocentScraper;
 
 return [
     // Portale, które można wybrać w wyszukiwaniu.
-    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo', 'stoprocent', 'rzeszowskie', 'pierwsze_pietro'],
+    'portals' => ['otodom', 'olx', 'rzeszowiak', 'morizon', 'gratka', 'nieruchomosci_online', 'domiporta', 'adresowo', 'stoprocent', 'rzeszowskie', 'pierwsze_pietro', 'jokerhouse'],
 
     // Klasa scrapera dla każdego portalu.
     'classes' => [
@@ -29,6 +30,7 @@ return [
         'stoprocent' => StoprocentScraper::class,
         'rzeszowskie' => RzeszowskieNieruchomosciScraper::class,
         'pierwsze_pietro' => PierwszePietroScraper::class,
+        'jokerhouse' => JokerHouseScraper::class,
     ],
 
     // Niższa cena przy sprzedaży to ogłoszenie najmu w złej kategorii.
@@ -66,6 +68,8 @@ return [
             'adresowo' => '/Ogłoszenie usunięte/u',
             // Strona w ISO-8859-2, dlatego "ł" jako dowolny znak (bajt).
             'rzeszowiak' => '/Og.{1,2}oszenie wygas.{1,2}o/',
+            // Joker House: 200 i pole "Sprzedaż / Wynajem" z wartością "Oferty Archiwalne". Usunięte: 404.
+            'jokerhouse' => "/<span class='value'>\\s*Oferty Archiwalne/",
             // OLX: bez wzorca, bo teksty "nie jest już dostępne" są też w kodzie aktywnych stron.
         ],
     ],
@@ -127,6 +131,11 @@ return [
     // Biuro Pierwsze Piętro (Rzeszów, 1pietro.net). Zwykły HTML, 18 ofert na stronę.
     'pierwsze_pietro' => [
         'base_url' => 'https://1pietro.net',
+    ],
+
+    // Biuro Joker House Nieruchomości (Rzeszów). WordPress z WP Directory Kit, 9 ofert na stronę.
+    'jokerhouse' => [
+        'base_url' => 'https://jokerhouse-nieruchomosci.pl',
     ],
 
     'domiporta' => [
