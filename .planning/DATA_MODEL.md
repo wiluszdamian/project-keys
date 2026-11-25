@@ -124,7 +124,7 @@ Produkt, który osoba chce kupić. Oferty w sklepach w `product_offers`.
 
 ## product_offers
 
-product_id, url (bez parametrów śledzących), url_key (sha1, unique z product_id), shop (domena), title, price, regular_price (przed promocją), lowest_30d_price (Omnibus), currency, available (null = nie wiadomo), source (`manual` albo `search`), is_primary, is_active, extracted_by (`json-ld`, `meta`, `microdata`, `shop`, `text`, `ai`), match_note (dlaczego AI uznało ofertę za ten sam produkt), last_checked_at, last_error, failures.
+product_id, url (bez parametrów śledzących), url_key (sha1, unique z product_id), shop (domena), title, price, regular_price (przed promocją), lowest_30d_price (Omnibus), currency, available (null = nie wiadomo), source (`manual` albo `search`), matched (znaleziona: true = AI uznało za ten sam produkt, false = inny wariant, widoczna w panelu, ale nie śledzona, dopóki osoba jej nie włączy; null = link ręczny), is_primary, is_active, extracted_by (`json-ld`, `meta`, `microdata`, `shop`, `text`, `ai`), match_note (dlaczego AI uznało ofertę za ten sam produkt), last_checked_at, last_error, failures.
 
 ## product_prices
 

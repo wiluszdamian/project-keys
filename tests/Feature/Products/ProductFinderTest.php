@@ -55,9 +55,10 @@ it('szuka w innych sklepach, AI odrzuca inny kolor, tańszy sklep daje powiadomi
     $result = app(ProductFinder::class)->find($this->product);
 
     expect($result)->candidates->toBe(2)->added->toBe(1)->rejected->toBe(1)->errors->toBe(0)
-        ->and($this->product->offers()->count())->toBe(2)
+        ->and($this->product->offers()->count())->toBe(3)
+        ->and($this->product->offers()->where('shop', 'inny.test')->first())->is_active->toBeFalse()->matched->toBeFalse()->match_note->toBe('Inny kolor (Moon Black).')
         ->and($this->product->refresh())->best_price->toBe(4599.0)->offers_searched_at->not->toBeNull()
-        ->and($this->product->offers()->where('shop', 'tanszy.test')->first())->source->toBe('search')->match_note->toBe('Ten sam model, kolor i zestaw.')
+        ->and($this->product->offers()->where('shop', 'tanszy.test')->first())->source->toBe('search')->matched->toBeTrue()->match_note->toBe('Ten sam model, kolor i zestaw.')
         ->and(Cache::get("products:rejected:{$this->product->id}"))->toHaveCount(1);
 
     Http::assertSent(fn (Request $request) => str_contains($request->url(), 'api.search.brave.com') && $request->header('X-Subscription-Token')[0] === 'brave-test');
@@ -70,7 +71,7 @@ it('bez AI porównuje nazwy', function () {
     $result = app(ProductFinder::class)->find($this->product, notify: false);
 
     expect($result['added'])->toBe(1)
-        ->and($this->product->offers()->pluck('shop')->all())->toContain('tanszy.test')->not->toContain('inny.test');
+        ->and($this->product->offers()->where('is_active', true)->pluck('shop')->all())->toContain('tanszy.test')->not->toContain('inny.test');
 });
 
 it('bez sklepów, AI i klucza wyszukiwarki nie szuka', function () {
@@ -106,7 +107,8 @@ it('szuka za darmo w mapach stron sklepów, które zaproponowało AI', function 
         ->and(ProductShop::pluck('domain')->all())->toBe(['wozki.test'])
         ->and($shop)->source->toBe('ai')->status->toBe('ok')->urls_count->toBe(3)
         ->and($result)->candidates->toBe(2)->added->toBe(1)
-        ->and($this->product->offers()->where('shop', 'wozki.test')->first())->price->toBe(4699.0)->source->toBe('search');
+        ->and($this->product->offers()->where('shop', 'wozki.test')->where('is_active', true)->first())->price->toBe(4699.0)->source->toBe('search')
+        ->and($this->product->offers()->where('shop', 'wozki.test')->where('is_active', false)->first())->price->toBe(129.0)->matched->toBeFalse();
 
     Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'sitemap-categories') || str_contains($request->url(), 'brave.com') || str_contains($request->url(), 'joie'));
 });

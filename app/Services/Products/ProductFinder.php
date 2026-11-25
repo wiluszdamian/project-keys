@@ -97,11 +97,21 @@ class ProductFinder
             if (! $same) {
                 $rejected[] = sha1($candidate['url']);
 
+                // Widoczna w panelu z powodem odrzucenia, ale nie śledzona. Osoba może ją włączyć.
+                try {
+                    $this->tracker->addOffer($product, $candidate['url'], ProductOffer::SOURCE_SEARCH, $page, $reason)
+                        ->forceFill(['matched' => false, 'is_active' => false])->save();
+                } catch (Throwable) {
+                    // Ten link już jest przy produkcie.
+                }
+
                 continue;
             }
 
             try {
-                $added[] = $this->tracker->addOffer($product, $candidate['url'], ProductOffer::SOURCE_SEARCH, $page, $reason)->id;
+                $offer = $this->tracker->addOffer($product, $candidate['url'], ProductOffer::SOURCE_SEARCH, $page, $reason);
+                $offer->forceFill(['matched' => true])->save();
+                $added[] = $offer->id;
                 $addedShops[] = $candidate['shop'];
             } catch (Throwable $exception) {
                 Log::info("Monitor cen: nie dodałem {$candidate['url']}: {$exception->getMessage()}");

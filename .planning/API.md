@@ -73,7 +73,7 @@ Okazje (od 2026-11-23): oferta w `GET /listings/{id}` i na listach ma `deal_reas
 | POST | /products/{id}/find-offers | szukanie w innych sklepach w tle (202), wynik w panelu. 422, gdy nie ma sklepów, AI ani klucza Brave |
 | POST | /products/{id}/advice | ocena ceny przez AI w tle (202) |
 
-Oferta (`offers`): `id`, `url`, `shop`, `title`, `price`, `regular_price`, `lowest_30d_price`, `currency`, `available`, `source` (`manual`, `search`), `is_primary`, `is_active`, `extracted_by`, `match_note`, `last_error`, `failures`, `last_checked_at`.
+Oferta (`offers`): `id`, `url`, `shop`, `title`, `price`, `regular_price`, `lowest_30d_price`, `currency`, `available`, `source` (`manual`, `search`), `matched` (true ten sam produkt, false inny wariant według AI, nie śledzona; null ręczny link), `is_primary`, `is_active`, `extracted_by`, `match_note`, `last_error`, `failures`, `last_checked_at`.
 
 Produkt ma też `search_query` (czego szukać w innych sklepach, np. "Cybex Balios S Lux"; puste = ustali AI albo początek nazwy).
 

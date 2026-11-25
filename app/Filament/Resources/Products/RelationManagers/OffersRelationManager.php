@@ -77,10 +77,17 @@ class OffersRelationManager extends RelationManager
                     ->badge()
                     ->formatStateUsing(fn (ProductOffer $record) => match (true) {
                         $record->is_primary => 'główny',
+                        $record->matched === false => 'inny wariant (AI)',
                         $record->source === ProductOffer::SOURCE_SEARCH => 'znaleziony',
                         default => 'dodany',
                     })
-                    ->color(fn (ProductOffer $record) => $record->source === ProductOffer::SOURCE_SEARCH ? 'info' : 'gray')
+                    ->color(fn (ProductOffer $record) => match (true) {
+                        $record->matched === false => 'warning',
+                        $record->source === ProductOffer::SOURCE_SEARCH => 'info',
+                        default => 'gray',
+                    })
+                    ->description(fn (ProductOffer $record) => $record->match_note ? Str::limit($record->match_note, 90) : null)
+                    ->wrap()
                     ->tooltip(fn (ProductOffer $record) => $record->match_note),
                 TextColumn::make('last_checked_at')
                     ->label('Sprawdzone')
@@ -92,7 +99,12 @@ class OffersRelationManager extends RelationManager
                     ->color(fn (ProductOffer $record) => $record->last_error ? 'danger' : null)
                     ->tooltip(fn (ProductOffer $record) => $record->last_error),
                 ToggleColumn::make('is_active')
-                    ->label('Śledź'),
+                    ->label('Śledź')
+                    ->tooltip(fn (ProductOffer $record) => $record->matched === false && ! $record->is_active ? 'AI uznało, że to inny wariant. Włącz, jeśli to ten sam produkt.' : null)
+                    ->afterStateUpdated(function (ProductOffer $record, ProductTracker $tracker) {
+                        $product = $this->getOwnerRecord();
+                        $tracker->refresh($product, $tracker->snapshot($product));
+                    }),
             ])
             ->headerActions([
                 Action::make('add')

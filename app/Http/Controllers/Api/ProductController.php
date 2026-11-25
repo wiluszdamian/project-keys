@@ -176,7 +176,7 @@ class ProductController extends Controller
     private function presentOffer(ProductOffer $offer): array
     {
         return $offer->only([
-            'id', 'url', 'shop', 'title', 'price', 'regular_price', 'lowest_30d_price', 'currency', 'available', 'source',
+            'id', 'url', 'shop', 'title', 'price', 'regular_price', 'lowest_30d_price', 'currency', 'available', 'source', 'matched',
             'is_primary', 'is_active', 'extracted_by', 'match_note', 'last_error', 'failures',
         ]) + ['last_checked_at' => $offer->last_checked_at?->toIso8601String()];
     }

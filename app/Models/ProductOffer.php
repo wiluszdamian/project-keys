@@ -20,7 +20,7 @@ class ProductOffer extends Model
 
     protected $fillable = [
         'product_id', 'url', 'url_key', 'shop', 'title', 'price', 'regular_price', 'lowest_30d_price', 'currency',
-        'available', 'source', 'is_primary', 'is_active', 'extracted_by', 'match_note',
+        'available', 'source', 'matched', 'is_primary', 'is_active', 'extracted_by', 'match_note',
     ];
 
     protected $attributes = [
@@ -38,6 +38,7 @@ class ProductOffer extends Model
             'regular_price' => 'float',
             'lowest_30d_price' => 'float',
             'available' => 'boolean',
+            'matched' => 'boolean',
             'is_primary' => 'boolean',
             'is_active' => 'boolean',
             'failures' => 'integer',

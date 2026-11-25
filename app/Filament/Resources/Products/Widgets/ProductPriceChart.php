@@ -37,7 +37,8 @@ class ProductPriceChart extends ChartWidget
             return ['datasets' => [], 'labels' => []];
         }
 
-        $offers = $this->record->offers()->with(['prices' => fn ($query) => $query->orderBy('checked_at')])->get();
+        // Bez ofert odrzuconych przez AI, których osoba nie śledzi.
+        $offers = $this->record->offers()->where(fn ($query) => $query->where('is_active', true)->orWhereNull('matched')->orWhere('matched', true))->with(['prices' => fn ($query) => $query->orderBy('checked_at')])->get();
         $labels = $offers->flatMap(fn (ProductOffer $offer) => $offer->prices->map(fn (ProductPrice $price) => $price->checked_at->format('Y-m-d')))
             ->push(now()->format('Y-m-d'))
             ->unique()
