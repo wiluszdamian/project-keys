@@ -38,10 +38,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('project-keys')
             // Logo z .github/assets (klucz i napis), osobno dla jasnego i ciemnego motywu. Także na ekranie logowania.
-            ->brandLogo(asset('images/logo-light.svg'))
-            ->darkModeBrandLogo(asset('images/logo-dark.svg'))
+            ->brandLogo('/images/logo-light.svg')
+            ->darkModeBrandLogo('/images/logo-dark.svg')
             ->brandLogoHeight('2rem')
-            ->favicon(asset('images/favicon.svg'))
+            ->favicon('/images/favicon.svg')
             // Login i passkey zamiast e-maila (Pages\Auth\Login), passkey wymagany (RequirePasskey).
             ->login(Login::class)
             ->profile(EditProfile::class)
