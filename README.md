@@ -112,10 +112,12 @@ repozytorium Dockera.
 
 ## Wdrożenie
 
-Push na `main`: GitHub Actions uruchamia testy (`tests.yml`), a gdy przejdą, `deploy.yml` wdraża ten commit
-na serwer przez `scripts/deploy.sh` (rsync, budowa obrazów, migracje, restart, sprawdzenie `/up`). Ręcznie:
-zakładka Actions, „Deploy”, „Run workflow”, albo `scripts/deploy.sh --tests` z laptopa. Sekrety repozytorium:
-`DEPLOY_SSH_KEY` (osobny klucz tylko do wdrożeń), `DEPLOY_HOST`, `DEPLOY_KNOWN_HOSTS`.
+Aplikacja działa na PanelAlpha (projekt `projectkeys1148`, domena nieruchomosci.wilusz.tech).
+PanelAlpha wdraża gałąź `develop` z tego repozytorium (Redeploy w panelu). Zmienne z `.env` są zapisane
+w PanelAlpha jako zmienne środowiskowe projektu, więc deploy ich nie nadpisuje. HTTPS kończy się na nginx
+PanelAlpha, a Caddy w projekcie słucha na porcie 8080 (`CADDY_HTTP_BIND=8080`). Backupy robi PanelAlpha
+(wszystkie wolumeny, codziennie). GitHub Actions uruchamia tylko testy (`tests.yml`); stary `deploy.yml`
+(rsync na serwer) jest usunięty.
 
 ## Logowanie do panelu
 
